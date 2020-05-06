@@ -6,6 +6,12 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
+discord-py = "*"
+trueskill = "*"
+rapidfuzz = "*"
+sqlalchemy = "*"
+tabulate = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.8"
