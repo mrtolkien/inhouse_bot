@@ -4,7 +4,7 @@ import os
 import trueskill
 
 # Folders utilities
-base_folder = os.path.join(os.path.expanduser("~"), '.inhouse_bot')
+base_folder = os.path.join(os.path.expanduser("~"), '.config', 'inhouse_bot')
 
 if not os.path.exists(base_folder):
     os.makedirs(base_folder)

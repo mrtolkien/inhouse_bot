@@ -12,6 +12,7 @@ rapidfuzz = "*"
 sqlalchemy = "*"
 tabulate = "*"
 pytest = "*"
+lol-id-tools = "*"
 
 [requires]
 python_version = "3.8"

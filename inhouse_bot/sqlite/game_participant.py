@@ -17,6 +17,9 @@ class GameParticipant(sql_alchemy_base):
     # Unique player_id
     player_id = Column(Integer, ForeignKey('player.id'))
 
+    # Champion id, only filled if the player updates it by themselves after the game
+    champion_id = Column(Integer)
+
     # Pregame TrueSkill values
     trueskill_mu = Column(Float)
     trueskill_sigma = Column(Float)

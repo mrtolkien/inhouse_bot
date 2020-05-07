@@ -2,12 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="670df52a-f7fc-417b-b17c-84ce188b6dcd" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/inhouse_bot/sqlite/player_rating.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inhouse_bot/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Pipfile" beforeDir="false" afterPath="$PROJECT_DIR$/Pipfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inhouse_bot/common_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/common_utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inhouse_bot/sqlite/game_participant.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/sqlite/game_participant.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inhouse_bot/sqlite/player.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/sqlite/player.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inhouse_bot/sqlite/player_rating.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/sqlite/player_rating.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -86,22 +85,22 @@
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
     <state x="804" y="316" key="FileChooserDialogImpl/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588836285317" />
-    <state width="2005" height="309" key="GridCell.Tab.0.bottom" timestamp="1588837396772">
+    <state width="2005" height="309" key="GridCell.Tab.0.bottom" timestamp="1588839327321">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state width="2005" height="309" key="GridCell.Tab.0.bottom/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588837396772" />
-    <state width="2005" height="309" key="GridCell.Tab.0.center" timestamp="1588837396771">
+    <state width="2005" height="309" key="GridCell.Tab.0.bottom/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588839327321" />
+    <state width="2005" height="309" key="GridCell.Tab.0.center" timestamp="1588839327321">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state width="2005" height="309" key="GridCell.Tab.0.center/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588837396771" />
-    <state width="2005" height="309" key="GridCell.Tab.0.left" timestamp="1588837396771">
+    <state width="2005" height="309" key="GridCell.Tab.0.center/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588839327321" />
+    <state width="2005" height="309" key="GridCell.Tab.0.left" timestamp="1588839327321">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state width="2005" height="309" key="GridCell.Tab.0.left/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588837396771" />
-    <state width="2005" height="309" key="GridCell.Tab.0.right" timestamp="1588837396772">
+    <state width="2005" height="309" key="GridCell.Tab.0.left/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588839327321" />
+    <state width="2005" height="309" key="GridCell.Tab.0.right" timestamp="1588839327321">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state width="2005" height="309" key="GridCell.Tab.0.right/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588837396772" />
+    <state width="2005" height="309" key="GridCell.Tab.0.right/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588839327321" />
     <state x="687" y="246" width="672" height="678" key="search.everywhere.popup" timestamp="1588837131684">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>

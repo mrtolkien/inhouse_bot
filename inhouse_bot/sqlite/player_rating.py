@@ -17,9 +17,10 @@ class PlayerRating(sql_alchemy_base):
     trueskill_sigma = Column(Float)
 
     def __init__(self, player, role):
-        # Initializing TrueSkill to default base values
         self.player_id = player.id
         self.role = role
 
+        # Initializing TrueSkill to default base values
+        # TODO Initialize to known values for additional roles?
         self.trueskill_mu = 25
         self.trueskill_sigma = 25 / 6
