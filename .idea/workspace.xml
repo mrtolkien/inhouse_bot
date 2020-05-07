@@ -6,6 +6,7 @@
       <change beforePath="$PROJECT_DIR$/inhouse_bot/cogs/queue_cog.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/cogs/queue_cog.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inhouse_bot/inhouse_bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/inhouse_bot.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inhouse_bot/sqlite/game.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/sqlite/game.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inhouse_bot/sqlite/sqlite_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/sqlite/sqlite_utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -100,10 +101,18 @@
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
     <state width="2005" height="405" key="GridCell.Tab.0.right/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588849706579" />
+    <state width="1031" height="568" key="XDebugger.FullValuePopup" timestamp="1588863178308">
+      <screen x="0" y="0" width="2048" height="1122" />
+    </state>
+    <state width="1031" height="568" key="XDebugger.FullValuePopup/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588863178308" />
     <state x="834" y="475" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1588844979507">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
     <state x="834" y="475" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588844979507" />
+    <state x="734" y="296" width="579" height="530" key="find.popup" timestamp="1588865285729">
+      <screen x="0" y="0" width="2048" height="1122" />
+    </state>
+    <state x="734" y="296" width="579" height="530" key="find.popup/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588865285729" />
     <state x="687" y="246" width="672" height="678" key="search.everywhere.popup" timestamp="1588837131684">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>

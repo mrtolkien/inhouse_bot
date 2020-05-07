@@ -1,3 +1,5 @@
+import discord
+from discord import Embed
 from sqlalchemy import Column, Integer, DateTime, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.collections import mapped_collection
@@ -30,7 +32,8 @@ class Game(sql_alchemy_base):
                                 ),
                                 backref='game')
 
-    # TODO Define __str__ with tabulate
+    def __str__(self):
+        value = str(self.participants)
 
     def __init__(self, players: dict):
         """

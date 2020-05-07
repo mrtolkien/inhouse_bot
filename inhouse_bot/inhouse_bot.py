@@ -25,6 +25,7 @@ class InhouseBot(commands.Bot):
     async def on_command_error(self, ctx, error):
         # If we are on a test bot, simply raise the error for debug
         # TODO put that back in a test case
+
         #if 'test' in self.user.name.lower():
         raise error
 

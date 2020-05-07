@@ -14,8 +14,9 @@ engine = sqlalchemy.create_engine('sqlite:///{}'.format(database_location))
 get_session = orm.sessionmaker(bind=engine)
 
 # Team name enum used in both Game and GameParticipant
+roles_list = ['top', 'jungle', 'mid', 'bot', 'support']
 team_enum = Enum('blue', 'red')
-role_enum = Enum('top', 'jungle', 'mid', 'bot', 'support')
+role_enum = Enum(*roles_list)
 
 
 # Defining the function to call at the end of the sqlite initialization

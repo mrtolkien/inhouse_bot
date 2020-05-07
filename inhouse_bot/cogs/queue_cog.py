@@ -57,29 +57,6 @@ class QueueCog(commands.Cog, name='queue'):
         elif match_quality > -0.2:
             self.start_game(ctx, players, mismatch=True)
 
-    def start_game(self, ctx, players, mismatch=False):
-        game = Game(players)
-
-        embed = Embed(title='Proposed game')
-        embed.add_field(name='Team compositions',
-                        value='```{}```'.format(str(game)))
-
-        embed.add_field(name='Get ready',
-                        value='A match has been found.\n'
-                              'You can refuse the match and leave the queue by pressing :negative_squared_cross_mark:.\n'
-                              'If you are ready, press :white_check_mark:.')
-        if mismatch:
-            embed.add_field(name='WARNING',
-                            value='According to TrueSkill, this game might be a slight mismatch.')
-
-        message = await ctx.send(embed=embed)
-
-        # TODO Use wait_for to react to the emotes
-
-        game_start = False
-        if game_start:
-            self.remove_players_from_queue(players)
-
     def match_game(self, channel_id) -> tuple:
         """
         Looks at the queue in the channel and returns the best match-made game and its "quality".
@@ -108,6 +85,30 @@ class QueueCog(commands.Cog, name='queue'):
             matches_quality[players] = -abs(0.5 - trueskill_blue_side_winrate(players))
 
         return matches_quality.most_common(1)[0]
+
+    def start_game(self, ctx, players, mismatch=False):
+        game = Game(players)
+
+        embed = Embed(title='Proposed game')
+        embed.add_field(name='Team compositions',
+                        value='```{}```'.format(str(game)))
+
+        embed.add_field(name='Get ready',
+                        value='A match has been found.\n'
+                              'You can refuse the match and leave the queue by pressing :negative_squared_cross_mark:.\n'
+                              'If you are ready, press :white_check_mark:.')
+        if mismatch:
+            embed.add_field(name='WARNING',
+                            value='According to TrueSkill, this game might be a slight mismatch.')
+
+        message = await ctx.send(embed=embed)
+
+        # TODO Use wait_for to react to the emotes
+
+        game_start = False
+        if game_start:
+            self.remove_players_from_queue(players)
+
 
     @commands.command()
     async def stop_queue(self, ctx: commands.Context, *args):
