@@ -1,7 +1,7 @@
 import os
 from discord.ext import commands
 from inhouse_bot.cogs.queue_cog import QueueCog
-from inhouse_bot.common_utils import base_folder
+from inhouse_bot.common_utils import discord_token
 from lol_id_tools import LolIdTools
 
 
@@ -10,8 +10,7 @@ class InhouseBot(commands.Bot):
         # TODO add dm_help=True
         super().__init__('!', **options)
 
-        with open(os.path.join(base_folder, 'discord_token.txt')) as file:
-            self.discord_token = file.read()
+        self.discord_token = discord_token
 
         self.lit = LolIdTools('en_US', 'ko_KR')
         self.add_cog(QueueCog(self))

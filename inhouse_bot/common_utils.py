@@ -9,6 +9,11 @@ base_folder = os.path.join(os.path.expanduser("~"), '.config', 'inhouse_bot')
 if not os.path.exists(base_folder):
     os.makedirs(base_folder)
 
+# Discord token
+with open(os.path.join(base_folder, 'discord_token.txt')) as file:
+    discord_token = file.read()
+# TODO Output at least some help if the file is not found
+
 
 # Trueskill utilities
 def win_probability(team1, team2):

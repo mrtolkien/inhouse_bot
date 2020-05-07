@@ -13,6 +13,7 @@ sqlalchemy = "*"
 tabulate = "*"
 pytest = "*"
 lol-id-tools = "*"
+dpytest = "*"
 
 [requires]
 python_version = "3.8"

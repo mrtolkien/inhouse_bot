@@ -2,11 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="670df52a-f7fc-417b-b17c-84ce188b6dcd" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/inhouse_bot/tests/test_bot.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inhouse_bot/tests/test_sqlite.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/garym.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/garym.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Pipfile" beforeDir="false" afterPath="$PROJECT_DIR$/Pipfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Pipfile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Pipfile.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inhouse_bot/cogs/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/tests/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inhouse_bot/cogs/queue_cog.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/cogs/queue_cog.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inhouse_bot/common_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/common_utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inhouse_bot/inhouse_bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/inhouse_bot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inhouse_bot/sqlite/game.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/sqlite/game.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inhouse_bot/sqlite/sqlite_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/sqlite/sqlite_utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -31,7 +36,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/run_bot.py" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="restartRequiresConfirmation" value="false" />
   </component>
   <component name="RecentsManager">
@@ -40,7 +45,7 @@
       <recent name="C:\Users\garym\development\inhouse_bot\inhouse_bot\sqlite\tables" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python tests.pytest in inhouse_bot">
     <configuration name="run_bot" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="inhouse_bot" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -62,6 +67,26 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="pytest in inhouse_bot" type="tests" factoryName="py.test" nameIsGenerated="true">
+      <module name="inhouse_bot" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="C:\Users\garym\.virtualenvs\inhouse_bot-DTNYgI33\Scripts\python.exe" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.run_bot" />
+      <item itemvalue="Python tests.pytest in inhouse_bot" />
+    </list>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -77,30 +102,34 @@
     <servers />
   </component>
   <component name="WindowStateProjectService">
-    <state x="479" y="216" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1588836287013">
+    <state x="479" y="216" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1588870987252">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state x="479" y="216" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588836287013" />
-    <state x="804" y="316" key="FileChooserDialogImpl" timestamp="1588836285317">
+    <state x="479" y="216" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588870987252" />
+    <state x="93" y="93" width="1862" height="936" key="#com.intellij.execution.junit2.states.ComparisonFailureState$DiffDialog" timestamp="1588873186617">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state x="804" y="316" key="FileChooserDialogImpl/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588836285317" />
-    <state width="2005" height="405" key="GridCell.Tab.0.bottom" timestamp="1588849706579">
+    <state x="93" y="93" width="1862" height="936" key="#com.intellij.execution.junit2.states.ComparisonFailureState$DiffDialog/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588873186617" />
+    <state x="804" y="316" key="FileChooserDialogImpl" timestamp="1588870986013">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state width="2005" height="405" key="GridCell.Tab.0.bottom/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588849706579" />
-    <state width="2005" height="405" key="GridCell.Tab.0.center" timestamp="1588849706579">
+    <state x="804" y="316" key="FileChooserDialogImpl/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588870986013" />
+    <state width="2005" height="501" key="GridCell.Tab.0.bottom" timestamp="1588873515702">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state width="2005" height="405" key="GridCell.Tab.0.center/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588849706579" />
-    <state width="2005" height="405" key="GridCell.Tab.0.left" timestamp="1588849706579">
+    <state width="2005" height="501" key="GridCell.Tab.0.bottom/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588873515702" />
+    <state width="2005" height="501" key="GridCell.Tab.0.center" timestamp="1588873515702">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state width="2005" height="405" key="GridCell.Tab.0.left/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588849706579" />
-    <state width="2005" height="405" key="GridCell.Tab.0.right" timestamp="1588849706579">
+    <state width="2005" height="501" key="GridCell.Tab.0.center/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588873515702" />
+    <state width="2005" height="501" key="GridCell.Tab.0.left" timestamp="1588873515701">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state width="2005" height="405" key="GridCell.Tab.0.right/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588849706579" />
+    <state width="2005" height="501" key="GridCell.Tab.0.left/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588873515701" />
+    <state width="2005" height="501" key="GridCell.Tab.0.right" timestamp="1588873515702">
+      <screen x="0" y="0" width="2048" height="1122" />
+    </state>
+    <state width="2005" height="501" key="GridCell.Tab.0.right/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588873515702" />
     <state width="1031" height="568" key="XDebugger.FullValuePopup" timestamp="1588863178308">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
@@ -109,13 +138,13 @@
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
     <state x="834" y="475" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588844979507" />
-    <state x="734" y="296" width="579" height="530" key="find.popup" timestamp="1588865285729">
+    <state x="734" y="296" width="579" height="530" key="find.popup" timestamp="1588872566231">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state x="734" y="296" width="579" height="530" key="find.popup/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588865285729" />
-    <state x="687" y="246" width="672" height="678" key="search.everywhere.popup" timestamp="1588837131684">
+    <state x="734" y="296" width="579" height="530" key="find.popup/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588872566231" />
+    <state x="687" y="246" width="672" height="678" key="search.everywhere.popup" timestamp="1588872865819">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state x="687" y="246" width="672" height="678" key="search.everywhere.popup/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588837131684" />
+    <state x="687" y="246" width="672" height="678" key="search.everywhere.popup/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588872865819" />
   </component>
 </project>
