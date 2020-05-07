@@ -30,6 +30,8 @@ class Game(sql_alchemy_base):
                                 ),
                                 backref='game')
 
+    # TODO Define __str__ with tabulate
+
     def __init__(self, players: dict):
         """
         Creates a Game object and its GameParticipant children.
