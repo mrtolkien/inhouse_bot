@@ -28,7 +28,7 @@ class Player(sql_alchemy_base):
 
         # Basic discord info
         self.discord_id = user.id
-        self.discord_string = user.__str__()
+        self.discord_string = str(user)
 
         # Initializing TrueSkill to default base values
         self.trueskill_mu = 25
