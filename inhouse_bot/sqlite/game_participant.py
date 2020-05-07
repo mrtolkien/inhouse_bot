@@ -15,7 +15,7 @@ class GameParticipant(sql_alchemy_base):
     role = Column(role_enum, primary_key=True)
 
     # Unique player_id
-    player_id = Column(Integer, ForeignKey('player.id'))
+    player_id = Column(Integer, ForeignKey('player.discord_id'))
 
     # Champion id, only filled if the player updates it by themselves after the game
     champion_id = Column(Integer)
@@ -40,6 +40,6 @@ class GameParticipant(sql_alchemy_base):
         self.game_id = game.id
         self.team = team
         self.role = role
-        self.player_id = player.id
+        self.player_id = player.discord_id
         self.trueskill_mu = player.trueskill_mu
         self.trueskill_sigma = player.trueskill_sigma

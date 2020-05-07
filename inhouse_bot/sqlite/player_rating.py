@@ -7,7 +7,7 @@ class PlayerRating(sql_alchemy_base):
     __tablename__ = 'player_rating'
 
     # Auto-incremented ID, needed to allow discord account changes in the future
-    player_id = Column(Integer, ForeignKey('player.id'),  primary_key=True)
+    player_id = Column(Integer, ForeignKey('player.discord_id'),  primary_key=True)
 
     # We will get one row per role
     role = Column(role_enum, primary_key=True)
