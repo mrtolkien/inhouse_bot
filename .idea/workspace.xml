@@ -2,16 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="670df52a-f7fc-417b-b17c-84ce188b6dcd" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/inhouse_bot/tests/test_bot.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/inhouse_bot/tests/test_sqlite.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/garym.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/garym.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Pipfile" beforeDir="false" afterPath="$PROJECT_DIR$/Pipfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Pipfile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Pipfile.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inhouse_bot/cogs/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/tests/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inhouse_bot/cogs/queue_cog.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/cogs/queue_cog.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inhouse_bot/common_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/common_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inhouse_bot/inhouse_bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/inhouse_bot.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inhouse_bot/sqlite/player.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/sqlite/player.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inhouse_bot/tests/test_bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/tests/test_bot.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -114,22 +108,22 @@
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
     <state x="804" y="316" key="FileChooserDialogImpl/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588870986013" />
-    <state width="2005" height="501" key="GridCell.Tab.0.bottom" timestamp="1588873515702">
+    <state width="2005" height="578" key="GridCell.Tab.0.bottom" timestamp="1588875627474">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state width="2005" height="501" key="GridCell.Tab.0.bottom/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588873515702" />
-    <state width="2005" height="501" key="GridCell.Tab.0.center" timestamp="1588873515702">
+    <state width="2005" height="578" key="GridCell.Tab.0.bottom/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588875627474" />
+    <state width="2005" height="578" key="GridCell.Tab.0.center" timestamp="1588875627474">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state width="2005" height="501" key="GridCell.Tab.0.center/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588873515702" />
-    <state width="2005" height="501" key="GridCell.Tab.0.left" timestamp="1588873515701">
+    <state width="2005" height="578" key="GridCell.Tab.0.center/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588875627474" />
+    <state width="2005" height="578" key="GridCell.Tab.0.left" timestamp="1588875627472">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state width="2005" height="501" key="GridCell.Tab.0.left/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588873515701" />
-    <state width="2005" height="501" key="GridCell.Tab.0.right" timestamp="1588873515702">
+    <state width="2005" height="578" key="GridCell.Tab.0.left/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588875627472" />
+    <state width="2005" height="578" key="GridCell.Tab.0.right" timestamp="1588875627474">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
-    <state width="2005" height="501" key="GridCell.Tab.0.right/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588873515702" />
+    <state width="2005" height="578" key="GridCell.Tab.0.right/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588875627474" />
     <state width="1031" height="568" key="XDebugger.FullValuePopup" timestamp="1588863178308">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>

@@ -19,7 +19,8 @@ class Player(sql_alchemy_base):
 
     ratings = relationship('PlayerRating',
                            collection_class=attribute_mapped_collection('role'),
-                           backref='player')
+                           backref='player',
+                           cascade="all, delete-orphan")
 
     def __init__(self, user: discord.User):
         # Basic discord info

@@ -46,6 +46,7 @@ class QueueCog(commands.Cog, name='queue'):
         clean_roles = [process.extractOne(r, roles_list)[0] for r in roles.split(' ')]
 
         for role in clean_roles:
+            # TODO Check if player ratings properly exist
             self.channel_queues[ctx.channel.id][role].add(player)
 
         await ctx.send('{} is now in queue for {}.'.format(ctx.author, ' and '.join(clean_roles)),
