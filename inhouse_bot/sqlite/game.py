@@ -2,11 +2,9 @@ from sqlalchemy import Column, Integer, DateTime, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.collections import mapped_collection
 import datetime
-
-from inhouse_bot.sqlite._sqlite_utils import sql_alchemy_base, team_enum
-from inhouse_bot.trueskill_utils import trueskill_blue_side_winrate
-
-from inhouse_bot.sqlite import GameParticipant
+from inhouse_bot.common_utils import trueskill_blue_side_winrate
+from inhouse_bot.sqlite.game_participant import GameParticipant
+from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, team_enum
 
 
 class Game(sql_alchemy_base):

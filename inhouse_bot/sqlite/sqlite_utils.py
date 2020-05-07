@@ -1,14 +1,10 @@
+import os
 import sqlalchemy
 from sqlalchemy import orm, Enum
 from sqlalchemy.ext import declarative
-import os
+from inhouse_bot.common_utils import base_folder
 
 sql_alchemy_base = declarative.declarative_base()
-base_folder = os.path.join(os.path.expanduser("~"), '.inhouse_bot')
-
-# If the base folder is not there we create it
-if not os.path.exists(base_folder):
-    os.makedirs(base_folder)
 
 # Opening the database
 database_location = os.path.join(base_folder, 'database.db')

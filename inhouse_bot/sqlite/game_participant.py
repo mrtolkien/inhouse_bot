@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, ForeignKey, Float
 from sqlalchemy.orm import relationship
-from inhouse_bot.sqlite._sqlite_utils import sql_alchemy_base, team_enum, role_enum
+from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, team_enum, role_enum
 
 
 class GameParticipant(sql_alchemy_base):

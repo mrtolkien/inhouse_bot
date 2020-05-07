@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float
-from inhouse_bot.sqlite._sqlite_utils import sql_alchemy_base
+from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base
 import discord
 
 
