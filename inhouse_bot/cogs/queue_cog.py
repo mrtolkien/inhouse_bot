@@ -1,4 +1,5 @@
-from collections import defaultdict
+from collections import defaultdict, Counter
+import itertools
 
 import discord
 from discord import Embed
@@ -7,16 +8,17 @@ from rapidfuzz import process
 from tabulate import tabulate
 
 from inhouse_bot.cogs.cog_utilities import get_player
+from inhouse_bot.common_utils import trueskill_blue_side_winrate
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
 from inhouse_bot.sqlite.player import Player
-from inhouse_bot.sqlite.sqlite_utils import role_enum, get_session
+from inhouse_bot.sqlite.sqlite_utils import get_session, roles_list
 
 
 class QueueCog(commands.Cog, name='queue'):
     def __init__(self, bot):
         self.bot = bot
-        self.channel_queues = defaultdict(lambda: defaultdict(lambda: set()))
+        self.channel_queues = defaultdict(lambda: {role: set() for role in roles_list})
         self.session = get_session()
 
     @commands.command()
@@ -38,18 +40,74 @@ class QueueCog(commands.Cog, name='queue'):
             await ctx.send('Your last game is still ongoing. Please use !won or !lost to inform the result.')
             return
 
-        clean_roles = [process.extractOne(r, role_enum.enums)[0] for r in roles.split(' ')]
+        clean_roles = [process.extractOne(r, roles_list)[0] for r in roles.split(' ')]
 
         for role in clean_roles:
             self.channel_queues[ctx.channel.id][role].add(player)
 
         await ctx.send('{} is now in queue for {}.'.format(ctx.author, ' and '.join(clean_roles)),
                        embed=self.get_current_queue_embed(ctx))
-        await self.match_game(ctx)
 
-    async def match_game(self, ctx):
-        # TODO Once the game is matched, post to the channel, ping the players, and have a "validation" option
-        pass
+        players, match_quality = self.match_game(ctx.channel.id)
+
+        # We have a good match
+        if match_quality > -0.1:
+            self.start_game(ctx, players)
+        # We have a match that could be slightly one-sided
+        elif match_quality > -0.2:
+            self.start_game(ctx, players, mismatch=True)
+
+    def start_game(self, ctx, players, mismatch=False):
+        game = Game(players)
+
+        embed = Embed(title='Proposed game')
+        embed.add_field(name='Team compositions',
+                        value='```{}```'.format(str(game)))
+
+        embed.add_field(name='Get ready',
+                        value='A match has been found.\n'
+                              'You can refuse the match and leave the queue by pressing :negative_squared_cross_mark:.\n'
+                              'If you are ready, press :white_check_mark:.')
+        if mismatch:
+            embed.add_field(name='WARNING',
+                            value='According to TrueSkill, this game might be a slight mismatch.')
+
+        message = await ctx.send(embed=embed)
+
+        # TODO Use wait_for to react to the emotes
+
+        game_start = False
+        if game_start:
+            self.remove_players_from_queue(players)
+
+    def match_game(self, channel_id) -> tuple:
+        """
+        Looks at the queue in the channel and returns the best match-made game and its "quality".
+        """
+        # Do not do anything if there’s not at least 2 players in queue per role
+        for role in roles_list:
+            if self.channel_queues[channel_id][role].__len__() < 2:
+                return None, -1
+
+        # We use a list of [(player, team, role)] -> match making quality
+        matches_quality = Counter()
+
+        # Simply testing all permutations because it should be pretty lightweight
+        role_permutations = []
+        for role in roles_list:
+            role_permutations.append([p for p in itertools.permutations(self.channel_queues[channel_id][role], 2)])
+
+        for team_composition in itertools.product(*role_permutations):
+            # players: [team, role] -> Player
+            players = {('red' if tuple_idx else 'blue', roles_list[role_idx]): players_tuple[tuple_idx]
+                       for role_idx, players_tuple in enumerate(team_composition)
+                       for tuple_idx in (0, 1)}
+            # We check to make sure all 10 players are different
+            if set(players.values()).__len__() != 10:
+                continue
+            matches_quality[players] = -abs(0.5 - trueskill_blue_side_winrate(players))
+
+        return matches_quality.most_common(1)[0]
 
     @commands.command()
     async def stop_queue(self, ctx: commands.Context, *args):
@@ -76,7 +134,7 @@ class QueueCog(commands.Cog, name='queue'):
 
     def get_current_queue_embed(self, ctx):
         table = [[]]
-        for role in role_enum.enums:
+        for role in roles_list:
             table.append([role.capitalize()] + [p.name for p in self.channel_queues[ctx.channel.id][role]])
 
         embed = Embed(title='Current queue', colour=discord.colour.Colour.dark_red())
@@ -97,7 +155,8 @@ class QueueCog(commands.Cog, name='queue'):
 
         embed = Embed(title='Ongoing games', colour=discord.colour.Colour.dark_blue())
         for game in games_without_results:
-            embed.add_field(name='Game {}'.format(game.id), value=str(game))
+            embed.add_field(name='Game {}'.format(game.id),
+                            value='```{}```'.format(str(game)))
 
         await ctx.send(embed=embed)
 
@@ -207,4 +266,12 @@ class QueueCog(commands.Cog, name='queue'):
 
     def update_trueskill(self, game):
         # TODO Update trueskill values for PlayerRating objects, based on the game’s result.
+        pass
+
+    def remove_players_from_queue(self, players):
+        """
+        Removes a given list of players from all queues across all channels.
+        Mostly used after a match has been made.
+        """
+
         pass
