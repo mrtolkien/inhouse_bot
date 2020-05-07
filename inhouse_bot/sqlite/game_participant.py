@@ -8,7 +8,7 @@ class GameParticipant(sql_alchemy_base):
     __tablename__ = 'game_participant'
 
     # Reference to the game table
-    game_id = Column(Integer, primary_key=True)
+    game_id = Column(Integer, ForeignKey('game.id'), primary_key=True)
 
     # Identifier among game participants
     team = Column(team_enum, primary_key=True)

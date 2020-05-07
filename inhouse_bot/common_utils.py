@@ -6,7 +6,6 @@ import trueskill
 # Folders utilities
 base_folder = os.path.join(os.path.expanduser("~"), '.inhouse_bot')
 
-# If the base folder is not there we create it
 if not os.path.exists(base_folder):
     os.makedirs(base_folder)
 
@@ -33,7 +32,9 @@ def trueskill_blue_side_winrate(players: dict) -> float:
     :param players: [team, role] -> Player dictionary
     :return: the expected blue side winrate
     """
-    return win_probability([trueskill.Rating(players[team, role].trueskill_mu, players[team, role].trueskill_sigma)
+    return win_probability([trueskill.Rating(players[team, role].ratings[role].trueskill_mu,
+                                             players[team, role].ratings[role].trueskill_sigma)
                             for team, role in players if team == 'blue'],
-                           [trueskill.Rating(players[team, role].trueskill_mu, players[team, role].trueskill_sigma)
+                           [trueskill.Rating(players[team, role].ratings[role].trueskill_mu,
+                                             players[team, role].ratings[role].trueskill_sigma)
                             for team, role in players if team == 'red'])
