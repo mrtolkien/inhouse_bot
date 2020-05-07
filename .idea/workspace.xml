@@ -2,9 +2,18 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="670df52a-f7fc-417b-b17c-84ce188b6dcd" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/inhouse_bot/cogs/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inhouse_bot/cogs/queue_cog.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inhouse_bot/inhouse_bot.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/run_bot.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inhouse_bot/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inhouse_bot/sqlite/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/inhouse_bot/sqlite/_sqlite_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/sqlite/sqlite_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inhouse_bot/sqlite/game.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/sqlite/game.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inhouse_bot/sqlite/game_participant.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/sqlite/game_participant.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inhouse_bot/sqlite/player.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/sqlite/player.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inhouse_bot/trueskill_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/trueskill_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inhouse_bot/trueskill_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/inhouse_bot/common_utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,12 +38,36 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/run_bot.py" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\garym\development\inhouse_bot\inhouse_bot\sqlite" />
       <recent name="C:\Users\garym\development\inhouse_bot\inhouse_bot\sqlite\tables" />
     </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="run_bot" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="inhouse_bot" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="C:\Users\garym\.virtualenvs\inhouse_bot-DTNYgI33\Scripts\python.exe" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/run_bot.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -50,6 +83,30 @@
     <servers />
   </component>
   <component name="WindowStateProjectService">
+    <state x="479" y="216" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1588836287013">
+      <screen x="0" y="0" width="2048" height="1122" />
+    </state>
+    <state x="479" y="216" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588836287013" />
+    <state x="804" y="316" key="FileChooserDialogImpl" timestamp="1588836285317">
+      <screen x="0" y="0" width="2048" height="1122" />
+    </state>
+    <state x="804" y="316" key="FileChooserDialogImpl/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588836285317" />
+    <state width="2005" height="309" key="GridCell.Tab.0.bottom" timestamp="1588836596985">
+      <screen x="0" y="0" width="2048" height="1122" />
+    </state>
+    <state width="2005" height="309" key="GridCell.Tab.0.bottom/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588836596985" />
+    <state width="2005" height="309" key="GridCell.Tab.0.center" timestamp="1588836596985">
+      <screen x="0" y="0" width="2048" height="1122" />
+    </state>
+    <state width="2005" height="309" key="GridCell.Tab.0.center/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588836596985" />
+    <state width="2005" height="309" key="GridCell.Tab.0.left" timestamp="1588836596985">
+      <screen x="0" y="0" width="2048" height="1122" />
+    </state>
+    <state width="2005" height="309" key="GridCell.Tab.0.left/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588836596985" />
+    <state width="2005" height="309" key="GridCell.Tab.0.right" timestamp="1588836596985">
+      <screen x="0" y="0" width="2048" height="1122" />
+    </state>
+    <state width="2005" height="309" key="GridCell.Tab.0.right/0.0.2048.1122/-2560.0.2048.1122@0.0.2048.1122" timestamp="1588836596985" />
     <state x="687" y="246" width="672" height="678" key="search.everywhere.popup" timestamp="1588829129846">
       <screen x="0" y="0" width="2048" height="1122" />
     </state>
