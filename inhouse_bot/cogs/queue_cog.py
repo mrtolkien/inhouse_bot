@@ -1,8 +1,9 @@
 from collections import defaultdict, Counter
 import itertools
+import logging
 
 import discord
-from discord import Embed, Emoji
+from discord import Embed
 from discord.ext import commands
 from rapidfuzz import process
 from tabulate import tabulate
@@ -12,6 +13,7 @@ from inhouse_bot.common_utils import trueskill_blue_side_winrate
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
 from inhouse_bot.sqlite.player import Player
+from inhouse_bot.sqlite.player_rating import PlayerRating
 from inhouse_bot.sqlite.sqlite_utils import get_session, roles_list
 
 
@@ -39,15 +41,21 @@ class QueueCog(commands.Cog, name='queue'):
             if not game.winner:
                 await ctx.send('Your last game is still ongoing. Please use !won or !lost to inform the result.')
                 return
-        # This happens if the player has not played a game yet
+        # This happens if the player has not played a game yet as get_last returns None and can’t be unpacked
         except TypeError:
             pass
 
         clean_roles = [process.extractOne(r, roles_list)[0] for r in roles.split(' ')]
 
         for role in clean_roles:
-            # TODO Check if player ratings properly exist
+            if role not in player.ratings:
+                logging.info('Creating a new PlayerRating for <{}> <{}>'.format(player.discord_string, role))
+                new_rating = PlayerRating(player, role)
+                self.session.add(new_rating)
+                self.session.commit()
+
             self.channel_queues[ctx.channel.id][role].add(player)
+            logging.info('Player <{}> has been added to the <{}> queue'.format(player.discord_string, role))
 
         await ctx.send('{} is now in queue for {}.'.format(ctx.author, ' and '.join(clean_roles)),
                        embed=self.get_current_queue_embed(ctx))
@@ -68,7 +76,10 @@ class QueueCog(commands.Cog, name='queue'):
         # Do not do anything if there’s not at least 2 players in queue per role
         for role in roles_list:
             if self.channel_queues[channel_id][role].__len__() < 2:
+                logging.debug('Not enough players to start matchmaking.')
                 return None, -1
+
+        logging.info('Starting matchmaking process.')
 
         # We use a list of [(player, team, role)] -> match making quality
         matches_quality = Counter()
@@ -86,8 +97,16 @@ class QueueCog(commands.Cog, name='queue'):
             # We check to make sure all 10 players are different
             if set(players.values()).__len__() != 10:
                 continue
+
+            # TODO Remove debug output here
+            for team, role in players:
+                print('{} {} {}'.format(team, role, players[team, role].discord_id))
+                print(players[team, role].ratings)
+                print('\n')
+
             matches_quality[players] = -abs(0.5 - trueskill_blue_side_winrate(players))
 
+        logging.info('The best match found had a {} score.'.format(matches_quality.most_common(1)[0][1]))
         return matches_quality.most_common(1)[0]
 
     async def start_game(self, ctx, players, mismatch=False):

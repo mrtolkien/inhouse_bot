@@ -1,15 +1,18 @@
+import pytest
+import logging
 import discord.ext.test as dpytest
+
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.sqlite.player import Player
-import pytest
 from inhouse_bot.sqlite.sqlite_utils import get_session, roles_list
 
 
 @pytest.mark.asyncio
-async def test_bot():
+async def test_bot(caplog):
     """
     Very basic testing, just calling functions and seeing if nothing crashes.
     """
+    caplog.set_level(logging.INFO)
 
     # We start by cleaning up old TestUser Player objects
     session = get_session()

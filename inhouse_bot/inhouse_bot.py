@@ -1,4 +1,4 @@
-import os
+import logging
 from discord.ext import commands
 from inhouse_bot.cogs.queue_cog import QueueCog
 from inhouse_bot.common_utils import discord_token
@@ -19,18 +19,11 @@ class InhouseBot(commands.Bot):
         super().run(self.discord_token, *args, **kwargs)
 
     async def on_ready(self):
-        print(f'{self.user.name} has connected to Discord!')
+        logging.info(f'{self.user.name} has connected to Discord!')
 
     async def on_command_error(self, ctx, error):
-        # If we are on a test bot, simply raise the error for debug
-        # TODO put that back in a test case
-
-        #if 'test' in self.user.name.lower():
-        raise error
-
-        # Simple console output
-        print(error)
-
         # User-facing error
         await ctx.send('`Error: {}`'
                        '\nUse `!help` for commands help. Contact <@124633440078266368> for bugs.'.format(error))
+
+        raise error
