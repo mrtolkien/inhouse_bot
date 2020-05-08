@@ -33,7 +33,8 @@ class Game(sql_alchemy_base):
                                 backref='game')
 
     def __str__(self):
-        value = str(self.participants)
+        # TODO Beautiful string output
+        return str(self.participants)
 
     def __init__(self, players: dict):
         """
@@ -46,4 +47,5 @@ class Game(sql_alchemy_base):
 
         self.blue_side_predicted_winrate = trueskill_blue_side_winrate(players)
 
-        self.participants = [GameParticipant(self, team, role, players[team, role]) for team, role in players]
+        self.participants = {(team, role): GameParticipant(self, team, role, players[team, role])
+                             for team, role in players}

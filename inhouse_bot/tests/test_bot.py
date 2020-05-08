@@ -14,7 +14,7 @@ async def test_bot(caplog):
     """
     caplog.set_level(logging.INFO)
 
-    # We start by cleaning up old TestUser Player objects
+    # We start by cleaning up old TestUser Player objects, which also clears related ratings.
     session = get_session()
     test_users = session.query(Player).filter(Player.discord_string.like('TestUser%')).all()
     for player in test_users:
@@ -30,8 +30,8 @@ async def test_bot(caplog):
     await dpytest.message('!help')
     await dpytest.message('!help queue')
 
-    await dpytest.message('!queue mid')
-    await dpytest.message('!stop_queue')
+    await dpytest.message('!queue mid', member=0)
+    await dpytest.message('!stop_queue', member=0)
 
     # Only queue one player per role
     for member in range(0, 5):

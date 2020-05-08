@@ -8,7 +8,6 @@ from discord.ext import commands
 from rapidfuzz import process
 from tabulate import tabulate
 
-from inhouse_bot.cogs.cog_utilities import get_player
 from inhouse_bot.common_utils import trueskill_blue_side_winrate
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
@@ -23,17 +22,26 @@ class QueueCog(commands.Cog, name='queue'):
         self.channel_queues = defaultdict(lambda: {role: set() for role in roles_list})
         self.session = get_session()
 
+    def get_player(self, ctx) -> Player:
+        """
+        Returns a Player object from a Discord context’s author and update name changes.
+        """
+        player = self.session.merge(Player(ctx.author))  # This will automatically update name changes
+        self.session.commit()
+
+        return player
+
     @commands.command()
     async def queue(self, ctx: commands.Context, *, roles):
         """
         Puts you in a queue in the current channel for the specified roles.
-        Roles are top, jungle, mid, bot, and support
+        Roles are top, jungle, mid, bot, and support.
 
         Example usage:
             !queue support
             !queue mid bot
         """
-        player = get_player(ctx)
+        player = self.get_player(ctx)
 
         # First, we check if the last game of the player is still ongoing.
         try:
@@ -53,6 +61,8 @@ class QueueCog(commands.Cog, name='queue'):
                 new_rating = PlayerRating(player, role)
                 self.session.add(new_rating)
                 self.session.commit()
+                # This step is required so our player object has access to the rating
+                player = self.session.merge(player)
 
             self.channel_queues[ctx.channel.id][role].add(player)
             logging.info('Player <{}> has been added to the <{}> queue'.format(player.discord_string, role))
@@ -76,19 +86,20 @@ class QueueCog(commands.Cog, name='queue'):
         # Do not do anything if there’s not at least 2 players in queue per role
         for role in roles_list:
             if self.channel_queues[channel_id][role].__len__() < 2:
-                logging.debug('Not enough players to start matchmaking.')
+                logging.debug('Not enough players to start matchmaking')
                 return None, -1
 
-        logging.info('Starting matchmaking process.')
-
-        # We use a list of [(player, team, role)] -> match making quality
-        matches_quality = Counter()
+        logging.info('Starting matchmaking process')
 
         # Simply testing all permutations because it should be pretty lightweight
+        # TODO Spot mirrored team compositions (full blue/red -> red/blue) to not calculate them twice
         role_permutations = []
         for role in roles_list:
             role_permutations.append([p for p in itertools.permutations(self.channel_queues[channel_id][role], 2)])
 
+        # Very simple maximum search
+        best_score = -1
+        best_players = {}
         for team_composition in itertools.product(*role_permutations):
             # players: [team, role] -> Player
             players = {('red' if tuple_idx else 'blue', roles_list[role_idx]): players_tuple[tuple_idx]
@@ -98,18 +109,19 @@ class QueueCog(commands.Cog, name='queue'):
             if set(players.values()).__len__() != 10:
                 continue
 
-            # TODO Remove debug output here
-            for team, role in players:
-                print('{} {} {}'.format(team, role, players[team, role].discord_id))
-                print(players[team, role].ratings)
-                print('\n')
+            score = -abs(0.5 - trueskill_blue_side_winrate(players))
 
-            matches_quality[players] = -abs(0.5 - trueskill_blue_side_winrate(players))
+            if score > best_score:
+                best_players = players
+                best_score = score
 
-        logging.info('The best match found had a {} score.'.format(matches_quality.most_common(1)[0][1]))
-        return matches_quality.most_common(1)[0]
+        logging.info('The best match found had a score of {}'.format(best_score))
+
+        return best_players, best_score
 
     async def start_game(self, ctx, players, mismatch=False):
+        logging.info('Starting a game')
+
         game = Game(players)
 
         embed = Embed(title='Proposed game')
@@ -145,9 +157,14 @@ class QueueCog(commands.Cog, name='queue'):
             !stop_queue
             !stop_queue all
         """
+        player = self.get_player(ctx)
+
         for channel_id in self.channel_queues if args else [ctx.channel.id]:
             for role in self.channel_queues[channel_id]:
-                self.channel_queues[channel_id][role].discard(get_player(ctx))
+                self.channel_queues[channel_id][role].discard(player)
+
+        logging.info('Player <{}> has been removed from {}'
+                     .format(player.discord_string, 'all queues' if args else '<{}> queue'.format(ctx.channel.id)))
 
         await ctx.send('{} has been removed from the queue{}'.format(ctx.author, ' in all channels' if args else ''),
                        embed=self.get_current_queue_embed(ctx))
@@ -242,7 +259,9 @@ class QueueCog(commands.Cog, name='queue'):
         self.update_champion(ctx, args)
 
     async def score_game(self, ctx, result):
-        game, game_participant = self.get_last(get_player(ctx))
+        player = self.get_player(ctx)
+
+        game, game_participant = self.get_last(player)
 
         previous_winner = game.winner
 
@@ -266,7 +285,7 @@ class QueueCog(commands.Cog, name='queue'):
             ctx.send('Champion name was not understood properly.\nUse `!help won` for more information.')
             return
 
-        player = get_player(ctx)
+        player = self.get_player(ctx)
         try:
             game, participant = self.session.query(Game, GameParticipant).join(GameParticipant) \
                 .filter(Game.id == args[1]) \
