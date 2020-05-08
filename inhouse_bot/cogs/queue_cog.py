@@ -1,4 +1,4 @@
-from collections import defaultdict, Counter
+from collections import defaultdict
 import itertools
 import logging
 
@@ -17,10 +17,15 @@ from inhouse_bot.sqlite.sqlite_utils import get_session, roles_list
 
 
 class QueueCog(commands.Cog, name='queue'):
-    def __init__(self, bot):
+    def __init__(self, bot, start_directly):
+        """
+        :param bot: the bot to attach the cog to
+        :param start_directly: directly starts game without validation from players (used for testing purposes)
+        """
         self.bot = bot
         self.channel_queues = defaultdict(lambda: {role: set() for role in roles_list})
         self.session = get_session()
+        self.start_directly = start_directly
 
     def get_player(self, ctx) -> Player:
         """
@@ -31,7 +36,7 @@ class QueueCog(commands.Cog, name='queue'):
 
         return player
 
-    @commands.command()
+    @commands.command(help_index=0)
     async def queue(self, ctx: commands.Context, *, roles):
         """
         Puts you in a queue in the current channel for the specified roles.
@@ -81,7 +86,7 @@ class QueueCog(commands.Cog, name='queue'):
 
     def match_game(self, channel_id) -> tuple:
         """
-        Looks at the queue in the channel and returns the best match-made game and its "quality".
+        Looks at the queue in the channel and returns the best match-made game (as a {team, role] -> Player}.
         """
         # Do not do anything if there’s not at least 2 players in queue per role
         for role in roles_list:
@@ -120,6 +125,11 @@ class QueueCog(commands.Cog, name='queue'):
         return best_players, best_score
 
     async def start_game(self, ctx, players, mismatch=False):
+        """
+        Attempts to start the given game by pinging players and waiting for their reactions.
+
+        self.start_directly can be used to bypass the reaction validation for testing purposes.
+        """
         logging.info('Starting a game')
 
         game = Game(players)
@@ -139,8 +149,11 @@ class QueueCog(commands.Cog, name='queue'):
 
         message = await ctx.send(embed=embed)
 
-        message.add_reaction('✅')
-        message.add_reaction('❎')
+        if self.start_directly:
+            self.remove_players_from_queue(players.values())
+
+        await message.add_reaction('✅')
+        await message.add_reaction('❎')
 
         # TODO Use wait_for to react to the emotes
 
@@ -148,8 +161,8 @@ class QueueCog(commands.Cog, name='queue'):
         if game_start:
             self.remove_players_from_queue(players.values())
 
-    @commands.command()
-    async def stop_queue(self, ctx: commands.Context, *args):
+    @commands.command(help_index=1)
+    async def leave_queue(self, ctx: commands.Context, *args):
         """
         Removes you from the queue in the current channel or all channels with !stop_queue all.
 
@@ -169,7 +182,7 @@ class QueueCog(commands.Cog, name='queue'):
         await ctx.send('{} has been removed from the queue{}'.format(ctx.author, ' in all channels' if args else ''),
                        embed=self.get_current_queue_embed(ctx))
 
-    @commands.command()
+    @commands.command(help_index=4)
     async def view_queue(self, ctx: commands.Context):
         """
         Shows the active queue in the channel.
@@ -186,7 +199,7 @@ class QueueCog(commands.Cog, name='queue'):
 
         return embed
 
-    @commands.command()
+    @commands.command(help_index=5)
     async def view_games(self, ctx: commands.context):
         """
         Shows the ongoing inhouse games.
@@ -205,7 +218,7 @@ class QueueCog(commands.Cog, name='queue'):
         await ctx.send(embed=embed)
 
     # TODO Check if we need to restrict access to this function
-    @commands.command()
+    @commands.command(help_index=6)
     async def cancel_game(self, ctx: commands.context, game_id):
         """
         Cancels and voids an ongoing game. Requires the game id from !view_games.
@@ -217,7 +230,7 @@ class QueueCog(commands.Cog, name='queue'):
 
         await ctx.send('Game {} cancelled.'.format(game.id))
 
-    @commands.command()
+    @commands.command(help_index=2)
     async def won(self, ctx: commands.context, *args):
         """
         Scores the game as a win for your team.
@@ -234,10 +247,10 @@ class QueueCog(commands.Cog, name='queue'):
             !won missfortune
             !won reksai 10
         """
-        self.score_game(ctx, True)
+        await self.score_game(ctx, True)
         self.update_champion(ctx, args)
 
-    @commands.command()
+    @commands.command(help_index=3)
     async def lost(self, ctx: commands.context, *args):
         """
         Scores the game as a loss for your team.
@@ -254,7 +267,6 @@ class QueueCog(commands.Cog, name='queue'):
             !won missfortune
             !won reksai 10
         """
-
         await self.score_game(ctx, False)
         self.update_champion(ctx, args)
 
@@ -319,5 +331,5 @@ class QueueCog(commands.Cog, name='queue'):
         Removes a given list of players from all queues across all channels.
         Mostly used after a match has been made.
         """
-
+        # TODO Remove players from queue
         pass
