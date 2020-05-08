@@ -47,6 +47,7 @@ async def test_bot(caplog):
 
     # Unfortunately it’s very hard to use the emote reaction function here, so we start the game by hand
     # TODO Remove logic from the commands as much as possible to test it more
+    # TODO Remove start_directly from the cog and test game start by directly calling the relevant functions.
 
     # Small cleanup required to delete the mock TestUser
     session = get_session()

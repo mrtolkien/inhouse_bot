@@ -17,15 +17,13 @@ from inhouse_bot.sqlite.sqlite_utils import get_session, roles_list
 
 
 class QueueCog(commands.Cog, name='queue'):
-    def __init__(self, bot, start_directly):
+    def __init__(self, bot):
         """
         :param bot: the bot to attach the cog to
-        :param start_directly: directly starts game without validation from players (used for testing purposes)
         """
         self.bot = bot
         self.channel_queues = defaultdict(lambda: {role: set() for role in roles_list})
         self.session = get_session()
-        self.start_directly = start_directly
 
     def get_player(self, ctx) -> Player:
         """
@@ -127,8 +125,6 @@ class QueueCog(commands.Cog, name='queue'):
     async def start_game(self, ctx, players, mismatch=False):
         """
         Attempts to start the given game by pinging players and waiting for their reactions.
-
-        self.start_directly can be used to bypass the reaction validation for testing purposes.
         """
         logging.info('Starting a game')
 
@@ -148,9 +144,6 @@ class QueueCog(commands.Cog, name='queue'):
                             value='According to TrueSkill, this game might be a slight mismatch.')
 
         message = await ctx.send(embed=embed)
-
-        if self.start_directly:
-            self.remove_players_from_queue(players.values())
 
         await message.add_reaction('✅')
         await message.add_reaction('❎')

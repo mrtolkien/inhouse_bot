@@ -9,7 +9,7 @@ from lol_id_tools import LolIdTools
 
 
 class InhouseBot(commands.Bot):
-    def __init__(self, start_directly=False, **options):
+    def __init__(self, **options):
         super().__init__('!',
                          help_command=IndexedHelpCommand(dm_help=True),
                          **options)
@@ -17,7 +17,7 @@ class InhouseBot(commands.Bot):
         self.discord_token = discord_token
 
         self.lit = LolIdTools('en_US', 'ko_KR')
-        self.add_cog(QueueCog(self, start_directly=start_directly))
+        self.add_cog(QueueCog(self))
 
     def run(self, *args, **kwargs):
         super().run(self.discord_token, *args, **kwargs)
