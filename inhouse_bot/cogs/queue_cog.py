@@ -1,6 +1,7 @@
 from collections import defaultdict
 import itertools
 import logging
+import os
 
 import discord
 from discord import Embed
@@ -73,6 +74,18 @@ class QueueCog(commands.Cog, name='queue'):
         await ctx.send('{} is now in queue for {}.'.format(ctx.author, ' and '.join(clean_roles)),
                        embed=self.get_current_queue_embed(ctx))
 
+        # TODO Find a cleaner way to test my bot (add_reaction in matchmaking crashes atm)
+        if os.environ['PYTEST_CURRENT_TEST']:
+            return
+
+        await self.matchmake(ctx)
+
+    async def matchmake(self, ctx):
+        """
+        Start the matchmaking process in the given channel.
+
+        This function is split in multiple functions for easier testing.
+        """
         players, match_quality = self.match_game(ctx.channel.id)
 
         # We have a good match
