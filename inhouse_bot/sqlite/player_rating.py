@@ -16,6 +16,9 @@ class PlayerRating(sql_alchemy_base):
     trueskill_mu = Column(Float)
     trueskill_sigma = Column(Float)
 
+    def __repr__(self):
+        return f'<PlayerRating: player_id={self.player_id} role={self.role}>'
+
     def __init__(self, player, role):
         self.player_id = player.discord_id
         self.role = role

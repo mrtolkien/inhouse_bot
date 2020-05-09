@@ -22,6 +22,9 @@ class Player(sql_alchemy_base):
                            backref='player',
                            cascade="all, delete-orphan")
 
+    def __repr__(self):
+        return f'<Player: player_id={self.player_id}>'
+
     def __init__(self, user: discord.User):
         # Basic discord info
         self.discord_id = user.id

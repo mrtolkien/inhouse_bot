@@ -68,8 +68,15 @@ async def test_accept_matchmaking(caplog, config):
     game = config.session.query(Game).filter(Game.winner == None).first()
     assert game
 
+    # Check the queue is empty
+    for role in config.queue_cog.channel_queues[config.channel_id]:
+        assert not config.queue_cog.channel_queues[config.channel_id][role]
+
     # Score the game
     await dpytest.message('!won')
+
+    # Re-scores the game, adding champion info
+    await dpytest.message('!won riven')
 
     config.session.refresh(game)
 
@@ -80,7 +87,25 @@ async def test_accept_matchmaking(caplog, config):
     for participant in game.participants.values():
         assert participant.player.ratings[participant.role].trueskill_mu != 25.0
 
+    # TODO Try re-scoring the game, behaviour TBD
+
 
 @pytest.mark.asyncio
-async def test_refuse_matchmaking():
-    pass
+async def test_refuse_matchmaking(caplog, config):
+    """
+    Testing 10 players queueing and them all accepting the game. Also tests game deletion.
+    """
+    caplog.set_level(logging.INFO)
+
+    from inhouse_bot.sqlite.game import Game
+    from inhouse_bot.sqlite.sqlite_utils import roles_list
+
+    # Queue two players per role
+    for member in range(0, 10):
+        await dpytest.message('!queue {}'.format(roles_list[member % 5]), member=member)
+
+    # Verify the game is properly there
+    game = config.session.query(Game).filter(Game.winner == None).first()
+    assert game
+
+    await dpytest.message('!cancel_game')

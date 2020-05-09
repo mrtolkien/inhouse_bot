@@ -1,9 +1,11 @@
+import warnings
 from collections import defaultdict
 import itertools
 import logging
 import os
 
 import discord
+import trueskill
 from discord import Embed
 from discord.ext import commands
 from rapidfuzz import process
@@ -138,7 +140,8 @@ class QueueCog(commands.Cog, name='queue'):
         """
         game = Game(players)
 
-        if not 'PYTEST_CURRENT_TEST' in os.environ:
+        # TODO Find a cleaner way to handle this test
+        if 'PYTEST_CURRENT_TEST' not in os.environ:
             # We wait for all 10 players to be ready before creating the game
             if not self.ready_check(ctx, players, mismatch, game):
                 # If ready_check returns False, we restart matchmaking as the queue changed
@@ -310,34 +313,42 @@ class QueueCog(commands.Cog, name='queue'):
             !won reksai 10
         """
         await self.score_game(ctx, False)
-        self.update_champion(ctx, args)
+        await self.update_champion(ctx, args)
 
     async def score_game(self, ctx, result):
         player = self.get_player(ctx)
 
         game, game_participant = self.get_last(player)
-
         previous_winner = game.winner
 
         game.winner = 'blue' if game_participant.team == 'blue' and result else 'red'
 
         if previous_winner and previous_winner != game.winner:
             # Conflict between entered results and current results
-            # TODO Add a validation here?
-            await ctx.send(f'**/!\\ Game result changed for game {game.id}**')
-            await ctx.send('**/!\\ TrueSkill ratings will be recomputed starting from this game**')
+            warnings.warn('A player is trying to change a game’s result.')
+            # TODO Implement conflict resolution here (which will require recomputing TrueSkill from this game)
+            await ctx.send(f'**/!\\ Game result conflict for game {game.id}.**')
+            # await ctx.send('**/!\\ TrueSkill ratings will be recomputed starting from this game**')
+        elif previous_winner:
+            ctx.send('This game has already been scored. Thank you for validating the information!')
+            return
 
         self.session.commit()
         self.update_trueskill(game)
 
-    def update_champion(self, ctx, args):
+        message = f'Game {game.id} has been scored as a win for {game.winner} and ratings have been updated.'
+
+        logging.info(message)
+        await ctx.send(message)
+
+    async def update_champion(self, ctx, args):
         if not args:
             return
 
         champion_id, ratio = self.bot.lit.get_id(args[0], input_type='champion', return_ratio=True)
 
         if ratio < 75:
-            ctx.send('Champion name was not understood properly.\nUse `!help won` for more information.')
+            await ctx.send('Champion name was not understood properly.\nUse `!help won` for more information.')
             return
 
         player = self.get_player(ctx)
@@ -352,9 +363,12 @@ class QueueCog(commands.Cog, name='queue'):
 
         participant.champion_id = champion_id
         self.session.merge(participant)
+
         self.session.commit()
 
-        ctx.send(f'Champion for game {game.id} set to {self.bot.lit.get_name(participant.champion_id)}')
+        logging.info(f'Champion for game {game.id} set to {self.bot.lit.get_name(participant.champion_id)} '
+                     f'for {ctx.author}')
+        await ctx.send(f'Champion for game {game.id} set to {self.bot.lit.get_name(participant.champion_id)}')
 
     def get_last(self, player: Player):
         """
@@ -366,5 +380,24 @@ class QueueCog(commands.Cog, name='queue'):
             .first()
 
     def update_trueskill(self, game):
-        # TODO Update trueskill values for PlayerRating objects, based on the game’s result.
-        pass
+        """
+        Updates the game’s participants TrueSkill values based on the game result.
+        """
+        # participant.trueskill represents pre-game values
+        # p.player.ratings[p.role] is the PlayerRating relevant to the game that was scored
+        team_ratings = {team: {p.player.ratings[p.role]: trueskill.Rating(p.trueskill_mu, p.trueskill_sigma)
+                               for p in game.participants.values() if p.team == team}
+                        for team in ['blue', 'red']}
+
+        if game.winner == 'blue':
+            new_ratings = trueskill.rate([team_ratings['blue'], team_ratings['red']])
+        else:
+            new_ratings = trueskill.rate([team_ratings['red'], team_ratings['blue']])
+
+        for team in new_ratings:
+            for player_rating in team:
+                player_rating.trueskill_mu = team[player_rating].mu
+                player_rating.trueskill_sigma = team[player_rating].sigma
+                self.session.add(player_rating)
+
+        self.session.commit()
