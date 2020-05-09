@@ -7,7 +7,11 @@ from inhouse_bot.common_utils import base_folder
 sql_alchemy_base = declarative.declarative_base()
 
 # Opening the database
-database_location = os.path.join(base_folder, 'database.db')
+if 'PYTEST_CURRENT_TEST' in os.environ:
+    database_location = os.path.join(base_folder, 'test_database.db')
+else:
+    database_location = os.path.join(base_folder, 'database.db')
+
 engine = sqlalchemy.create_engine('sqlite:///{}'.format(database_location))
 
 # Creating an easy access function

@@ -30,7 +30,8 @@ class Game(sql_alchemy_base):
                                 collection_class=mapped_collection(
                                     lambda participant: (participant.team, participant.role)
                                 ),
-                                backref='game')
+                                backref='game',
+                                cascade="all, delete-orphan")
 
     def __str__(self):
         # TODO Beautiful string output

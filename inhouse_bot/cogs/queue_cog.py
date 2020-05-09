@@ -51,7 +51,8 @@ class QueueCog(commands.Cog, name='queue'):
         try:
             game, participant = self.get_last(player)
             if not game.winner:
-                await ctx.send('Your last game is still ongoing. Please use !won or !lost to inform the result.')
+                await ctx.send('Your last game looks to be ongoing. '
+                               'Please use !won or !lost to inform the result if the game is over.')
                 return
         # This happens if the player has not played a game yet as get_last returns None and can’t be unpacked
         except TypeError:
@@ -73,10 +74,6 @@ class QueueCog(commands.Cog, name='queue'):
 
         await ctx.send('{} is now in queue for {}.'.format(ctx.author, ' and '.join(clean_roles)),
                        embed=self.get_current_queue_embed(ctx))
-
-        # TODO Find a cleaner way to test my bot (add_reaction in matchmaking crashes atm)
-        if os.environ['PYTEST_CURRENT_TEST']:
-            return
 
         await self.matchmake(ctx)
 
@@ -139,13 +136,37 @@ class QueueCog(commands.Cog, name='queue'):
         """
         Attempts to start the given game by pinging players and waiting for their reactions.
         """
-        logging.info('Starting a game')
-
         game = Game(players)
+
+        if not 'PYTEST_CURRENT_TEST' in os.environ:
+            # We wait for all 10 players to be ready before creating the game
+            if not self.ready_check(ctx, players, mismatch, game):
+                # If ready_check returns False, we restart matchmaking as the queue changed
+                await self.matchmake(ctx)
+                return
+
+        # Remove all players from all queues before starting the game
+        for player in players.values():
+            await self.remove_player(player)
+
+        self.session.add(game)
+        self.session.commit()
+
+        await ctx.send(f'Game {game.id} has been started!')
+
+    @staticmethod
+    async def ready_check(ctx, players, mismatch, game):
+        """
+        Posts a message in the given context, pinging the 10 players, trying to start the game.
+
+        If all 10 players accept the game, returns True.
+        If not, returns False.
+        """
+        logging.info('Trying to start a game.')
 
         embed = Embed(title='Proposed game')
         embed.add_field(name='Team compositions',
-                        value='```{}```'.format(str(game)))
+                        value=f'```{game}```')
 
         embed.add_field(name='Get ready',
                         value='A match has been found for {}.\n'
@@ -162,10 +183,10 @@ class QueueCog(commands.Cog, name='queue'):
         await message.add_reaction('❎')
 
         # TODO Use wait_for to react to the emotes
+        # Reacting with '✅' checks if all 10 players have reacted and are ready.
+        # Reacting with ❎ removes you from the queue in the current channel and restarts matchmaking.
 
-        game_start = False
-        if game_start:
-            self.remove_players_from_queue(players.values())
+        return True
 
     @commands.command(help_index=1)
     async def leave_queue(self, ctx: commands.Context, *args):
@@ -178,15 +199,27 @@ class QueueCog(commands.Cog, name='queue'):
         """
         player = self.get_player(ctx)
 
-        for channel_id in self.channel_queues if args else [ctx.channel.id]:
+        await self.remove_player(player, ctx.channel.id if args else None, ctx)
+
+    async def remove_player(self, player, channel_id=None, ctx=None):
+        """
+        Removes the given player from queue.
+
+        If given a channel_id, only removes the player from the given channel.
+        If given a context, posts a notice in it.
+        """
+        for channel_id in self.channel_queues if not channel_id else channel_id:
             for role in self.channel_queues[channel_id]:
                 self.channel_queues[channel_id][role].discard(player)
 
         logging.info('Player <{}> has been removed from {}'
-                     .format(player.discord_string, 'all queues' if args else '<{}> queue'.format(ctx.channel.id)))
+                     .format(player.discord_string,
+                             'all queues' if channel_id else '<{}> queue'.format(channel_id)))
 
-        await ctx.send('{} has been removed from the queue{}'.format(ctx.author, ' in all channels' if args else ''),
-                       embed=self.get_current_queue_embed(ctx))
+        if ctx:
+            await ctx.send('{} has been removed from the queue{}'
+                           .format(ctx.author, ' in all channels' if channel_id else ''),
+                           embed=self.get_current_queue_embed(ctx))
 
     @commands.command(help_index=4)
     async def view_queue(self, ctx: commands.Context):
@@ -201,7 +234,7 @@ class QueueCog(commands.Cog, name='queue'):
             table.append([role.capitalize()] + [p.name for p in self.channel_queues[ctx.channel.id][role]])
 
         embed = Embed(title='Current queue', colour=discord.colour.Colour.dark_red())
-        embed.add_field(name='Queue', value='```{}```'.format(tabulate(table, tablefmt='plain')))
+        embed.add_field(name='Queue', value=f'```{tabulate(table, tablefmt="plain")}```')
 
         return embed
 
@@ -218,8 +251,8 @@ class QueueCog(commands.Cog, name='queue'):
 
         embed = Embed(title='Ongoing games', colour=discord.colour.Colour.dark_blue())
         for game in games_without_results:
-            embed.add_field(name='Game {}'.format(game.id),
-                            value='```{}```'.format(str(game)))
+            embed.add_field(name=f'Game {game.id}',
+                            value=f'```{game}```')
 
         await ctx.send(embed=embed)
 
@@ -234,7 +267,7 @@ class QueueCog(commands.Cog, name='queue'):
         self.session.delete(game)
         self.session.commit()
 
-        await ctx.send('Game {} cancelled.'.format(game.id))
+        await ctx.send(f'Game {game.id} cancelled.')
 
     @commands.command(help_index=2)
     async def won(self, ctx: commands.context, *args):
@@ -288,8 +321,8 @@ class QueueCog(commands.Cog, name='queue'):
         if previous_winner and previous_winner != game.winner:
             # Conflict between entered results and current results
             # TODO Add a validation here?
-            await ctx.send('**/!\ Game result changed for game {}**'.format(game.id))
-            await ctx.send('**/!\ TrueSkill ratings will be recomputed starting from this game**'.format(game.id))
+            await ctx.send(f'**/!\\ Game result changed for game {game.id}**')
+            await ctx.send('**/!\\ TrueSkill ratings will be recomputed starting from this game**')
 
         self.update_trueskill(game)
 
@@ -317,7 +350,7 @@ class QueueCog(commands.Cog, name='queue'):
         self.session.merge(participant)
         self.session.commit()
 
-        ctx.send('Champion for game {} set to {}'.format(game.id, self.bot.lit.get_name(participant.champion_id)))
+        ctx.send(f'Champion for game {game.id} set to {self.bot.lit.get_name(participant.champion_id)}')
 
     def get_last(self, player: Player):
         """
@@ -330,12 +363,4 @@ class QueueCog(commands.Cog, name='queue'):
 
     def update_trueskill(self, game):
         # TODO Update trueskill values for PlayerRating objects, based on the game’s result.
-        pass
-
-    def remove_players_from_queue(self, players):
-        """
-        Removes a given list of players from all queues across all channels.
-        Mostly used after a match has been made.
-        """
-        # TODO Remove players from queue
         pass
