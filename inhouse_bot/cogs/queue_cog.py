@@ -140,13 +140,10 @@ class QueueCog(commands.Cog, name='queue'):
         """
         game = Game(players)
 
-        # TODO Find a cleaner way to handle this test
-        if 'PYTEST_CURRENT_TEST' not in os.environ:
-            # We wait for all 10 players to be ready before creating the game
-            if not self.ready_check(ctx, players, mismatch, game):
-                # If ready_check returns False, we restart matchmaking as the queue changed
-                await self.matchmake(ctx)
-                return
+        if not self.ready_check(ctx, players, mismatch, game):
+            # If ready_check returns False, we restart matchmaking as the queue changed
+            await self.matchmake(ctx)
+            return
 
         # Remove all players from all queues before starting the game
         for player in players.values():
@@ -165,6 +162,10 @@ class QueueCog(commands.Cog, name='queue'):
         If all 10 players accept the game, returns True.
         If not, returns False.
         """
+        # TODO Find a cleaner way to handle this test
+        if 'PYTEST_CURRENT_TEST' in os.environ:
+            return True
+
         logging.info('Trying to start a game.')
 
         embed = Embed(title='Proposed game')
@@ -293,7 +294,7 @@ class QueueCog(commands.Cog, name='queue'):
             !won reksai 10
         """
         await self.score_game(ctx, True)
-        self.update_champion(ctx, args)
+        await self.update_champion(ctx, args)
 
     @commands.command(help_index=3)
     async def lost(self, ctx: commands.context, *args):
