@@ -6,16 +6,10 @@ import discord.ext.test as dpytest
 
 @pytest.fixture()
 def config():
-    # We start by cleaning up old TestUser Player objects, which also clears related ratings.
     from inhouse_bot.inhouse_bot import InhouseBot
     from inhouse_bot.sqlite.sqlite_utils import get_session
-    from inhouse_bot.sqlite.player import Player
 
     session = get_session()
-    test_users = session.query(Player).filter(Player.discord_string.like('TestUser%')).all()
-    for player in test_users:
-        session.delete(player)
-    session.commit()
 
     # We create our bot object, a mock server, a mock channel, 10 mock members, and return our cog for testing
     bot = InhouseBot()
@@ -74,12 +68,17 @@ async def test_accept_matchmaking(caplog, config):
     game = config.session.query(Game).filter(Game.winner == None).first()
     assert game
 
-    #
-    config.session.delete(game)
-    config.session.commit()
+    # Score the game
+    await dpytest.message('!won')
 
-    game = config.session.query(Game).filter(Game.winner == None).first()
-    assert not game
+    config.session.refresh(game)
+
+    # Verify the game was scored properly
+    assert game.winner
+
+    # Check that players trueskill rating was changed
+    for participant in game.participants.values():
+        assert participant.player.ratings[participant.role].trueskill_mu != 25.0
 
 
 @pytest.mark.asyncio

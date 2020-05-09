@@ -1,3 +1,4 @@
+import warnings
 import os
 import sqlalchemy
 from sqlalchemy import orm, Enum
@@ -8,7 +9,13 @@ sql_alchemy_base = declarative.declarative_base()
 
 # Opening the database
 if 'PYTEST_CURRENT_TEST' in os.environ:
-    database_location = os.path.join(base_folder, 'test_database.db')
+    database_location = os.path.join(base_folder, 'database_test.db')
+    try:
+        os.remove(database_location)
+    except PermissionError:
+        warnings.warn('Test database open in another program, using it as-is')
+    except FileNotFoundError:
+        pass
 else:
     database_location = os.path.join(base_folder, 'database.db')
 

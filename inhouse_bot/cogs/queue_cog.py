@@ -214,7 +214,7 @@ class QueueCog(commands.Cog, name='queue'):
 
         logging.info('Player <{}> has been removed from {}'
                      .format(player.discord_string,
-                             'all queues' if channel_id else '<{}> queue'.format(channel_id)))
+                             'all queues' if not channel_id else 'the <{}> queue'.format(channel_id)))
 
         if ctx:
             await ctx.send('{} has been removed from the queue{}'
@@ -267,7 +267,10 @@ class QueueCog(commands.Cog, name='queue'):
         self.session.delete(game)
         self.session.commit()
 
-        await ctx.send(f'Game {game.id} cancelled.')
+        message = f'Game {game.id} cancelled.'
+
+        logging.info(message)
+        await ctx.send(message)
 
     @commands.command(help_index=2)
     async def won(self, ctx: commands.context, *args):
@@ -324,6 +327,7 @@ class QueueCog(commands.Cog, name='queue'):
             await ctx.send(f'**/!\\ Game result changed for game {game.id}**')
             await ctx.send('**/!\\ TrueSkill ratings will be recomputed starting from this game**')
 
+        self.session.commit()
         self.update_trueskill(game)
 
     def update_champion(self, ctx, args):
