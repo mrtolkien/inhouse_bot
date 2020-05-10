@@ -1,11 +1,12 @@
 import itertools
 import logging
-
 from discord.ext import commands
 from discord.ext.commands import DefaultHelpCommand
 from inhouse_bot.cogs.queue_cog import QueueCog
+from inhouse_bot.cogs.stats_cog import StatsCog
 from inhouse_bot.common_utils import discord_token
 from lol_id_tools import LolIdTools
+from inhouse_bot.sqlite.sqlite_utils import get_session
 
 
 class InhouseBot(commands.Bot):
@@ -17,7 +18,10 @@ class InhouseBot(commands.Bot):
         self.discord_token = discord_token
 
         self.lit = LolIdTools('en_US', 'ko_KR')
+        self.session = get_session()
+
         self.add_cog(QueueCog(self))
+        self.add_cog(StatsCog(self))
 
     def run(self, *args, **kwargs):
         super().run(self.discord_token, *args, **kwargs)

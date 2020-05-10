@@ -16,6 +16,8 @@ class PlayerRating(sql_alchemy_base):
     trueskill_mu = Column(Float)
     trueskill_sigma = Column(Float)
 
+    # TODO Define games count total and winrate as lazy loaded arguments
+
     def __repr__(self):
         return f'<PlayerRating: player_id={self.player_id} role={self.role}>'
 

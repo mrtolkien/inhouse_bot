@@ -22,6 +22,8 @@ class Player(sql_alchemy_base):
                            backref='player',
                            cascade="all, delete-orphan")
 
+    # TODO Define games as a relationship
+
     def __repr__(self):
         return f'<Player: player_id={self.player_id}>'
 
@@ -32,3 +34,5 @@ class Player(sql_alchemy_base):
 
         # We use display_name to get the server-specific name
         self.name = user.display_name
+
+    # TODO Define get_last_game_and_participant here

@@ -7,11 +7,12 @@ import os
 
 import discord
 import trueskill
-from discord import Embed, Emoji
+from discord import Embed
 from discord.ext import commands
 from rapidfuzz import process
 from tabulate import tabulate
 
+from inhouse_bot.cogs.cogs_utils import get_player
 from inhouse_bot.common_utils import trueskill_blue_side_winrate
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
@@ -27,7 +28,6 @@ class QueueCog(commands.Cog, name='queue'):
         """
         self.bot = bot
         self.channel_queues = defaultdict(lambda: {role: set() for role in roles_list})
-        self.session = get_session()
 
     @commands.command(help_index=0)
     async def queue(self, ctx: commands.Context, *, roles):
@@ -39,7 +39,7 @@ class QueueCog(commands.Cog, name='queue'):
             !queue support
             !queue mid bot
         """
-        player = self.get_player(ctx)
+        player = get_player(self.bot.session, ctx)
 
         # First, we check if the last game of the player is still ongoing.
         try:
@@ -85,7 +85,7 @@ class QueueCog(commands.Cog, name='queue'):
             !stop_queue
             !stop_queue all
         """
-        player = self.get_player(ctx)
+        player = get_player(self.bot.session, ctx)
 
         await self.remove_player_from_queue(player, ctx.channel.id if not args else None, ctx)
 
@@ -108,7 +108,7 @@ class QueueCog(commands.Cog, name='queue'):
         """
         Shows the ongoing inhouse games.
         """
-        games_without_results = self.session.query(Game).filter(Game.winner == None).all()
+        games_without_results = self.bot.session.query(Game).filter(Game.winner == None).all()
 
         if not games_without_results:
             await ctx.send('No active games found', delete_after=10)
@@ -129,10 +129,10 @@ class QueueCog(commands.Cog, name='queue'):
 
         Accessible only by server admins.
         """
-        game = self.session.query(Game).filter(Game.id == game_id).one()
+        game = self.bot.session.query(Game).filter(Game.id == game_id).one()
 
-        self.session.delete(game)
-        self.session.commit()
+        self.bot.session.delete(game)
+        self.bot.session.commit()
 
         message = f'Game {game.id} cancelled.'
 
@@ -142,7 +142,7 @@ class QueueCog(commands.Cog, name='queue'):
     @commands.command(help_index=2)
     async def won(self, ctx: commands.context, *args):
         """
-        Scores the game as a win for your team.
+        Scores your last game as a win and informs the champion used.
 
         Optional arguments:
             champion_name   The champion you used in the game (for stats tracking)
@@ -162,7 +162,7 @@ class QueueCog(commands.Cog, name='queue'):
     @commands.command(help_index=3)
     async def lost(self, ctx: commands.context, *args):
         """
-        Scores the game as a loss for your team.
+        Scores your last game as a loss and informs the champion used.
 
         Optional arguments:
             champion_name   The champion you used in the game (for stats tracking)
@@ -174,28 +174,19 @@ class QueueCog(commands.Cog, name='queue'):
             !won "Miss Fortune"
             !won mf
             !won missfortune
-            !won reksai 10
+            !won reksai 10)
         """
         await self.score_game(ctx, False)
         await self.update_champion(ctx, args)
-
-    def get_player(self, ctx) -> Player:
-        """
-        Returns a Player object from a Discord context’s author and update name changes.
-        """
-        player = self.session.merge(Player(ctx.author))  # This will automatically update name changes
-        self.session.commit()
-
-        return player
 
     def add_player_to_queue(self, player, role, channel_id):
         if role not in player.ratings:
             logging.info('Creating a new PlayerRating for <{}> <{}>'.format(player.discord_string, role))
             new_rating = PlayerRating(player, role)
-            self.session.add(new_rating)
-            self.session.commit()
+            self.bot.session.add(new_rating)
+            self.bot.session.commit()
             # This step is required so our player object has access to the rating
-            player = self.session.merge(player)
+            player = self.bot.session.merge(player)
 
         # Actually adding the player to the queue
         self.channel_queues[channel_id][role].add(player)
@@ -284,18 +275,18 @@ class QueueCog(commands.Cog, name='queue'):
             await self.remove_player_from_queue(player, channel_id=ctx.channel.id)
 
         game = Game(players)
-        self.session.add(game)
+        self.bot.session.add(game)
 
         if not await self.ready_check(ctx, players, mismatch, game):
             # If ready_check returns False, we restart matchmaking as the queue changed
-            self.session.rollback()
+            self.bot.session.rollback()
             await self.matchmaking_process(ctx)
             return
 
         logging.info(f'Starting game {game.id}')
 
         # Saving the game to the database
-        self.session.commit()
+        self.bot.session.commit()
 
         await ctx.send(f'Game {game.id} has started!')
 
@@ -321,10 +312,10 @@ class QueueCog(commands.Cog, name='queue'):
                             value='According to TrueSkill, this game might be a slight mismatch.')
 
         ready_check_message = await ctx.send('A match has been found for {}.\n'
+                                             'All players have been dropped from queues they were in.\n'
                                              'You can refuse the match and leave the queue by pressing ❎.\n'
                                              'If you are ready, press ✅.'
-            .format(
-            ', '.join(['<@{}>'.format(p.discord_id) for p in players.values()])), embed=embed)
+            .format(', '.join(['<@{}>'.format(p.discord_id) for p in players.values()])), embed=embed)
 
         await ready_check_message.add_reaction('✅')
         await ready_check_message.add_reaction('❎')
@@ -366,7 +357,7 @@ class QueueCog(commands.Cog, name='queue'):
         """
         Scores the player’s last game with the given result.
         """
-        player = self.get_player(ctx)
+        player = get_player(self.bot.session, ctx)
 
         game, game_participant = self.get_last_game_and_participant(player)
         previous_winner = game.winner
@@ -398,7 +389,7 @@ class QueueCog(commands.Cog, name='queue'):
                            delete_after=10)
             return
 
-        self.session.commit()
+        self.bot.session.commit()
         self.update_trueskill(game)
 
         message = f'Game {game.id} has been scored as a win for {game.winner} and ratings have been updated.'
@@ -417,9 +408,9 @@ class QueueCog(commands.Cog, name='queue'):
                            delete_after=10)
             return
 
-        player = self.get_player(ctx)
+        player = get_player(self.bot.session, ctx)
         try:
-            game, participant = self.session.query(Game, GameParticipant).join(GameParticipant) \
+            game, participant = self.bot.session.query(Game, GameParticipant).join(GameParticipant) \
                 .filter(Game.id == args[1]) \
                 .filter(GameParticipant.player_id == player) \
                 .order_by(Game.date.desc()) \
@@ -428,9 +419,9 @@ class QueueCog(commands.Cog, name='queue'):
             game, participant = self.get_last_game_and_participant(player)
 
         participant.champion_id = champion_id
-        self.session.merge(participant)
+        self.bot.session.merge(participant)
 
-        self.session.commit()
+        self.bot.session.commit()
 
         log_message = f'Champion for game {game.id} set to {self.bot.lit.get_name(participant.champion_id)} for {ctx.author}'
 
@@ -441,7 +432,7 @@ class QueueCog(commands.Cog, name='queue'):
         """
         Returns the last game and game_participant for the given user.
         """
-        return self.session.query(Game, GameParticipant)\
+        return self.bot.session.query(Game, GameParticipant)\
             .join(GameParticipant) \
             .filter(GameParticipant.player_id == player.discord_id) \
             .order_by(Game.date.desc()) \
@@ -466,6 +457,6 @@ class QueueCog(commands.Cog, name='queue'):
             for player_rating in team:
                 player_rating.trueskill_mu = team[player_rating].mu
                 player_rating.trueskill_sigma = team[player_rating].sigma
-                self.session.add(player_rating)
+                self.bot.session.add(player_rating)
 
-        self.session.commit()
+        self.bot.session.commit()
