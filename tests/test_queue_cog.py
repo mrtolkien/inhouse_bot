@@ -108,4 +108,5 @@ async def test_refuse_matchmaking(caplog, config):
     game = config.session.query(Game).filter(Game.winner == None).first()
     assert game
 
-    await dpytest.message(f'!cancel_game {game.id}')
+    # TODO Try to test as admin
+    # await dpytest.message(f'!cancel_game {game.id}')

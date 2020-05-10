@@ -28,7 +28,8 @@ class InhouseBot(commands.Bot):
     async def on_command_error(self, ctx, error):
         # User-facing error
         await ctx.send('`Error: {}`'
-                       '\nUse `!help` for commands help. Contact <@124633440078266368> for bugs.'.format(error))
+                       '\nUse `!help` for commands help. Contact <@124633440078266368> for bugs.'.format(error),
+                       delete_after=30)
 
         raise error
 

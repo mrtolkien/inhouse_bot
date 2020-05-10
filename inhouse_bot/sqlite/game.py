@@ -33,7 +33,9 @@ class Game(sql_alchemy_base):
                                 cascade="all, delete-orphan")
 
     def __str__(self):
-        return str(self.participants)
+        return tabulate({team_column: [self.participants[team, role].player.name
+                                       for (team, role) in self.participants if team == team_column]
+                         for team_column in ['blue', 'red']}, headers='keys')
 
     def __init__(self, players: dict):
         """
