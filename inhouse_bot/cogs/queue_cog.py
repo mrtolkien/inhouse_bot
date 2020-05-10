@@ -1,3 +1,4 @@
+import asyncio
 import warnings
 from collections import defaultdict
 import itertools
@@ -20,7 +21,7 @@ from inhouse_bot.sqlite.sqlite_utils import get_session, roles_list
 
 
 class QueueCog(commands.Cog, name='queue'):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         """
         :param bot: the bot to attach the cog to
         """
@@ -60,7 +61,9 @@ class QueueCog(commands.Cog, name='queue'):
         except TypeError:
             pass
 
-        clean_roles = [process.extractOne(r, roles_list)[0] for r in roles.split(' ')]
+        # TODO Enforce a minimum score
+        clean_roles = [process.extractOne(r, roles_list)[0] for r in roles.split(' ')
+                       if process.extractOne(r, roles_list)[1] > 0.8]
 
         for role in clean_roles:
             if role not in player.ratings:
@@ -85,6 +88,7 @@ class QueueCog(commands.Cog, name='queue'):
 
         This function is split in multiple functions for easier testing.
         """
+        # Match quality returns -1 when matchmaking can’t be done
         players, match_quality = self.match_game(ctx.channel.id)
 
         # We have a good match
@@ -140,33 +144,35 @@ class QueueCog(commands.Cog, name='queue'):
         """
         game = Game(players)
 
-        if not self.ready_check(ctx, players, mismatch, game):
+        if not await self.ready_check(ctx, players, mismatch, game):
             # If ready_check returns False, we restart matchmaking as the queue changed
             await self.matchmake(ctx)
             return
 
+        logging.info(f'Starting game {game.id}')
+
         # Remove all players from all queues before starting the game
         for player in players.values():
-            await self.remove_player(player)
+            await self.remove_player_from_queue(player)
 
+        # Saving the game to the database
         self.session.add(game)
         self.session.commit()
 
         await ctx.send(f'Game {game.id} has been started!')
 
-    @staticmethod
-    async def ready_check(ctx, players, mismatch, game):
+    async def ready_check(self, ctx: commands.Context, players, mismatch, game):
         """
         Posts a message in the given context, pinging the 10 players, trying to start the game.
 
         If all 10 players accept the game, returns True.
         If not, returns False.
         """
-        # TODO Find a cleaner way to handle this test
+        # TODO Find a cleaner way to handle this test with a mock
         if 'PYTEST_CURRENT_TEST' in os.environ:
             return True
 
-        logging.info('Trying to start a game.')
+        logging.info('Starting a game ready check.')
 
         embed = Embed(title='Proposed game')
         embed.add_field(name='Team compositions',
@@ -181,16 +187,43 @@ class QueueCog(commands.Cog, name='queue'):
             embed.add_field(name='WARNING',
                             value='According to TrueSkill, this game might be a slight mismatch.')
 
-        message = await ctx.send(embed=embed)
+        ready_check_message = await ctx.send(embed=embed)
 
-        await message.add_reaction('✅')
-        await message.add_reaction('❎')
+        await ready_check_message.add_reaction('✅')
+        await ready_check_message.add_reaction('❎')
 
-        # TODO Use wait_for to react to the emotes
-        # Reacting with '✅' checks if all 10 players have reacted and are ready.
-        # Reacting with ❎ removes you from the queue in the current channel and restarts matchmaking.
+        players_discord_ids = [p.discord_id for p in players.values()]
 
-        return True
+        def check(received_reaction: discord.Reaction, sending_user: discord.User):
+            # This check is simply used to see if a player in the game responded to the message.
+            # Queue logic is handled below
+            return received_reaction.message.id == ready_check_message.id and \
+                   sending_user.id in players_discord_ids and \
+                   str(reaction.emoji) in ['✅', '❎']
+
+        users_ready = set()
+        try:
+            while True:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=120.0, check=check)
+
+                if str(reaction.emoji) == '✅':
+                    users_ready.add(user.id)
+                    if users_ready.__len__() == 10:
+                        return True
+
+                elif str(reaction.emoji) == '❎':
+                    # Remove the player from the queue and return False (which restarts matchmaking)
+                    player = [p for p in players.values() if p.discord_id == user.id][0]
+                    await self.remove_player_from_queue(player, ctx.channel.id)
+                    return False
+
+        # We get there if no player accepted in the last two minutes
+        except asyncio.TimeoutError:
+            await ctx.send('No player accepted the match in the last two minutes.'
+                           'Removing afk players from all queues and restarting matchmaking.')
+            for player in [p for p in players.values() if p.discord_id not in users_ready]:
+                await self.remove_player_from_queue(player)
+            return False
 
     @commands.command(help_index=1)
     async def leave_queue(self, ctx: commands.Context, *args):
@@ -203,9 +236,9 @@ class QueueCog(commands.Cog, name='queue'):
         """
         player = self.get_player(ctx)
 
-        await self.remove_player(player, ctx.channel.id if args else None, ctx)
+        await self.remove_player_from_queue(player, ctx.channel.id if args else None, ctx)
 
-    async def remove_player(self, player, channel_id=None, ctx=None):
+    async def remove_player_from_queue(self, player, channel_id=None, ctx=None):
         """
         Removes the given player from queue.
 
@@ -235,7 +268,7 @@ class QueueCog(commands.Cog, name='queue'):
     def get_current_queue_embed(self, ctx):
         table = [[]]
         for role in roles_list:
-            table.append([role.capitalize()] + [p.name for p in self.channel_queues[ctx.channel.id][role]])
+            table.append([role.capitalize()] + sorted([p.name for p in self.channel_queues[ctx.channel.id][role]]))
 
         embed = Embed(title='Current queue', colour=discord.colour.Colour.dark_red())
         embed.add_field(name='Queue', value=f'```{tabulate(table, tablefmt="plain")}```')
@@ -260,11 +293,13 @@ class QueueCog(commands.Cog, name='queue'):
 
         await ctx.send(embed=embed)
 
-    # TODO Check if we need to restrict access to this function
     @commands.command(help_index=6)
+    @commands.has_permissions(administrator=True)
     async def cancel_game(self, ctx: commands.context, game_id):
         """
         Cancels and voids an ongoing game. Requires the game id from !view_games.
+
+        Accessible only by server admins.
         """
         game = self.session.query(Game).filter(Game.id == game_id).one()
 
@@ -329,6 +364,8 @@ class QueueCog(commands.Cog, name='queue'):
             warnings.warn('A player is trying to change a game’s result.')
             # TODO Implement conflict resolution here (which will require recomputing TrueSkill from this game)
             await ctx.send(f'**/!\\ Game result conflict for game {game.id}.**')
+            await ctx.send(f'**TODO**')
+            return
             # await ctx.send('**/!\\ TrueSkill ratings will be recomputed starting from this game**')
         elif previous_winner:
             ctx.send('This game has already been scored. Thank you for validating the information!')

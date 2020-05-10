@@ -1,5 +1,4 @@
-import discord
-from discord import Embed
+from tabulate import tabulate
 from sqlalchemy import Column, Integer, DateTime, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.collections import mapped_collection
@@ -34,7 +33,6 @@ class Game(sql_alchemy_base):
                                 cascade="all, delete-orphan")
 
     def __str__(self):
-        # TODO Beautiful string output
         return str(self.participants)
 
     def __init__(self, players: dict):
