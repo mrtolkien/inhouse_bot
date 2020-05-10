@@ -87,7 +87,9 @@ async def test_accept_matchmaking(caplog, config):
     for participant in game.participants.values():
         assert participant.player.ratings[participant.role].trueskill_mu != 25.0
 
-    # TODO Try re-scoring the game, behaviour TBD
+    # Stupidly trying everybody saying they won. They won’t be able to react though.
+    for member in range(0, 10):
+        await dpytest.message('!won')
 
 
 @pytest.mark.asyncio
@@ -108,5 +110,5 @@ async def test_refuse_matchmaking(caplog, config):
     game = config.session.query(Game).filter(Game.winner == None).first()
     assert game
 
-    # TODO Try to test as admin
+    # TODO See how to test as admin
     # await dpytest.message(f'!cancel_game {game.id}')

@@ -24,6 +24,5 @@ class PlayerRating(sql_alchemy_base):
         self.role = role
 
         # Initializing TrueSkill to default base values
-        # TODO Initialize to known values for additional roles?
         self.trueskill_mu = 25
         self.trueskill_sigma = 25 / 3
