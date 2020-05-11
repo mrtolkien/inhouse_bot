@@ -37,19 +37,20 @@ The rating system is based on [Microsoft TrueSkill](https://en.wikipedia.org/wik
 
 `!leave all` removes you from all channel’s queue for all roles.
 
-`!won` scores your last game as a win for your team.
+`!won` scores your last game as a win for your team and waits for validation from at least 6 players from the game.
 
-`!lost` is the counterpart to `!won`. If there is a conflict in the last game’s result, the bot will
-ask for validation.
+`!lost` is the counterpart to `!won`.
 
-`![won|lost] [champion_name] [game_id]` scores the game, and you can informs which champion you 
-used for winrate tracking. If you don’t supply the `game_id`, it will apply to your last game.
+`!champion champion_name [game_id]` informs which champion you used for winrate tracking.
+If you don’t supply the `game_id`, it will apply to your last game.
 
 `!view_queue` shows the queue in the current channel.
 
 `!view_games` shows the ongoing games for all channels.
 
 `!cancel_game` cancels your ongoing game, requiring validation from at least 6 players in the game.
+
+`!admin_score game_id winner` is an admin-only command that scores the game without asking for validation.
 
 # Stats features
 `!history` returns the match history of your last 20 games.
@@ -69,7 +70,7 @@ pipenv run python run_bot.py
 ```
 
 # Wanted contributions (2020-05-11)
-- `dpytest` doesn’t mock adding reactions to messages, which means the test functions are currently failing.
+- `dpytest` doesn’t support reactions to messages, which means the test functions are currently failing.
 Any help with mocking those would be greatly welcomed.
 
 - The matchmaking algorithm is currently fully brute-force and can definitely be improved in terms of calculation time.

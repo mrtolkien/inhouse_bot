@@ -1,8 +1,9 @@
 from typing import List, Tuple
 
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, func, type_coerce
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.sql import label
 
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
@@ -63,17 +64,14 @@ class Player(sql_alchemy_base):
             .order_by(Game.date.desc())
 
     # TODO Try to get a better type hint without circular imports
-    def get_roles_stats(self, session) -> dict:
+    def get_roles_stats(self, session, date_start) -> dict:
         """
         Returns stats for all roles for the player
 
+        :param date_start: DateTime to start the stats at
         :param session: SQLAlchemy session
         :return: [role]['games', 'wins',]
         """
-        from inhouse_bot.sqlite.game_participant import GameParticipant
-        from inhouse_bot.sqlite.game import Game
-        from sqlalchemy import func, type_coerce
-
         query = session.query(
             GameParticipant.role,
             func.count().label('games'),
@@ -82,5 +80,31 @@ class Player(sql_alchemy_base):
             .join(GameParticipant) \
             .filter(GameParticipant.player_id == self.discord_id) \
             .group_by(GameParticipant.role)
+
+        if date_start:
+            query = query.filter(Game.date > date_start)
+
+        return {row.role: row for row in query}
+
+    def get_champions_stats(self, session, lit, date_start) -> dict:
+        """
+        Returns stats for all champions for the player
+
+        :param date_start: DateTime to start the stats at
+        :param session: SQLAlchemy session
+        :return: [role]['games', 'wins',]
+        """
+        query = session.query(
+            lit.get_name(GameParticipant.champion_id),
+            GameParticipant.role,
+            func.count().label('games'),
+            type_coerce(func.sum(GameParticipant.team == Game.winner), Integer).label('wins')) \
+            .select_from(Game) \
+            .join(GameParticipant) \
+            .filter(GameParticipant.player_id == self.discord_id) \
+            .group_by(GameParticipant.champion_id, GameParticipant.role)
+
+        if date_start:
+            query = query.filter(Game.date > date_start)
 
         return {row.role: row for row in query}

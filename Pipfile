@@ -15,6 +15,7 @@ pytest = "*"
 lol-id-tools = "*"
 dpytest = "*"
 inflect = "*"
+dateparser = "*"
 
 [requires]
 python_version = "3.8"
