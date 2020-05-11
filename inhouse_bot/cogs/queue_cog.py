@@ -262,6 +262,9 @@ class QueueCog(commands.Cog, name='queue'):
             if score > best_score:
                 best_players = players
                 best_score = score
+                # If the game is seen as being below 51% winrate for one side, we simply stop there
+                if best_score > -0.01:
+                    break
 
         logging.info('The best match found had a score of {}'.format(best_score))
 
