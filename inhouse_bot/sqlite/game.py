@@ -9,7 +9,7 @@ from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, team_enum
 
 
 class Game(sql_alchemy_base):
-    """Represents a single inhouse game, currently only supporting LoL"""
+    """Represents a single inhouse game, currently only supporting LoL and standard roles."""
     __tablename__ = 'game'
 
     # Auto-incremented ID field

@@ -474,7 +474,7 @@ class QueueCog(commands.Cog, name='queue'):
 
         self.bot.session.commit()
 
-        log_message = f'Champion for game {game.id} set to {self.bot.lit.get_name(participant.champion_id)} for {ctx.author}'
+        log_message = f'Champion for game {game.id} set to {self.bot.lit.get_name(participant.champion_id)} for {player.name}'
 
         logging.info(log_message)
         await ctx.send(log_message, delete_after=10)

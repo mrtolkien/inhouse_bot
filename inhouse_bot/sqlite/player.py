@@ -47,3 +47,25 @@ class Player(sql_alchemy_base):
             .filter(GameParticipant.player_id == self.discord_id) \
             .order_by(Game.date.desc()) \
             .first()
+
+    def get_roles_stats(self, session) -> dict:
+        """
+        Returns stats for all roles for the player
+
+        :param session: SQLAlchemy session
+        :return: [role]['games', 'wins',]
+        """
+        from inhouse_bot.sqlite.game_participant import GameParticipant
+        from inhouse_bot.sqlite.game import Game
+        from sqlalchemy import func, type_coerce
+
+        query = session.query(
+            GameParticipant.role,
+            func.count().label('games'),
+            type_coerce(func.sum(GameParticipant.team == Game.winner), Integer).label('wins')) \
+                .select_from(Game) \
+                .join(GameParticipant) \
+                .filter(GameParticipant.player_id == self.discord_id) \
+                .group_by(GameParticipant.role)
+
+        return {row.role: row for row in query}

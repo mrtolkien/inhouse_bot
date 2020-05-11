@@ -2,6 +2,7 @@ from discord.ext import commands
 from sqlalchemy import func
 from inhouse_bot.cogs.cogs_utils import get_player
 from inhouse_bot.sqlite.game_participant import GameParticipant
+from tabulate import tabulate
 
 
 class StatsCog(commands.Cog, name='stats'):
@@ -11,29 +12,44 @@ class StatsCog(commands.Cog, name='stats'):
         """
         self.bot = bot
 
-    @commands.command(help_index=1, aliases=['ratings', 'rating', 'MMR'])
-    async def mmr(self, ctx: commands.Context):
+    @commands.command(help_index=0, aliases=['ranks', 'ranking'])
+    async def rank(self, ctx: commands.Context):
         """
-        Returns your MMR for all roles.
+        Returns your global rank for all roles.
         """
         player = get_player(self.bot.session, ctx)
 
-        player_games_count = {row.role: row.games for row in
-                              self.bot.session
-                                  .query(GameParticipant.role, func.count().label('games')) \
-                                  .filter(GameParticipant.player_id == player.discord_id) \
-                                  .group_by(GameParticipant.role) \
-                                  .all()}
-
-        text_lines = []
+        table = []
         for role in player.ratings:
             rating = player.ratings[role]
-            try:
-                text_lines.append(f'{player.name}’s rating for {rating.role} is '
-                                  f'{rating.trueskill_mu - 3 * rating.trueskill_sigma:.1f} '
-                                  f'over {player_games_count[role] or 0} games')
-            except KeyError:
-                continue
+            table.append([f'{rating.role.capitalize()}', rating.get_rank(self.bot.session)])
 
-        await ctx.send('\n'.join(text_lines) or 'No ratings found')
+        print(table)
+        table = sorted(table, key=lambda x: x[1])
+        table.insert(0, ['Role', 'Rank'])
 
+        await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
+
+    @commands.command(help_index=1, aliases=['ratings', 'rating', 'MMR', 'mmr'])
+    async def stats(self, ctx: commands.Context):
+        """
+        Returns your MMR, games total, and winrate for all roles.
+        """
+        player = get_player(self.bot.session, ctx)
+
+        stats = player.get_roles_stats(self.bot.session)
+
+        print(stats)
+
+        table = []
+        for role in stats:
+            table.append([f'{role.capitalize()}',
+                          f'{player.ratings[role].mmr:.2f}',
+                          stats[role].games,
+                          f'{stats[role].wins / stats[role].games * 100:.2f}%'])
+
+        print(table)
+        table = sorted(table, key=lambda x: x[2])
+        table.insert(0, ['Role', 'MMR', 'Games', 'Winrate'])
+
+        await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
