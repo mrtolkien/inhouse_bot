@@ -28,6 +28,10 @@ class QueueCog(commands.Cog, name='Queue'):
         # [channel_id][role][list of Player objects]
         self.channel_queues = defaultdict(lambda: {role: set() for role in roles_list})
 
+        # [discord_id]
+        # TODO Find a smarter to do that, currently adding the game at the beginning of ready_check
+        self.games_in_ready_check_status = set()
+
     @commands.command(help_index=0)
     async def queue(self, ctx: commands.Context, *, roles):
         """
@@ -112,7 +116,8 @@ class QueueCog(commands.Cog, name='Queue'):
         champion_id, ratio = self.bot.lit.get_id(champion_name, input_type='champion', return_ratio=True)
 
         if ratio < 75:
-            await ctx.send('Champion name was not understood properly.\nUse `!help won` for more information.',
+            await ctx.send('Champion name was not understood properly.\n'
+                           'Use `!help champion` for more information.',
                            delete_after=30)
             return
 
@@ -184,16 +189,14 @@ class QueueCog(commands.Cog, name='Queue'):
             await ctx.send(no_cancel_notice)
             return
 
-        cancelling_game_message = await ctx.send('Trying to cancel the game including {}.\n'
+        discord_ids_list = [p.player.discord_id for p in game.participants.values()]
+
+        cancelling_game_message = await ctx.send(f'Trying to cancel the game including {self.get_tags(discord_ids_list)}.\n'
                                                  'If you want to cancel the game, have at least 6 players press ✅.\n'
-                                                 'If you did not mean to cancel the game, press ❎.'
-                                                 .format(
-            ', '.join(['<@{}>'.format(p.player) for p in game.participants.values()])),
+                                                 'If you did not mean to cancel the game, press ❎.',
                                                  delete_after=60)
 
-        if not await self.checkmark_validation(cancelling_game_message,
-                                               [p.player.discord_id for p in game.participants.values()],
-                                               6):
+        if not await self.checkmark_validation(cancelling_game_message, discord_ids_list, 6):
             # If there’s no validation, we just inform players nothing happened and leave
             no_cancellation_message = f'Cancellation canceled.'
             logging.info(no_cancellation_message)
@@ -340,17 +343,19 @@ class QueueCog(commands.Cog, name='Queue'):
         for player in players.values():
             await self.remove_player_from_queue(player, channel_id=ctx.channel.id)
 
-        game_session = get_session()
-
+        # TODO Change data structure to only create the game at the end
+        # Requires moving this code slightly later, removing checks on game.winner, and having a self.current_games set.
         game = Game(players)
-        game_session.add(game)
+        self.bot.session.add(game)
+        self.bot.session.commit()
 
         if not await self.ready_check(ctx, players, mismatch, game):
             # If the ready check fails, we delete the game and let !queue handle restarting matchmaking.
-            await ctx.send('The game has been cancelled. You can queue again.')
+            self.bot.session.delete(game)
+            self.bot.session.commit()
+            await ctx.send('The game has been cancelled. You can now queue again.')
             return
 
-        game_session.commit()
         logging.info(f'Starting game {game.id}')
         await ctx.send(f'Game {game.id} has started!')
 
@@ -365,7 +370,9 @@ class QueueCog(commands.Cog, name='Queue'):
         if 'PYTEST_CURRENT_TEST' in os.environ:
             return True
 
-        logging.info('Starting a game ready check.')
+        self.games_in_ready_check_status.add(game.id)
+
+        logging.info('Starting a game ready check')
 
         embed = Embed(title='Proposed game')
         embed.add_field(name='Team compositions',
@@ -375,14 +382,18 @@ class QueueCog(commands.Cog, name='Queue'):
             embed.add_field(name='WARNING',
                             value='According to TrueSkill, this game might be a slight mismatch.')
 
-        ready_check_message = await ctx.send('A match has been found for {}.\n'
-                                             'All players have been dropped from queues they were in.\n'
-                                             'You can refuse the match and leave the queue by pressing ❎.\n'
-                                             'If you are ready, press ✅.'
-            .format(
-            ', '.join(['<@{}>'.format(p.discord_id) for p in players.values()])), embed=embed)
+        discord_id_list = [p.discord_id for p in players.values()]
 
-        return await self.checkmark_validation(ready_check_message, [p.discord_id for p in players.values()], 10)
+        ready_check_message = await ctx.send(f'A match has been found for {self.get_tags(discord_id_list)}\n'
+                                             'All players have been dropped from queues they were in\n'
+                                             'You can refuse the match and leave the queue by pressing ❎\n'
+                                             'If you are ready, press ✅', embed=embed)
+
+        return_value = await self.checkmark_validation(ready_check_message, discord_id_list, 10)
+
+        self.games_in_ready_check_status.remove(game.id)
+
+        return return_value
 
     async def score_game(self, ctx, result: bool):
         """
@@ -392,19 +403,21 @@ class QueueCog(commands.Cog, name='Queue'):
 
         game, game_participant = player.get_last_game(self.bot.session)
 
-        if game.winner:
+        # TODO Check that this works.
+        if game.winner or game.id in self.games_in_ready_check_status:
             # Conflict between entered results and current results
             await ctx.send(f'**Your last game’s result was already entered and validated**', delete_after=30)
             return
 
         winner = 'blue' if game_participant.team == 'blue' and result else 'red'
+        discord_id_list = [p.player_id for p in game.participants.values()]
 
         ready_check_message = await ctx.send(f'{player.name} wants to score game {game.id} as a win for {winner}\n'
-                                             f'{", ".join(["<@{}>".format(p.player_id) for p in game.participants.values()])}\n'
+                                             f'{self.get_tags(discord_id_list)}\n'
                                              f'Result will be validated once 6 players from the game press ✅.',
                                              delete_after=120)
 
-        if not await self.checkmark_validation(ready_check_message, [p.player_id for p in game.participants.values()], 6):
+        if not await self.checkmark_validation(ready_check_message, discord_id_list, 6):
             await ctx.send('Game result input cancelled.', delete_after=60)
             return
 
@@ -452,3 +465,7 @@ class QueueCog(commands.Cog, name='Queue'):
         # We get there if no player accepted in the last two minutes
         except asyncio.TimeoutError:
             return False
+
+    @staticmethod
+    def get_tags(discord_ids: list):
+        return ', '.join(['<@{}>'.format(discord_id) for discord_id in discord_ids])

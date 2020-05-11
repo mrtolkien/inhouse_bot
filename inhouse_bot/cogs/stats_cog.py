@@ -1,3 +1,6 @@
+from collections import defaultdict
+
+import discord
 from discord.ext import commands
 from rapidfuzz import process
 
@@ -5,11 +8,19 @@ from inhouse_bot.cogs.cogs_utils import get_player, role_not_understood
 from tabulate import tabulate
 import inflect
 import dateparser
+import matplotlib
+import matplotlib.pyplot as plt
+import mplcyberpunk
+import tempfile
 
+from inhouse_bot.sqlite.game import Game
+from inhouse_bot.sqlite.game_participant import GameParticipant
 from inhouse_bot.sqlite.player_rating import PlayerRating
 from inhouse_bot.sqlite.sqlite_utils import roles_list
 
 engine = inflect.engine()
+matplotlib.use('Agg')
+plt.style.use("cyberpunk")
 
 
 class StatsCog(commands.Cog, name='Stats'):
@@ -113,7 +124,41 @@ class StatsCog(commands.Cog, name='Stats'):
 
     @commands.command(help_index=4, aliases=['rating_history', 'ratings_history'])
     async def mmr_history(self, ctx: commands.Context, date_start=None):
-        pass
+        if not date_start:
+            date_start = dateparser.parse('one month ago')
+        else:
+            date_start = dateparser.parse(date_start)
+
+        player = get_player(self.bot.session, ctx)
+
+        participants = self.bot.session.query(Game, GameParticipant)\
+            .join(GameParticipant)\
+            .filter(GameParticipant.player_id == player.discord_id)\
+            .filter(Game.date > date_start)
+
+        mmr_history = defaultdict(lambda: {'dates': [], 'mmr': []})
+
+        for game, participant in participants:
+            mmr_history[participant.role]['dates'].append(game.date)
+            mmr_history[participant.role]['mmr'].append(participant.mmr)
+
+        legend = []
+        for role in mmr_history:
+            mmr_history[role]['dates'].append(dateparser.parse('now'))
+            mmr_history[role]['mmr'].append(player.ratings[role].mmr)
+
+            plt.plot(mmr_history[role]['dates'], mmr_history[role]['mmr'])
+            legend.append(role)
+
+        plt.legend(legend)
+        plt.title(f'MMR variation in the last month for {player.name}')
+        mplcyberpunk.add_glow_effects()
+
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp:
+            plt.savefig(temp.name)
+            file = discord.File(temp.name, filename=temp.name)
+            await ctx.send(file=file)
+            temp.close()
 
     @commands.command(help_index=5, aliases=['champs_stats', 'champion_stats', 'champ_stat'])
     async def champions_stats(self, ctx: commands.Context, date_start=None):
@@ -124,20 +169,18 @@ class StatsCog(commands.Cog, name='Stats'):
 
         date_start = dateparser.parse(date_start) if date_start else date_start
 
-        stats = player.get_champions_stats(self.bot.session, date_start, self.bot.lit)
+        stats = player.get_champions_stats(self.bot.session, date_start)
 
-        # TODO=
         table = []
-        for role in stats:
-            table.append([stats[role][0],
-                          f'{role.capitalize()}',
-                          f'{player.ratings[role].mmr:.2f}',
-                          stats[role].games,
-                          f'{stats[role].wins / stats[role].games * 100:.2f}%'])
+        for champion_id in stats:
+            table.append([self.bot.lit.get_name(champion_id),
+                          f'{stats[champion_id].role.capitalize()}',
+                          stats[champion_id].games,
+                          f'{stats[champion_id].wins / stats[champion_id].games * 100:.2f}%'])
 
         # Sorting the table by games total
         table = sorted(table, key=lambda x: -x[2])
         # Adding the header last to not screw with the sorting
-        table.insert(0, ['Role', 'MMR', 'Games', 'Winrate'])
+        table.insert(0, ['Champion', 'Role', 'Games', 'Winrate'])
 
         await ctx.send(f'```{tabulate(table, headers="firstrow")}```')

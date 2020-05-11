@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, ForeignKey, Float
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, team_enum, role_enum
 
@@ -23,6 +24,11 @@ class GameParticipant(sql_alchemy_base):
     # Pre-game TrueSkill values
     trueskill_mu = Column(Float)
     trueskill_sigma = Column(Float)
+
+    # Conservative rating for MMR display
+    @hybrid_property
+    def mmr(self):
+        return self.trueskill_mu - 3 * self.trueskill_sigma
 
     # ORM relationship to the player table
     player = relationship('Player', backref="participant_objects")

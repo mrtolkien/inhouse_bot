@@ -16,6 +16,7 @@ lol-id-tools = "*"
 dpytest = "*"
 inflect = "*"
 dateparser = "*"
+mplcyberpunk = "*"
 
 [requires]
 python_version = "3.8"

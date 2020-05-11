@@ -80,7 +80,7 @@ class Player(sql_alchemy_base):
 
         return {row.role: row for row in query}
 
-    def get_champions_stats(self, session, date_start, lit) -> dict:
+    def get_champions_stats(self, session, date_start) -> dict:
         """
         Returns stats for all champions for the player
 
@@ -89,7 +89,7 @@ class Player(sql_alchemy_base):
         :return: [role]['games', 'wins',]
         """
         query = session.query(
-            lit.get_name(GameParticipant.champion_id),
+            GameParticipant.champion_id,
             GameParticipant.role,
             func.count().label('games'),
             type_coerce(func.sum(GameParticipant.team == Game.winner), Integer).label('wins')) \
@@ -101,4 +101,4 @@ class Player(sql_alchemy_base):
         if date_start:
             query = query.filter(Game.date > date_start)
 
-        return {row.role: row for row in query}
+        return {row.champion_id: row for row in query}

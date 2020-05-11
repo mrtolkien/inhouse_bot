@@ -80,7 +80,7 @@ If you don’t supply the `game_id`, it will apply to your last game.
 
 `!mmr_history` displays a graph of your MMR per role in the past month.
 
-`!champions_stats` returns statistics about the champions you played for the games you informed it.
+`!champions_stats` returns statistics about the champions you played.
 
 # Installation
 ```shell script
@@ -93,6 +93,9 @@ pipenv run python run_bot.py
 # Wanted contributions (2020-05-11)
 - `dpytest` does not support reactions to messages, which means the test functions are currently failing.
 Any help with mocking those would be greatly welcomed.
+
+- The current data flow needs to be slightly reviewed. The easy way is likely to simply store all ongoing games in memory
+before committing them.
 
 - The matchmaking algorithm is currently fully brute-force and can definitely be improved in terms of calculation time.
 
