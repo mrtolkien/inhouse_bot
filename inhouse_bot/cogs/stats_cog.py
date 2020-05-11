@@ -32,7 +32,7 @@ class StatsCog(commands.Cog, name='stats'):
         for role in player.ratings:
             rating = player.ratings[role]
             try:
-                text_lines.append(f'Your rating for {rating.role} is '
+                text_lines.append(f'{player.name}’s rating for {rating.role} is '
                                   f'{rating.trueskill_mu - 3 * rating.trueskill_sigma:.1f} '
                                   f'over {player_games_count[role] or 0} games')
             except KeyError:

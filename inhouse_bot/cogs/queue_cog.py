@@ -276,10 +276,12 @@ class QueueCog(commands.Cog, name='queue'):
 
         game = Game(players)
         self.bot.session.add(game)
+        self.bot.session.commit()
 
         if not await self.ready_check(ctx, players, mismatch, game):
             # If ready_check returns False, we restart matchmaking as the queue changed
-            self.bot.session.rollback()
+            self.bot.session.delete(game)
+            self.bot.session.commit()
             await self.matchmaking_process(ctx)
             return
 
@@ -349,8 +351,7 @@ class QueueCog(commands.Cog, name='queue'):
         except asyncio.TimeoutError:
             pass
 
-        await ctx.send('The game has been cancelled and everybody removed from queue. Please queue again.',
-                       delete_after=30)
+        await ctx.send('The game has been cancelled. You can queue again.')
         return False
 
     async def score_game(self, ctx, result: bool):
@@ -369,13 +370,13 @@ class QueueCog(commands.Cog, name='queue'):
             warnings.warn('A player is trying to change a game’s result.')
 
             warning_message = await ctx.send(f'**⚠️⚠️⚠️ Game result conflict for game {game.id} ⚠️⚠️⚠️**\n'
-                                             f'If you really want to change the result, react to the message with ⚠️',
+                                             f'If you really want to change the result, react to the message with ⚠️\n',
                                              delete_after=30)
             await warning_message.add_reaction('⚠️')
 
             def check(received_reaction: discord.Reaction, sending_user: discord.User):
                 return received_reaction.message.id == warning_message.id and \
-                       sending_user.id in ctx.author.id and \
+                       sending_user.id == ctx.author.id and \
                        str(received_reaction.emoji) == '⚠️'
 
             try:
