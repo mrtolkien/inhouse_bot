@@ -1,6 +1,11 @@
+from typing import List, Tuple
+
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.collections import attribute_mapped_collection
+
+from inhouse_bot.sqlite.game import Game
+from inhouse_bot.sqlite.game_participant import GameParticipant
 from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base
 import discord
 
@@ -22,10 +27,14 @@ class Player(sql_alchemy_base):
                            backref='player',
                            cascade="all, delete-orphan")
 
-    # TODO Define games as a relationship
+    # Working relationship, but unused atm since I want to be able to limit
+    participants = relationship('GameParticipant',
+                                foreign_keys=[discord_id],
+                                primaryjoin='and_(GameParticipant.player_id == Player.discord_id)',
+                                uselist=True)
 
     def __repr__(self):
-        return f'<Player: player_id={self.player_id}>'
+        return f'<Player: player_id={self.discord_id}>'
 
     def __init__(self, user: discord.User):
         # Basic discord info
@@ -35,19 +44,25 @@ class Player(sql_alchemy_base):
         # We use display_name to get the server-specific name
         self.name = user.display_name
 
-    def get_last_game_and_participant(self, session):
+    def get_last_game(self, session) -> List[Tuple[Game, GameParticipant]]:
         """
         Returns the last game and game_participant for the player.
         """
-        from inhouse_bot.sqlite.game import Game
-        from inhouse_bot.sqlite.game_participant import GameParticipant
+        return self._get_games_query(session).first()
 
+    def get_latest_games(self, session, games_limit) -> List[Tuple[Game, GameParticipant]]:
+        """
+        Returns a list of (Game, GameParticipant) representing the last X games of the player
+        """
+        return self._get_games_query(session).limit(games_limit).all()
+
+    def _get_games_query(self, session):
         return session.query(Game, GameParticipant) \
             .join(GameParticipant) \
             .filter(GameParticipant.player_id == self.discord_id) \
-            .order_by(Game.date.desc()) \
-            .first()
+            .order_by(Game.date.desc())
 
+    # TODO Try to get a better type hint without circular imports
     def get_roles_stats(self, session) -> dict:
         """
         Returns stats for all roles for the player
@@ -63,9 +78,9 @@ class Player(sql_alchemy_base):
             GameParticipant.role,
             func.count().label('games'),
             type_coerce(func.sum(GameParticipant.team == Game.winner), Integer).label('wins')) \
-                .select_from(Game) \
-                .join(GameParticipant) \
-                .filter(GameParticipant.player_id == self.discord_id) \
-                .group_by(GameParticipant.role)
+            .select_from(Game) \
+            .join(GameParticipant) \
+            .filter(GameParticipant.player_id == self.discord_id) \
+            .group_by(GameParticipant.role)
 
         return {row.role: row for row in query}

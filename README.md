@@ -37,11 +37,13 @@ The rating system is based on [Microsoft TrueSkill](https://en.wikipedia.org/wik
 
 `!leave all` removes you from all channel’s queue for all roles.
 
-`!won [champion_name]` scores your last game as a win for your team, and you can optionally inform which champion you 
-used for winrate tracking.
+`!won` scores your last game as a win for your team.
 
-`!lost [champion_name]` is the counterpart to `!won`. If there is a conflict in the last game’s result, the bot will
+`!lost` is the counterpart to `!won`. If there is a conflict in the last game’s result, the bot will
 ask for validation.
+
+`![won|lost] [champion_name] [game_id]` scores the game, and you can informs which champion you 
+used for winrate tracking. If you don’t supply the `game_id`, it will apply to your last game.
 
 `!view_queue` shows the queue in the current channel.
 
@@ -50,6 +52,8 @@ ask for validation.
 `!cancel_game` cancels your ongoing game, requiring validation from at least 6 players in the game.
 
 # Stats features
+`!history` returns the match history of your last 20 games.
+
 `!rank` returns your server-wide rank.
 
 `!mmr` returns your current MMR.

@@ -72,6 +72,6 @@ class Game(sql_alchemy_base):
             for player_rating in team:
                 player_rating.trueskill_mu = team[player_rating].mu
                 player_rating.trueskill_sigma = team[player_rating].sigma
-                self.bot.session.add(player_rating)
+                session.add(player_rating)
 
         session.commit()

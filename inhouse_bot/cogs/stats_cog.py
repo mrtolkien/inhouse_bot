@@ -1,8 +1,9 @@
 from discord.ext import commands
-from sqlalchemy import func
 from inhouse_bot.cogs.cogs_utils import get_player
-from inhouse_bot.sqlite.game_participant import GameParticipant
 from tabulate import tabulate
+import inflect
+
+engine = inflect.engine()
 
 
 class StatsCog(commands.Cog, name='stats'):
@@ -22,9 +23,10 @@ class StatsCog(commands.Cog, name='stats'):
         table = []
         for role in player.ratings:
             rating = player.ratings[role]
-            table.append([f'{rating.role.capitalize()}', rating.get_rank(self.bot.session)])
+            table.append([f'{rating.role.capitalize()}',
+                          engine.ordinal(rating.get_rank(self.bot.session))])
 
-        print(table)
+        # Sorting the table by rank
         table = sorted(table, key=lambda x: x[1])
         table.insert(0, ['Role', 'Rank'])
 
@@ -39,8 +41,6 @@ class StatsCog(commands.Cog, name='stats'):
 
         stats = player.get_roles_stats(self.bot.session)
 
-        print(stats)
-
         table = []
         for role in stats:
             table.append([f'{role.capitalize()}',
@@ -48,8 +48,30 @@ class StatsCog(commands.Cog, name='stats'):
                           stats[role].games,
                           f'{stats[role].wins / stats[role].games * 100:.2f}%'])
 
-        print(table)
-        table = sorted(table, key=lambda x: x[2])
+        # Sorting the table by games total
+        table = sorted(table, key=lambda x: -x[2])
+        # Adding the header last to not screw with the sorting
         table.insert(0, ['Role', 'MMR', 'Games', 'Winrate'])
+
+        await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
+
+    @commands.command(help_index=2, aliases=['match_history', 'mh'])
+    async def history(self, ctx: commands.Context, display_games=20):
+        """
+        Returns your MMR, games total, and winrate for all roles.
+
+        display_games specifies how many games to show and is 20 by default.
+        """
+        player = get_player(self.bot.session, ctx)
+
+        games_list = player.get_latest_games(self.bot.session, display_games)
+
+        table = [['Game ID', 'Date', 'Role', 'Champion', 'Result']]
+        for game, participant in games_list:
+            table.append([game.id,
+                          game.date.date(),
+                          participant.role,
+                          self.bot.lit.get_name(participant.champion_id) or 'Unknown',
+                          'Win' if game.winner == participant.team else 'Loss'])
 
         await ctx.send(f'```{tabulate(table, headers="firstrow")}```')

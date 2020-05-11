@@ -42,7 +42,7 @@ class QueueCog(commands.Cog, name='queue'):
 
         # First, we check if the last game of the player is still ongoing.
         try:
-            game, participant = player.get_last_game_and_participant(self.bot.session)
+            game, participant = player.get_last_game(self.bot.session)
             if not game.winner:
                 await ctx.send('Your last game looks to be ongoing. '
                                'Please use !won or !lost to inform the result if the game is over.',
@@ -127,7 +127,7 @@ class QueueCog(commands.Cog, name='queue'):
         """
         player = get_player(self.bot.session, ctx)
 
-        game, participant = player.get_last_game_and_participant(self.bot.session)
+        game, participant = player.get_last_game(self.bot.session)
         game = self.bot.session.query(Game).filter(Game.id == game.id).one()
 
         # If the game is already done and scored, we don’t offer cancellation anymore.
@@ -184,7 +184,7 @@ class QueueCog(commands.Cog, name='queue'):
         logging.info(cancel_notice)
         await ctx.send(cancel_notice)
 
-    @commands.command(help_index=2)
+    @commands.command(help_index=2, aliases=['win'])
     async def won(self, ctx: commands.context, *args):
         """
         Scores your last game as a win and informs the champion used.
@@ -201,10 +201,9 @@ class QueueCog(commands.Cog, name='queue'):
             !won missfortune
             !won reksai 10
         """
-        await self.score_game(ctx, True)
-        await self.update_champion(ctx, args)
+        await self.score_game_and_update_champion(ctx, True, args)
 
-    @commands.command(help_index=3)
+    @commands.command(help_index=3, aliases=['loss', 'defeat', 'ff'])
     async def lost(self, ctx: commands.context, *args):
         """
         Scores your last game as a loss and informs the champion used.
@@ -221,8 +220,7 @@ class QueueCog(commands.Cog, name='queue'):
             !won missfortune
             !won reksai 10)
         """
-        await self.score_game(ctx, False)
-        await self.update_champion(ctx, args)
+        await self.score_game_and_update_champion(ctx, False, args)
 
     def add_player_to_queue(self, player, role, channel_id):
         if role not in player.ratings:
@@ -403,13 +401,26 @@ class QueueCog(commands.Cog, name='queue'):
         await ctx.send('The game has been cancelled. You can queue again.')
         return False
 
-    async def score_game(self, ctx, result: bool):
+    async def score_game_and_update_champion(self, ctx, result: bool, args):
         """
         Scores the player’s last game with the given result.
         """
+        if args:
+            try:
+                game_id = int(args[1])
+            except TypeError:
+                await ctx.send('Arguments not understood. See `!help won` for more information.')
+                return
+            except IndexError:
+                game_id = None
+
+            await self.update_champion(ctx, args[0], game_id)
+            if game_id:
+                return
+
         player = get_player(self.bot.session, ctx)
 
-        game, game_participant = player.get_last_game_and_participant(self.bot.session)
+        game, game_participant = player.get_last_game(self.bot.session)
         previous_winner = game.winner
 
         game.winner = 'blue' if game_participant.team == 'blue' and result else 'red'
@@ -448,26 +459,23 @@ class QueueCog(commands.Cog, name='queue'):
         logging.info(message)
         await ctx.send(message)
 
-    async def update_champion(self, ctx, args):
-        if not args:
-            return
-
-        champion_id, ratio = self.bot.lit.get_id(args[0], input_type='champion', return_ratio=True)
+    async def update_champion(self, ctx, input_name, game_id):
+        champion_id, ratio = self.bot.lit.get_id(input_name, input_type='champion', return_ratio=True)
 
         if ratio < 75:
             await ctx.send('Champion name was not understood properly.\nUse `!help won` for more information.',
-                           delete_after=10)
+                           delete_after=30)
             return
 
         player = get_player(self.bot.session, ctx)
-        try:
+        if game_id:
             game, participant = self.bot.session.query(Game, GameParticipant).join(GameParticipant) \
-                .filter(Game.id == args[1]) \
-                .filter(GameParticipant.player_id == player) \
+                .filter(Game.id == game_id) \
+                .filter(GameParticipant.player_id == player.discord_id) \
                 .order_by(Game.date.desc()) \
                 .first()
-        except IndexError:
-            game, participant = player.get_last_game_and_participant(self.bot.session)
+        else:
+            game, participant = player.get_last_game(self.bot.session)
 
         participant.champion_id = champion_id
         self.bot.session.merge(participant)
