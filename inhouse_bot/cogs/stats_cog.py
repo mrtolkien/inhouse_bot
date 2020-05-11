@@ -91,11 +91,13 @@ class StatsCog(commands.Cog, name='Stats'):
 
         date_start = dateparser.parse(date_start) if date_start else date_start
 
-        stats = player.get_roles_stats(self.bot.session, date_start)
+        stats = player.get_champions_stats(self.bot.session, date_start, self.bot.lit)
 
+        # TODO
         table = []
         for role in stats:
-            table.append([f'{role.capitalize()}',
+            table.append([stats[role][0],
+                          f'{role.capitalize()}',
                           f'{player.ratings[role].mmr:.2f}',
                           stats[role].games,
                           f'{stats[role].wins / stats[role].games * 100:.2f}%'])

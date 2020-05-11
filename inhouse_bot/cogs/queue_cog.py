@@ -396,17 +396,18 @@ class QueueCog(commands.Cog, name='Queue'):
 
         if game.winner:
             # Conflict between entered results and current results
-            warning_message = await ctx.send(
-                f'**Your last game’s result was already entered and validated**',
-                delete_after=30)
+            await ctx.send(f'**Your last game’s result was already entered and validated**', delete_after=30)
+            return
 
         game.winner = 'blue' if game_participant.team == 'blue' and result else 'red'
 
         ready_check_message = await ctx.send(f'{player.name} wants to score game {game.id} as a win for {game.winner}\n'
-                                             f'{", ".join(["<@{}>".format(p.discord_id) for p in game.participants])}\n'
-                                             f'Result will be validated once 6 players from the game press ✅.')
+                                             f'{", ".join(["<@{}>".format(p.player_id) for p in game.participants.values()])}\n'
+                                             f'Result will be validated once 6 players from the game press ✅.',
+                                             delete_after=120)
 
-        if not await self.checkmark_validation(ready_check_message, [p.discord_id for p in game.participants], 6):
+        if not await self.checkmark_validation(ready_check_message, [p.player_id for p in game.participants.values()], 6):
+            await ctx.send('Game result input cancelled.', delete_after=60)
             return
 
         self.bot.session.commit()

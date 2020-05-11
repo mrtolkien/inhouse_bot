@@ -86,7 +86,7 @@ class Player(sql_alchemy_base):
 
         return {row.role: row for row in query}
 
-    def get_champions_stats(self, session, lit, date_start) -> dict:
+    def get_champions_stats(self, session, date_start, lit) -> dict:
         """
         Returns stats for all champions for the player
 
