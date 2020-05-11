@@ -27,6 +27,7 @@ class QueueCog(commands.Cog, name='queue'):
         :param bot: the bot to attach the cog to
         """
         self.bot = bot
+        # [channel_id][role][list of Player objects]
         self.channel_queues = defaultdict(lambda: {role: set() for role in roles_list})
 
     @commands.command(help_index=0)
