@@ -1,7 +1,7 @@
 import itertools
 import logging
 from discord.ext import commands
-from discord.ext.commands import DefaultHelpCommand
+from discord.ext.commands import DefaultHelpCommand, Paginator
 from inhouse_bot.cogs.queue_cog import QueueCog
 from inhouse_bot.cogs.stats_cog import StatsCog
 from inhouse_bot.common_utils import discord_token
@@ -52,9 +52,9 @@ class IndexedHelpCommand(DefaultHelpCommand):
 
         no_category = '\u200b{0.no_category}:'.format(self)
 
-        def get_category(command, *, no_category=no_category):
+        def get_category(command, *, no_category_=no_category):
             cog = command.cog
-            return cog.qualified_name + ':' if cog is not None else no_category
+            return cog.qualified_name + ':' if cog is not None else no_category_
 
         filtered = await self.filter_commands(bot.commands, sort=True, key=get_category)
         max_size = self.get_max_size(filtered)
@@ -73,4 +73,10 @@ class IndexedHelpCommand(DefaultHelpCommand):
             self.paginator.add_line()
             self.paginator.add_line(note)
 
-        await self.send_pages()
+        # Not using send_pages to add a custom footnote.
+        destination = self.get_destination()
+        for page in self.paginator.pages:
+            await destination.send(page + '\nFull help can be found at https://github.com/mrtolkien/inhouse_bot')
+
+    def get_ending_note(self):
+        return f"Type {self.clean_prefix}help command for more info on a command.\n"

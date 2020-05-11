@@ -124,6 +124,9 @@ class StatsCog(commands.Cog, name='Stats'):
 
     @commands.command(help_index=4, aliases=['rating_history', 'ratings_history'])
     async def mmr_history(self, ctx: commands.Context, date_start=None):
+        """
+        Displays a graph of your MMR history over the past month.
+        """
         if not date_start:
             date_start = dateparser.parse('one month ago')
         else:
