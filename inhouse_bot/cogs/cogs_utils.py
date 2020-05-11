@@ -9,3 +9,7 @@ def get_player(session, ctx) -> Player:
     session.commit()
 
     return player
+
+
+role_not_understood = 'Role name was not properly understood. ' \
+                      'Working values are top, jungle, mid, bot, and support.'

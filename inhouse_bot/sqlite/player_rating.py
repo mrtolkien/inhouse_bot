@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, ForeignKey
+from sqlalchemy import Column, Integer, Float, ForeignKey, func
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, role_enum
@@ -35,11 +35,20 @@ class PlayerRating(sql_alchemy_base):
         self.trueskill_sigma = 25 / 3
 
     def get_rank(self, session) -> int:
-        from sqlalchemy import func
-
         rank_query = session.query(func.count().label('rank'))\
             .select_from(PlayerRating) \
             .filter(PlayerRating.role == self.role, PlayerRating.mmr > self.mmr)
 
         # Need to count yourself as well!
         return rank_query.one().rank + 1
+
+    def get_games(self, session) -> int:
+        from inhouse_bot.sqlite.game_participant import GameParticipant
+
+        rank_query = session.query(func.count().label('games'))\
+            .select_from(GameParticipant) \
+            .filter(GameParticipant.role == self.role,
+                    GameParticipant.player_id == self.player_id)
+
+        # Need to count yourself as well!
+        return rank_query.one().games

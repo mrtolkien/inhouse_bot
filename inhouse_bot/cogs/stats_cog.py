@@ -1,8 +1,13 @@
 from discord.ext import commands
-from inhouse_bot.cogs.cogs_utils import get_player
+from rapidfuzz import process
+
+from inhouse_bot.cogs.cogs_utils import get_player, role_not_understood
 from tabulate import tabulate
 import inflect
 import dateparser
+
+from inhouse_bot.sqlite.player_rating import PlayerRating
+from inhouse_bot.sqlite.sqlite_utils import roles_list
 
 engine = inflect.engine()
 
@@ -14,26 +19,7 @@ class StatsCog(commands.Cog, name='Stats'):
         """
         self.bot = bot
 
-    @commands.command(help_index=0, aliases=['ranks', 'ranking'])
-    async def rank(self, ctx: commands.Context):
-        """
-        Returns your global rank for all roles.
-        """
-        player = get_player(self.bot.session, ctx)
-
-        table = []
-        for role in player.ratings:
-            rating = player.ratings[role]
-            table.append([f'{rating.role.capitalize()}',
-                          engine.ordinal(rating.get_rank(self.bot.session))])
-
-        # Sorting the table by rank
-        table = sorted(table, key=lambda x: x[1])
-        table.insert(0, ['Role', 'Rank'])
-
-        await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
-
-    @commands.command(help_index=1, aliases=['match_history', 'mh'])
+    @commands.command(help_index=0, aliases=['match_history', 'mh'])
     async def history(self, ctx: commands.Context, display_games=20):
         """
         Returns your match history in a table.
@@ -54,8 +40,51 @@ class StatsCog(commands.Cog, name='Stats'):
 
         await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
 
-    @commands.command(help_index=2, aliases=['ratings', 'rating', 'MMR', 'mmr'])
-    async def stats(self, ctx: commands.Context, date_start=None):
+    @commands.command(help_index=1, aliases=['ranks'])
+    async def rank(self, ctx: commands.Context):
+        """
+        Returns your global rank for all roles.
+        """
+        player = get_player(self.bot.session, ctx)
+
+        table = []
+        for role in player.ratings:
+            rating = player.ratings[role]
+            table.append([f'{rating.role.capitalize()}',
+                          engine.ordinal(rating.get_rank(self.bot.session))])
+
+        # Sorting the table by rank
+        table = sorted(table, key=lambda x: x[1])
+        table.insert(0, ['Role', 'Rank'])
+
+        await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
+
+    @commands.command(help_index=2, aliases=['rankings'])
+    async def ranking(self, ctx: commands.Context, role):
+        """
+        Returns the top 20 players for the selected role.
+        """
+        clean_role, score = process.extractOne(role, roles_list)
+        if score < 80:
+            await ctx.send(role_not_understood, delete_after=30)
+
+        role_ranking = self.bot.session.query(PlayerRating). \
+            filter(PlayerRating.role == clean_role). \
+            order_by(- PlayerRating.mmr). \
+            limit(20)
+
+        table = [['Rank', 'Name', 'MMR', 'Games']]
+
+        for rank, rating in enumerate(role_ranking):
+            table.append([engine.ordinal(rank+1),
+                          rating.player.name,
+                          f'{rating.mmr:.2f}',
+                          rating.get_games(self.bot.session)])
+
+        await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
+
+    @commands.command(help_index=3, aliases=['MMR', 'stats', 'rating', 'ratings'])
+    async def mmr(self, ctx: commands.Context, date_start=None):
         """
         Returns your MMR, games total, and winrate for all roles.
         date_start can be used to define a lower limit on stats.
@@ -82,8 +111,12 @@ class StatsCog(commands.Cog, name='Stats'):
 
         await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
 
-    @commands.command(help_index=3, aliases=['champions_stats', 'champs'])
-    async def champions(self, ctx: commands.Context, date_start=None):
+    @commands.command(help_index=4, aliases=['rating_history', 'ratings_history'])
+    async def mmr_history(self, ctx: commands.Context, date_start=None):
+        pass
+
+    @commands.command(help_index=5, aliases=['champs_stats', 'champion_stats', 'champ_stat'])
+    async def champions_stats(self, ctx: commands.Context, date_start=None):
         """
         Returns your games total and winrate for all champions.
         """
@@ -93,7 +126,7 @@ class StatsCog(commands.Cog, name='Stats'):
 
         stats = player.get_champions_stats(self.bot.session, date_start, self.bot.lit)
 
-        # TODO
+        # TODO=
         table = []
         for role in stats:
             table.append([stats[role][0],

@@ -3,18 +3,35 @@ A Discord bot to handle League of Legends in-house games, with role queue, balan
 
 # Basic use
 ```
-# Enter the channel’s matchamking queue
+# Enter the channel’s matchmaking queue
 !queue mid
 >>> 🇲
 
 # Accept queue by reacting to the ready check message
+>>> ✅✅✅✅✅✅✅✅✅✅✅
+>>> Game 1 has started.
 
-# Games can be scored with !won and !lost, and you can optionally inform the champion you used
-!won riven
->>> Game 1 has been scored as a win for blue and ratings have been updated.
+# Games can be scored with !won and !lost
+!won
+>>> ✅✅✅✅✅✅✅
+>>> Game 1 has been scored as a win for blue and ratings have been updated
 
-!rating
->>> Your rating for top is 2.6 over 1 game
+# Champion played can be added with !champion
+!champion riven
+>>> Champion for game 1 set to Riven for Tolki
+
+# Your server-wide rank can be seen with !rank
+# You can see top players with !ranking
+!rank
+Role     Rank
+-------  ------
+Jungle   1st
+
+# MMR and winrate per role can be accessed with !stats
+!stats
+Role      MMR    Games  Winrate
+------  -----  -------  ---------
+Jungle   1.43        2  50.00%
 ```
 
 # Use case and behaviour
@@ -53,13 +70,17 @@ If you don’t supply the `game_id`, it will apply to your last game.
 `!admin_score game_id winner` is an admin-only command that scores the game without asking for validation.
 
 # Stats features
-`!history` returns the match history of your last 20 games.
+`!history` returns your match history.
 
 `!rank` returns your server-wide rank.
+
+`!ranking role` returns the top 20 players in the given role.
 
 `!mmr` returns your current MMR.
 
 `!mmr_history` displays a graph of your MMR per role in the past month.
+
+`!champions_stats` returns statistics about the champions you played for the games you informed it.
 
 # Installation
 ```shell script
@@ -70,7 +91,7 @@ pipenv run python run_bot.py
 ```
 
 # Wanted contributions (2020-05-11)
-- `dpytest` doesn’t support reactions to messages, which means the test functions are currently failing.
+- `dpytest` does not support reactions to messages, which means the test functions are currently failing.
 Any help with mocking those would be greatly welcomed.
 
 - The matchmaking algorithm is currently fully brute-force and can definitely be improved in terms of calculation time.

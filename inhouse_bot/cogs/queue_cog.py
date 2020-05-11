@@ -11,7 +11,7 @@ from discord.ext import commands
 from rapidfuzz import process
 from tabulate import tabulate
 
-from inhouse_bot.cogs.cogs_utils import get_player
+from inhouse_bot.cogs.cogs_utils import get_player, role_not_understood
 from inhouse_bot.common_utils import trueskill_blue_side_winrate
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
@@ -61,9 +61,7 @@ class QueueCog(commands.Cog, name='Queue'):
                 clean_roles.add(clean_role)
 
         if not clean_roles:
-            await ctx.send('Role name was not properly understood. '
-                           'Working values are top, jungle, mid, bot, and support.',
-                           delete_after=10)
+            await ctx.send(role_not_understood, delete_after=30)
             return
 
         for role in clean_roles:
