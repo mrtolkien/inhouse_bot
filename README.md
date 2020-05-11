@@ -1,6 +1,9 @@
 # LoL in-house bot
 A Discord bot to handle League of Legends in-house games, with role queue, balanced matchmaking, and basic stats.
 
+# Demo
+![Demo](inhouse_bot_demo.gif)
+
 # Basic use
 ```
 # Enter the channel’s matchmaking queue
