@@ -35,4 +35,15 @@ class Player(sql_alchemy_base):
         # We use display_name to get the server-specific name
         self.name = user.display_name
 
-    # TODO Define get_last_game_and_participant here
+    def get_last_game_and_participant(self, session):
+        """
+        Returns the last game and game_participant for the player.
+        """
+        from inhouse_bot.sqlite.game import Game
+        from inhouse_bot.sqlite.game_participant import GameParticipant
+
+        return session.query(Game, GameParticipant) \
+            .join(GameParticipant) \
+            .filter(GameParticipant.player_id == self.discord_id) \
+            .order_by(Game.date.desc()) \
+            .first()

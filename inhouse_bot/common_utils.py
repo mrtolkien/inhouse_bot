@@ -5,14 +5,23 @@ import trueskill
 
 # Folders utilities
 base_folder = os.path.join(os.path.expanduser("~"), '.config', 'inhouse_bot')
+token_location = os.path.join(base_folder, 'discord_token.txt')
 
 if not os.path.exists(base_folder):
     os.makedirs(base_folder)
 
-# Discord token
-with open(os.path.join(base_folder, 'discord_token.txt')) as file:
-    discord_token = file.read()
-# TODO Output at least some help if the file is not found
+# Discord token acquisition
+try:
+    with open(token_location) as file:
+        discord_token = file.read()
+except FileNotFoundError:
+    print(f'Discord token not found\n'
+          f'If you don’t have one, you can create it at https://discord.com/developers/applications\n'
+          f'It will be saved in clear text at {os.path.join(base_folder, "discord_token.txt")}\n'
+          f'Please input the bot’s Discord token:\n\n')
+    discord_token = input()
+    with open(token_location, 'w+') as file:
+        file.write(discord_token)
 
 
 # Trueskill utilities

@@ -6,7 +6,6 @@ import logging
 import os
 
 import discord
-import trueskill
 from discord import Embed
 from discord.ext import commands
 from rapidfuzz import process
@@ -16,9 +15,8 @@ from inhouse_bot.cogs.cogs_utils import get_player
 from inhouse_bot.common_utils import trueskill_blue_side_winrate
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
-from inhouse_bot.sqlite.player import Player
 from inhouse_bot.sqlite.player_rating import PlayerRating
-from inhouse_bot.sqlite.sqlite_utils import get_session, roles_list
+from inhouse_bot.sqlite.sqlite_utils import roles_list
 
 
 class QueueCog(commands.Cog, name='queue'):
@@ -44,7 +42,7 @@ class QueueCog(commands.Cog, name='queue'):
 
         # First, we check if the last game of the player is still ongoing.
         try:
-            game, participant = self.get_last_game_and_participant(player)
+            game, participant = player.get_last_game_and_participant(self.bot.session)
             if not game.winner:
                 await ctx.send('Your last game looks to be ongoing. '
                                'Please use !won or !lost to inform the result if the game is over.',
@@ -123,22 +121,68 @@ class QueueCog(commands.Cog, name='queue'):
         await ctx.send(embed=embed)
 
     @commands.command(help_index=6)
-    @commands.has_permissions(administrator=True)
-    async def cancel_game(self, ctx: commands.context, game_id):
+    async def cancel_game(self, ctx: commands.context):
         """
-        Cancels and voids an ongoing game. Requires the game id from !view_games.
+        Cancels and voids your ongoing game. Require validation from other players in the game.
+        """
+        player = get_player(self.bot.session, ctx)
 
-        Accessible only by server admins.
-        """
-        game = self.bot.session.query(Game).filter(Game.id == game_id).one()
+        game, participant = player.get_last_game_and_participant(self.bot.session)
+        game = self.bot.session.query(Game).filter(Game.id == game.id).one()
+
+        # If the game is already done and scored, we don’t offer cancellation anymore.
+        if game.winner:
+            no_cancel_notice = f'You don’t seem to currently be in a game.\n' \
+                      f'If you want to change your last game’s winner, call `!won` or `!lost`.'
+            logging.info(no_cancel_notice)
+            await ctx.send(no_cancel_notice)
+            return
+
+        ready_check_message = await ctx.send('Trying to cancel the game including {}.\n'
+                                             'If you want to cancel the game, have at least 6 players press ✅.\n'
+                                             'If you did not mean to cancel the game, press ❎.'
+                                             .format(
+            ', '.join(['<@{}>'.format(p.player) for p in game.participants])),
+            delete_after=60)
+
+        await ready_check_message.add_reaction('✅')
+        await ready_check_message.add_reaction('❎')
+
+        players_discord_ids = [p.player.discord_id for p in game.participants]
+
+        # TODO Find a way to remove code duplication with ready_check
+        def checkmark_reaction_check(received_reaction: discord.Reaction, sending_user: discord.User):
+            return received_reaction.message.id == ready_check_message.id and \
+                   sending_user.id in players_discord_ids and \
+                   str(received_reaction.emoji) in ['✅', '❎']
+
+        cancelling_users = set()
+        try:
+            while True:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=checkmark_reaction_check)
+
+                if str(reaction.emoji) == '✅':
+                    logging.info(f'{user} has accepted to cancel the game.')
+                    cancelling_users.add(user.id)
+                    if cancelling_users.__len__() == 6:
+                        continue
+
+                elif str(reaction.emoji) == '❎':
+                    no_cancellation_message = f'{user} has cancelled the cancellation.'
+                    logging.info(no_cancellation_message)
+                    await ctx.send(no_cancellation_message, delete_after=30)
+                    return
+        # We get there if no player pressed the checkmark in the last minute, we cancel
+        except asyncio.TimeoutError:
+            return
 
         self.bot.session.delete(game)
         self.bot.session.commit()
 
-        message = f'Game {game.id} cancelled.'
+        cancel_notice = f'Game {game.id} cancelled.'
 
-        logging.info(message)
-        await ctx.send(message)
+        logging.info(cancel_notice)
+        await ctx.send(cancel_notice)
 
     @commands.command(help_index=2)
     async def won(self, ctx: commands.context, *args):
@@ -257,6 +301,7 @@ class QueueCog(commands.Cog, name='queue'):
             if set(players.values()).__len__() != 10:
                 continue
 
+            # Defining the score as -|0.5-expected_blue_winrate| to be side-agnostic.
             score = -abs(0.5 - trueskill_blue_side_winrate(players))
 
             if score > best_score:
@@ -364,7 +409,7 @@ class QueueCog(commands.Cog, name='queue'):
         """
         player = get_player(self.bot.session, ctx)
 
-        game, game_participant = self.get_last_game_and_participant(player)
+        game, game_participant = player.get_last_game_and_participant(self.bot.session)
         previous_winner = game.winner
 
         game.winner = 'blue' if game_participant.team == 'blue' and result else 'red'
@@ -394,8 +439,9 @@ class QueueCog(commands.Cog, name='queue'):
                            delete_after=10)
             return
 
+        # If we actually want to process the game’s result, we commit the winner to the database.
         self.bot.session.commit()
-        self.update_trueskill(game)
+        game.update_trueskill(self.bot.session)
 
         message = f'Game {game.id} has been scored as a win for {game.winner} and ratings have been updated.'
 
@@ -421,7 +467,7 @@ class QueueCog(commands.Cog, name='queue'):
                 .order_by(Game.date.desc()) \
                 .first()
         except IndexError:
-            game, participant = self.get_last_game_and_participant(player)
+            game, participant = player.get_last_game_and_participant(self.bot.session)
 
         participant.champion_id = champion_id
         self.bot.session.merge(participant)
@@ -432,36 +478,3 @@ class QueueCog(commands.Cog, name='queue'):
 
         logging.info(log_message)
         await ctx.send(log_message, delete_after=10)
-
-    def get_last_game_and_participant(self, player: Player):
-        """
-        Returns the last game and game_participant for the given user.
-        """
-        return self.bot.session.query(Game, GameParticipant)\
-            .join(GameParticipant) \
-            .filter(GameParticipant.player_id == player.discord_id) \
-            .order_by(Game.date.desc()) \
-            .first()
-
-    def update_trueskill(self, game):
-        """
-        Updates the game’s participants TrueSkill values based on the game result.
-        """
-        # participant.trueskill represents pre-game values
-        # p.player.ratings[p.role] is the PlayerRating relevant to the game that was scored
-        team_ratings = {team: {p.player.ratings[p.role]: trueskill.Rating(p.trueskill_mu, p.trueskill_sigma)
-                               for p in game.participants.values() if p.team == team}
-                        for team in ['blue', 'red']}
-
-        if game.winner == 'blue':
-            new_ratings = trueskill.rate([team_ratings['blue'], team_ratings['red']])
-        else:
-            new_ratings = trueskill.rate([team_ratings['red'], team_ratings['blue']])
-
-        for team in new_ratings:
-            for player_rating in team:
-                player_rating.trueskill_mu = team[player_rating].mu
-                player_rating.trueskill_sigma = team[player_rating].sigma
-                self.bot.session.add(player_rating)
-
-        self.bot.session.commit()

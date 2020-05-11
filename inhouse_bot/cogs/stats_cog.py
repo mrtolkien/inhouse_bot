@@ -1,5 +1,4 @@
 from discord.ext import commands
-from discord.ext.commands import CommandInvokeError
 from sqlalchemy import func
 from inhouse_bot.cogs.cogs_utils import get_player
 from inhouse_bot.sqlite.game_participant import GameParticipant
@@ -12,12 +11,10 @@ class StatsCog(commands.Cog, name='stats'):
         """
         self.bot = bot
 
-    @commands.command(help_index=0, aliases=['ratings'])
-    async def rating(self, ctx: commands.Context):
+    @commands.command(help_index=1, aliases=['ratings', 'rating', 'MMR'])
+    async def mmr(self, ctx: commands.Context):
         """
-        Returns your rating for all roles.
-
-        # TODO Return rank as well
+        Returns your MMR for all roles.
         """
         player = get_player(self.bot.session, ctx)
 
@@ -39,3 +36,4 @@ class StatsCog(commands.Cog, name='stats'):
                 continue
 
         await ctx.send('\n'.join(text_lines) or 'No ratings found')
+
