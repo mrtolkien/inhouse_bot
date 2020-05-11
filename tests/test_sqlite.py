@@ -1,6 +1,7 @@
-import logging
 import discord
+import logging
 import pytest
+import discord.ext.test as dpytest
 
 
 @pytest.mark.asyncio
@@ -42,3 +43,41 @@ async def test_player(caplog):
 
     assert session.query(Player).filter(Player.discord_id == test_user.id).one_or_none() is None
     assert session.query(PlayerRating).filter(PlayerRating.player_id == test_user.id).one_or_none() is None
+
+
+@pytest.mark.asyncio
+async def test_game(caplog):
+    """
+    Tests the addition of a game.
+    """
+    # TODO Make this test cleaner
+    from inhouse_bot.inhouse_bot import InhouseBot
+    from inhouse_bot.sqlite.sqlite_utils import get_session
+    from inhouse_bot.sqlite.sqlite_utils import roles_list
+    from inhouse_bot.sqlite.game import Game
+    from inhouse_bot.sqlite.player import Player
+    from inhouse_bot.sqlite.player_rating import PlayerRating
+
+    session = get_session()
+
+    # We create our bot object, a mock server, a mock channel, 10 mock members, and return our cog for testing
+    bot = InhouseBot()
+    dpytest.configure(bot, 1, 1, 10)
+
+    players = {}
+    for member_id in range(0, 10):
+        role = roles_list[member_id % 5]
+        player = Player(dpytest.get_config().members[member_id])
+        rating = PlayerRating(player, role)
+        session.add(player)
+        session.add(rating)
+        session.commit()
+        players['blue' if member_id % 2 else 'red', role] = player
+
+    game = Game(players)
+    session.add(game)
+
+    # Printing ahead of time
+    print(game)
+
+    session.commit()

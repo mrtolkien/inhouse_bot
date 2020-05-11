@@ -28,12 +28,6 @@ class Player(sql_alchemy_base):
                            backref='player',
                            cascade="all, delete-orphan")
 
-    # Working relationship, but unused atm since I want to be able to limit
-    participants = relationship('GameParticipant',
-                                foreign_keys=[discord_id],
-                                primaryjoin='and_(GameParticipant.player_id == Player.discord_id)',
-                                uselist=True)
-
     def __repr__(self):
         return f'<Player: player_id={self.discord_id}>'
 

@@ -16,7 +16,7 @@ from inhouse_bot.common_utils import trueskill_blue_side_winrate
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
 from inhouse_bot.sqlite.player_rating import PlayerRating
-from inhouse_bot.sqlite.sqlite_utils import roles_list
+from inhouse_bot.sqlite.sqlite_utils import roles_list, get_session
 
 
 class QueueCog(commands.Cog, name='Queue'):
@@ -136,7 +136,7 @@ class QueueCog(commands.Cog, name='Queue'):
         logging.info(log_message)
         await ctx.send(log_message, delete_after=10)
 
-    @commands.command(help_index=5)
+    @commands.command(help_index=5, aliases=['view'])
     async def view_queue(self, ctx: commands.Context):
         """
         Shows the active queue in the channel.
@@ -188,11 +188,11 @@ class QueueCog(commands.Cog, name='Queue'):
                                                  'If you want to cancel the game, have at least 6 players press ✅.\n'
                                                  'If you did not mean to cancel the game, press ❎.'
                                                  .format(
-            ', '.join(['<@{}>'.format(p.player) for p in game.participants])),
+            ', '.join(['<@{}>'.format(p.player) for p in game.participants.values()])),
                                                  delete_after=60)
 
         if not await self.checkmark_validation(cancelling_game_message,
-                                               [p.player.discord_id for p in game.participants],
+                                               [p.player.discord_id for p in game.participants.values()],
                                                6):
             # If there’s no validation, we just inform players nothing happened and leave
             no_cancellation_message = f'Cancellation canceled.'
@@ -340,17 +340,17 @@ class QueueCog(commands.Cog, name='Queue'):
         for player in players.values():
             await self.remove_player_from_queue(player, channel_id=ctx.channel.id)
 
+        game_session = get_session()
+
         game = Game(players)
-        self.bot.session.add(game)
-        self.bot.session.commit()
+        game_session.add(game)
 
         if not await self.ready_check(ctx, players, mismatch, game):
             # If the ready check fails, we delete the game and let !queue handle restarting matchmaking.
-            self.bot.session.delete(game)
-            self.bot.session.commit()
             await ctx.send('The game has been cancelled. You can queue again.')
             return
 
+        game_session.commit()
         logging.info(f'Starting game {game.id}')
         await ctx.send(f'Game {game.id} has started!')
 
@@ -397,9 +397,9 @@ class QueueCog(commands.Cog, name='Queue'):
             await ctx.send(f'**Your last game’s result was already entered and validated**', delete_after=30)
             return
 
-        game.winner = 'blue' if game_participant.team == 'blue' and result else 'red'
+        winner = 'blue' if game_participant.team == 'blue' and result else 'red'
 
-        ready_check_message = await ctx.send(f'{player.name} wants to score game {game.id} as a win for {game.winner}\n'
+        ready_check_message = await ctx.send(f'{player.name} wants to score game {game.id} as a win for {winner}\n'
                                              f'{", ".join(["<@{}>".format(p.player_id) for p in game.participants.values()])}\n'
                                              f'Result will be validated once 6 players from the game press ✅.',
                                              delete_after=120)
@@ -408,6 +408,7 @@ class QueueCog(commands.Cog, name='Queue'):
             await ctx.send('Game result input cancelled.', delete_after=60)
             return
 
+        game.winner = winner
         self.bot.session.commit()
         game.update_trueskill(self.bot.session)
 
