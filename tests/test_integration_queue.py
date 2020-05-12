@@ -1,24 +1,6 @@
-import collections
 import logging
 import pytest
 import discord.ext.test as dpytest
-
-
-@pytest.fixture()
-def config():
-    from inhouse_bot.inhouse_bot import InhouseBot
-    from inhouse_bot.sqlite.sqlite_utils import get_session
-
-    session = get_session()
-
-    # We create our bot object, a mock server, a mock channel, 10 mock members, and return our cog for testing
-    bot = InhouseBot()
-    queue_cog = bot.get_cog('queue')
-    dpytest.configure(bot, 1, 1, 10)
-    channel_id = dpytest.get_config().channels[0].id
-    ConfigTuple = collections.namedtuple('config', ['bot', 'queue_cog', 'channel_id', 'session'])
-
-    return ConfigTuple(bot, queue_cog, channel_id, session)
 
 
 @pytest.mark.asyncio
@@ -65,7 +47,7 @@ async def test_accept_matchmaking(caplog, config):
         await dpytest.message('!queue {}'.format(roles_list[member % 5]), member=member)
 
     # Verify the game is properly there
-    game = config.session.query(Game).filter(Game.winner == None).first()
+    game = config.players_session.query(Game).filter(Game.winner == None).first()
     assert game
 
     # Check the queue is empty
@@ -78,7 +60,7 @@ async def test_accept_matchmaking(caplog, config):
     # Re-scores the game, adding champion info
     await dpytest.message('!won riven')
 
-    config.session.refresh(game)
+    config.players_session.refresh(game)
 
     # Verify the game was scored properly
     assert game.winner
@@ -107,8 +89,7 @@ async def test_refuse_matchmaking(caplog, config):
         await dpytest.message('!queue {}'.format(roles_list[member % 5]), member=member)
 
     # Verify the game is properly there
-    game = config.session.query(Game).filter(Game.winner == None).first()
+    game = config.players_session.query(Game).filter(Game.winner == None).first()
     assert game
 
-    # TODO See how to test as admin
-    # await dpytest.message(f'!cancel_game {game.id}')
+    await dpytest.message(f'!cancel_game')

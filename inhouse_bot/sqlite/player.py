@@ -3,11 +3,10 @@ from typing import List, Tuple
 from sqlalchemy import Column, Integer, String, func, type_coerce
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy.sql import label
 
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
-from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base
+from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, get_session
 import discord
 
 
@@ -39,17 +38,20 @@ class Player(sql_alchemy_base):
         # We use display_name to get the server-specific name
         self.name = user.display_name
 
-    def get_last_game(self, session) -> List[Tuple[Game, GameParticipant]]:
+    def get_last_game(self, session=None) -> Tuple[Game, GameParticipant]:
         """
         Returns the last game and game_participant for the player.
         """
+        # TODO This should be a relationship called last_game so it uses the session from the player
+        if not session:     # Allowing user to supply the session for game deletion
+            session = get_session()
         return self._get_games_query(session).first()
 
-    def get_latest_games(self, session, games_limit) -> List[Tuple[Game, GameParticipant]]:
+    def get_latest_games(self, games_limit=20) -> List[Tuple[Game, GameParticipant]]:
         """
         Returns a list of (Game, GameParticipant) representing the last X games of the player
         """
-        return self._get_games_query(session).limit(games_limit).all()
+        return self._get_games_query(get_session()).limit(games_limit).all()
 
     def _get_games_query(self, session):
         return session.query(Game, GameParticipant) \
@@ -58,14 +60,15 @@ class Player(sql_alchemy_base):
             .order_by(Game.date.desc())
 
     # TODO Try to get a better type hint without circular imports
-    def get_roles_stats(self, session, date_start) -> dict:
+    def get_roles_stats(self, date_start=None) -> dict:
         """
         Returns stats for all roles for the player
 
         :param date_start: DateTime to start the stats at
-        :param session: SQLAlchemy session
         :return: [role]['games', 'wins',]
         """
+        session = get_session()
+
         query = session.query(
             GameParticipant.role,
             func.count().label('games'),

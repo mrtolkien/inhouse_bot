@@ -1,10 +1,10 @@
 from collections import defaultdict
+from datetime import datetime
 
 import discord
 from discord.ext import commands
 from rapidfuzz import process
 
-from inhouse_bot.cogs.cogs_utils import get_player, role_not_understood
 from tabulate import tabulate
 import inflect
 import dateparser
@@ -13,18 +13,19 @@ import matplotlib.pyplot as plt
 import mplcyberpunk
 import tempfile
 
+from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
 from inhouse_bot.sqlite.player_rating import PlayerRating
-from inhouse_bot.sqlite.sqlite_utils import roles_list
+from inhouse_bot.sqlite.sqlite_utils import roles_list, get_session
 
-engine = inflect.engine()
+inflect_engine = inflect.engine()
 matplotlib.use('Agg')
 plt.style.use("cyberpunk")
 
 
 class StatsCog(commands.Cog, name='Stats'):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: InhouseBot):
         """
         :param bot: the bot to attach the cog to
         """
@@ -37,9 +38,9 @@ class StatsCog(commands.Cog, name='Stats'):
 
         display_games specifies how many games to show and is 20 by default.
         """
-        player = get_player(self.bot.session, ctx)
+        player = await self.bot.get_player(ctx)
 
-        games_list = player.get_latest_games(self.bot.session, display_games)
+        games_list = player.get_latest_games(display_games)
 
         table = [['Game ID', 'Date', 'Role', 'Champion', 'Result']]
         for game, participant in games_list:
@@ -56,19 +57,21 @@ class StatsCog(commands.Cog, name='Stats'):
         """
         Returns your global rank for all roles.
         """
-        player = get_player(self.bot.session, ctx)
+        player = await self.bot.get_player(ctx)
+        session = get_session()
 
         table = []
         for role in player.ratings:
             rating = player.ratings[role]
             table.append([f'{rating.role.capitalize()}',
-                          engine.ordinal(rating.get_rank(self.bot.session))])
+                          inflect_engine.ordinal(rating.get_rank(session))])
 
         # Sorting the table by rank
         table = sorted(table, key=lambda x: x[1])
         table.insert(0, ['Role', 'Rank'])
 
-        await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
+        await ctx.send(f'Ranks for {player.name}:'
+                       f'```{tabulate(table, headers="firstrow")}```')
 
     @commands.command(help_index=2, aliases=['rankings'])
     async def ranking(self, ctx: commands.Context, role):
@@ -77,9 +80,11 @@ class StatsCog(commands.Cog, name='Stats'):
         """
         clean_role, score = process.extractOne(role, roles_list)
         if score < 80:
-            await ctx.send(role_not_understood, delete_after=30)
+            await ctx.send(self.bot.role_not_understood, delete_after=30)
 
-        role_ranking = self.bot.session.query(PlayerRating). \
+        session = get_session()
+
+        role_ranking = session.query(PlayerRating). \
             filter(PlayerRating.role == clean_role). \
             order_by(- PlayerRating.mmr). \
             limit(20)
@@ -87,12 +92,13 @@ class StatsCog(commands.Cog, name='Stats'):
         table = [['Rank', 'Name', 'MMR', 'Games']]
 
         for rank, rating in enumerate(role_ranking):
-            table.append([engine.ordinal(rank+1),
+            table.append([inflect_engine.ordinal(rank + 1),
                           rating.player.name,
                           f'{rating.mmr:.2f}',
-                          rating.get_games(self.bot.session)])
+                          rating.get_games(session)])
 
-        await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
+        await ctx.send(f'Ranking for {clean_role} is:\n'
+                       f'```{tabulate(table, headers="firstrow")}```')
 
     @commands.command(help_index=3, aliases=['MMR', 'stats', 'rating', 'ratings'])
     async def mmr(self, ctx: commands.Context, date_start=None):
@@ -102,11 +108,11 @@ class StatsCog(commands.Cog, name='Stats'):
 
         !stats "two weeks ago"
         """
-        player = get_player(self.bot.session, ctx)
+        player = await self.bot.get_player(ctx)
 
         date_start = dateparser.parse(date_start) if date_start else date_start
 
-        stats = player.get_roles_stats(self.bot.session, date_start)
+        stats = player.get_roles_stats(date_start)
 
         table = []
         for role in stats:
@@ -132,9 +138,10 @@ class StatsCog(commands.Cog, name='Stats'):
         else:
             date_start = dateparser.parse(date_start)
 
-        player = get_player(self.bot.session, ctx)
+        player = await self.bot.get_player(ctx)
+        session = get_session()
 
-        participants = self.bot.session.query(Game, GameParticipant)\
+        participants = session.query(Game, GameParticipant)\
             .join(GameParticipant)\
             .filter(GameParticipant.player_id == player.discord_id)\
             .filter(Game.date > date_start)
@@ -147,7 +154,8 @@ class StatsCog(commands.Cog, name='Stats'):
 
         legend = []
         for role in mmr_history:
-            mmr_history[role]['dates'].append(dateparser.parse('now'))
+            # We add a data point at the current timestamp with the player’s current MMR
+            mmr_history[role]['dates'].append(datetime.now())
             mmr_history[role]['mmr'].append(player.ratings[role].mmr)
 
             plt.plot(mmr_history[role]['dates'], mmr_history[role]['mmr'])
@@ -168,11 +176,12 @@ class StatsCog(commands.Cog, name='Stats'):
         """
         Returns your games total and winrate for all champions.
         """
-        player = get_player(self.bot.session, ctx)
+        player = await self.bot.get_player(ctx)
+        session = get_session()
 
         date_start = dateparser.parse(date_start) if date_start else date_start
 
-        stats = player.get_champions_stats(self.bot.session, date_start)
+        stats = player.get_champions_stats(session, date_start)
 
         table = []
         for champion_id in stats:

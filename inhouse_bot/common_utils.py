@@ -18,7 +18,7 @@ except FileNotFoundError:
     print(f'Discord token not found\n'
           f'If you don’t have one, you can create it at https://discord.com/developers/applications\n'
           f'It will be saved in clear text at {os.path.join(base_folder, "discord_token.txt")}\n'
-          f'Please input the bot’s Discord token:\n\n')
+          f'Please input the bot’s Discord token:')
     discord_token = input()
     with open(token_location, 'w+') as file:
         file.write(discord_token)

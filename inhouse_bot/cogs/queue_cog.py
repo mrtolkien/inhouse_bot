@@ -1,26 +1,25 @@
 import asyncio
-import warnings
 from collections import defaultdict
 import itertools
 import logging
-import os
+from typing import List, Tuple
 
 import discord
 from discord import Embed
 from discord.ext import commands
 from rapidfuzz import process
 from tabulate import tabulate
-
-from inhouse_bot.cogs.cogs_utils import get_player, role_not_understood
 from inhouse_bot.common_utils import trueskill_blue_side_winrate
+from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
+from inhouse_bot.sqlite.player import Player
 from inhouse_bot.sqlite.player_rating import PlayerRating
 from inhouse_bot.sqlite.sqlite_utils import roles_list, get_session
 
 
 class QueueCog(commands.Cog, name='Queue'):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: InhouseBot):
         """
         :param bot: the bot to attach the cog to
         """
@@ -28,9 +27,11 @@ class QueueCog(commands.Cog, name='Queue'):
         # [channel_id][role][list of Player objects]
         self.channel_queues = defaultdict(lambda: {role: set() for role in roles_list})
 
-        # [discord_id]
-        # TODO Find a smarter to do that, currently adding the game at the beginning of ready_check
-        self.games_in_ready_check_status = set()
+        # [channel_id][message]
+        self.latest_queue_message = {}
+
+        # (discord_id)
+        self.games_in_ready_check = set()
 
     @commands.command(help_index=0)
     async def queue(self, ctx: commands.Context, *, roles):
@@ -42,15 +43,15 @@ class QueueCog(commands.Cog, name='Queue'):
             !queue support
             !queue mid bot
         """
-        player = get_player(self.bot.session, ctx)
+        player = await self.bot.get_player(ctx)
 
         # First, we check if the last game of the player is still ongoing.
         try:
-            game, participant = player.get_last_game(self.bot.session)
+            game, participant = player.get_last_game()
             if not game.winner:
                 await ctx.send('Your last game looks to be ongoing. '
                                'Please use !won or !lost to inform the result if the game is over.',
-                               delete_after=10)
+                               delete_after=self.bot.short_notice_duration)
                 return
         # This happens if the player has not played a game yet as get_last returns None and can’t be unpacked
         except TypeError:
@@ -65,7 +66,7 @@ class QueueCog(commands.Cog, name='Queue'):
                 clean_roles.add(clean_role)
 
         if not clean_roles:
-            await ctx.send(role_not_understood, delete_after=30)
+            await ctx.send(self.bot.role_not_understood, delete_after=self.bot.warning_duration)
             return
 
         for role in clean_roles:
@@ -74,6 +75,8 @@ class QueueCog(commands.Cog, name='Queue'):
         for role in clean_roles:
             # Dirty code to get the emoji related to the letters
             await ctx.message.add_reaction(chr(127462 + (ord(f"{role[0]}") - 97)))
+
+        await self.send_queue(ctx)
 
         await self.matchmaking_process(ctx)
 
@@ -86,7 +89,7 @@ class QueueCog(commands.Cog, name='Queue'):
             !stop_queue
             !stop_queue all
         """
-        player = get_player(self.bot.session, ctx)
+        player = await self.bot.get_player(ctx)
 
         await self.remove_player_from_queue(player, ctx.channel.id if not args else None, ctx)
 
@@ -118,52 +121,49 @@ class QueueCog(commands.Cog, name='Queue'):
         if ratio < 75:
             await ctx.send('Champion name was not understood properly.\n'
                            'Use `!help champion` for more information.',
-                           delete_after=30)
+                           delete_after=self.bot.warning_duration)
             return
 
-        player = get_player(self.bot.session, ctx)
+        player = await self.bot.get_player(ctx)
+        session = get_session()
+
         if game_id:
-            game, participant = self.bot.session.query(Game, GameParticipant).join(GameParticipant) \
+            game, participant = session.query(Game, GameParticipant).join(GameParticipant) \
                 .filter(Game.id == game_id) \
                 .filter(GameParticipant.player_id == player.discord_id) \
                 .order_by(Game.date.desc()) \
                 .first()
         else:
-            game, participant = player.get_last_game(self.bot.session)
+            game, participant = player.get_last_game()
 
         participant.champion_id = champion_id
-        self.bot.session.merge(participant)
 
-        self.bot.session.commit()
+        session.merge(participant)
+        session.commit()
 
         log_message = f'Champion for game {game.id} set to {self.bot.lit.get_name(participant.champion_id)} for {player.name}'
 
         logging.info(log_message)
-        await ctx.send(log_message, delete_after=10)
+        await ctx.send(log_message, delete_after=self.bot.short_notice_duration)
 
     @commands.command(help_index=5, aliases=['view'])
     async def view_queue(self, ctx: commands.Context):
         """
         Shows the active queue in the channel.
         """
-        table = [[]]
-        for role in roles_list:
-            table.append([role.capitalize()] + sorted([p.name for p in self.channel_queues[ctx.channel.id][role]]))
-
-        embed = Embed(title='Current queue', colour=discord.colour.Colour.dark_red())
-        embed.add_field(name='Queue', value=f'```{tabulate(table, tablefmt="plain")}```')
-
-        await ctx.send(embed=embed)
+        await self.send_queue(ctx)
 
     @commands.command(help_index=6)
     async def view_games(self, ctx: commands.context):
         """
         Shows the ongoing inhouse games.
         """
-        games_without_results = self.bot.session.query(Game).filter(Game.winner == None).all()
+        session = get_session()
+
+        games_without_results = session.query(Game).filter(Game.winner == None).all()
 
         if not games_without_results:
-            await ctx.send('No active games found', delete_after=10)
+            await ctx.send('No active games found', delete_after=self.bot.short_notice_duration)
             return
 
         embed = Embed(title='Ongoing games', colour=discord.colour.Colour.dark_blue())
@@ -178,9 +178,10 @@ class QueueCog(commands.Cog, name='Queue'):
         """
         Cancels and voids your ongoing game. Require validation from other players in the game.
         """
-        player = get_player(self.bot.session, ctx)
+        player = await self.bot.get_player(ctx)
 
-        game, participant = player.get_last_game(self.bot.session)
+        session = get_session()
+        game, participant = player.get_last_game(session)
 
         # If the game is already done and scored, we don’t offer cancellation anymore.
         if game.winner:
@@ -191,12 +192,15 @@ class QueueCog(commands.Cog, name='Queue'):
 
         discord_ids_list = [p.player.discord_id for p in game.participants.values()]
 
-        cancelling_game_message = await ctx.send(f'Trying to cancel the game including {self.get_tags(discord_ids_list)}.\n'
-                                                 'If you want to cancel the game, have at least 6 players press ✅.\n'
-                                                 'If you did not mean to cancel the game, press ❎.',
-                                                 delete_after=60)
+        cancelling_game_message = await ctx.send(
+            f'Trying to cancel the game including {self.get_tags(discord_ids_list)}.\n'
+            'If you want to cancel the game, have at least 6 players press ✅.\n'
+            'If you did not mean to cancel the game, press ❎.',
+            delete_after=self.bot.validation_duration)
 
-        if not await self.checkmark_validation(cancelling_game_message, discord_ids_list, 6):
+        cancel, cancelling_players = await self.checkmark_validation(cancelling_game_message, discord_ids_list, 6)
+
+        if not cancel:
             # If there’s no validation, we just inform players nothing happened and leave
             no_cancellation_message = f'Cancellation canceled.'
             logging.info(no_cancellation_message)
@@ -204,8 +208,8 @@ class QueueCog(commands.Cog, name='Queue'):
             return
 
         # If we get here, 6+ players accepted to cancel the game
-        self.bot.session.delete(game)
-        self.bot.session.commit()
+        session.delete(game)
+        session.commit()
 
         cancel_notice = f'Game {game.id} cancelled.'
 
@@ -222,11 +226,13 @@ class QueueCog(commands.Cog, name='Queue'):
             !admin_score 1 blue
             !admin_score 3 red
         """
-        game = self.bot.session.query(Game).filter(Game.id == game_id).one()
+        session = get_session()
+        game = session.query(Game).filter(Game.id == game_id).one()
 
         if game.winner:
-            await ctx.send('It is currently impossible the change the result of a game that was scored because it would '
-                           'create huge issues with rating recalculations.')
+            await ctx.send(
+                'It is currently impossible the change the result of a game that was scored because it would '
+                'create huge issues with rating recalculations.')
             return
 
         if winning_team not in ['blue', 'red']:
@@ -236,37 +242,101 @@ class QueueCog(commands.Cog, name='Queue'):
 
         game.winner = winning_team
 
-        self.bot.session.commit()
-        game.update_trueskill(self.bot.session)
+        session.commit()
+        game.update_trueskill(session)
 
         message = f'Game {game.id} has been scored as a win for {game.winner} and ratings have been updated.'
 
         logging.info(message)
         await ctx.send(message)
 
+    @commands.command(hidden=True)
+    @commands.has_permissions(administrator=True)
+    async def admin_queue(self, ctx, user_id, role):
+        """
+        Admin-only way to queue a specified user.
+
+        user_id is the player’s discord user id (right click -> Copy ID after enabling discord developer tools)
+        role can be any of the valid roles or 'kick'
+
+        Example:
+            !admin_queue 127200016472211456 mid
+            !admin_queue 127200016472211456 kick
+        """
+        # This needs to use the players_session to work with player objects equality
+        player = self.bot.players_session.query(Player).get(user_id) \
+                 or await self.bot.get_player(None, user_id)
+
+        if role == 'kick':
+            await self.remove_player_from_queue(player, ctx.channel.id)
+        else:
+            clean_role, score = process.extractOne(role, roles_list)
+            self.add_player_to_queue(player, clean_role, ctx.channel.id)
+
+        await self.send_queue(ctx)
+
+    @commands.command(hidden=True)
+    @commands.has_permissions(administrator=True)
+    async def reset_queue(self, ctx):
+        """
+        Admin-only way to reset the queue in the current channel
+        """
+        self.channel_queues[ctx.channel.id] = {role: set() for role in roles_list}
+        await self.send_queue(ctx)
+
     def add_player_to_queue(self, player, role, channel_id):
         if role not in player.ratings:
             logging.info('Creating a new PlayerRating for <{}> <{}>'.format(player.discord_string, role))
             new_rating = PlayerRating(player, role)
-            self.bot.session.add(new_rating)
-            self.bot.session.commit()
+            self.bot.players_session.add(new_rating)
+            self.bot.players_session.commit()
             # This step is required so our player object has access to the rating
-            player = self.bot.session.merge(player)
+            player = self.bot.players_session.merge(player)
 
         # Actually adding the player to the queue
         self.channel_queues[channel_id][role].add(player)
         logging.info(f'Player <{player.discord_string}> has been added to the <{role}><{channel_id}> queue')
 
-    async def remove_player_from_queue(self, player, channel_id=None, ctx=None):
+    async def send_queue(self, ctx: commands.context):
+        """
+        Deletes the previous queue message and sends a new one in the channel
+        """
+        channel_id = ctx.channel.id
+
+        try:
+            old_queue_message = self.latest_queue_message[channel_id]
+        except KeyError:
+            old_queue_message = None
+
+        table = [[]]
+        for role in roles_list:
+            table.append([role.capitalize()] + sorted([p.name for p in self.channel_queues[channel_id][role]]))
+
+        embed = Embed(colour=discord.colour.Colour.dark_red())
+        embed.add_field(name='Queue', value=f'```{tabulate(table, tablefmt="plain")}```')
+
+        self.latest_queue_message[channel_id] = await ctx.send(embed=embed)
+
+        # Sequenced that way for smoother scrolling in discord
+        if old_queue_message:
+            await old_queue_message.delete()
+
+    async def remove_player_from_queue(self, player, channel_id=None, ctx=None) -> List[Tuple[int, str]]:
         """
         Removes the given player from queue.
 
         If given a channel_id, only removes the player from the given channel.
         If given a context message, thumbs ups it.
+
+        Returns a list of [channel_id, role] it was removed from
         """
+        channels_roles_list = []
+
         for channel_id in self.channel_queues if not channel_id else [channel_id]:
             for role in self.channel_queues[channel_id]:
-                self.channel_queues[channel_id][role].discard(player)
+                if player in self.channel_queues[channel_id][role]:
+                    channels_roles_list.append((channel_id, role))
+                    self.channel_queues[channel_id][role].remove(player)
 
         logging.info('Player <{}> has been removed from {}'
                      .format(player.discord_string,
@@ -274,6 +344,9 @@ class QueueCog(commands.Cog, name='Queue'):
 
         if ctx:
             await ctx.message.add_reaction('👍')
+            await self.send_queue(ctx)
+
+        return channels_roles_list
 
     async def matchmaking_process(self, ctx):
         """
@@ -281,7 +354,7 @@ class QueueCog(commands.Cog, name='Queue'):
 
         This function is split in multiple functions for easier testing.
         """
-        # Match quality returns -1 when matchmaking can’t be done
+        # Match quality returns -1 when matchmaking has not found a valid game
         players, match_quality = self.find_best_game(ctx.channel.id)
 
         # We have a good match
@@ -340,24 +413,39 @@ class QueueCog(commands.Cog, name='Queue'):
         Attempts to start the given game by pinging players and waiting for their reactions.
         """
         # Start by removing all players from the channel queue before starting the game
+        players_queues = {}
         for player in players.values():
-            await self.remove_player_from_queue(player, channel_id=ctx.channel.id)
+            players_queues[player.discord_id] = await self.remove_player_from_queue(player, channel_id=ctx.channel.id)
 
-        # TODO Change data structure to only create the game at the end
-        # Requires moving this code slightly later, removing checks on game.winner, and having a self.current_games set.
+        game_session = get_session()
         game = Game(players)
-        self.bot.session.add(game)
-        self.bot.session.commit()
+        game_session.add(game)
+        game_session.commit()
 
-        if not await self.ready_check(ctx, players, mismatch, game):
+        ready, ready_players = await self.ready_check(ctx, players, mismatch, game)
+
+        if not ready:
             # If the ready check fails, we delete the game and let !queue handle restarting matchmaking.
-            self.bot.session.delete(game)
-            self.bot.session.commit()
-            await ctx.send('The game has been cancelled. You can now queue again.')
-            return
+            for player_id in ready_players:
+                for queue, role in players_queues[player_id]:
+                    self.add_player_to_queue(await self.bot.get_player(None, player_id), role, queue)
 
-        logging.info(f'Starting game {game.id}')
-        await ctx.send(f'Game {game.id} has started!')
+            await ctx.send(f'The game has been cancelled.\n'
+                           f'Players who pressed ✅ have been put back in queue.\n'
+                           f'{self.get_tags([discord_id for discord_id in players_queues if discord_id not in ready_players])}'
+                           f' have been removed from queue')
+
+            game_session.delete(game)
+            game_session.commit()
+
+            # We return and restart matchmaking with the new queue
+            await self.send_queue(ctx)
+            return await self.matchmaking_process(ctx)
+
+        validation_message = f'Game {game.id} has been accepted and can start!'
+
+        logging.info(validation_message)
+        await ctx.send(validation_message)
 
     async def ready_check(self, ctx: commands.Context, players, mismatch, game):
         """
@@ -366,11 +454,7 @@ class QueueCog(commands.Cog, name='Queue'):
         If all 10 players accept the game, returns True.
         If not, returns False.
         """
-        # TODO Find a clean way to handle this test with a mock instead (and remove that snippet)
-        if 'PYTEST_CURRENT_TEST' in os.environ:
-            return True
-
-        self.games_in_ready_check_status.add(game.id)
+        self.games_in_ready_check.add(game.id)
 
         logging.info('Starting a game ready check')
 
@@ -389,22 +473,23 @@ class QueueCog(commands.Cog, name='Queue'):
                                              'You can refuse the match and leave the queue by pressing ❎\n'
                                              'If you are ready, press ✅', embed=embed)
 
-        return_value = await self.checkmark_validation(ready_check_message, discord_id_list, 10)
+        return_value, accepting_players = await self.checkmark_validation(ready_check_message, discord_id_list, 10)
 
-        self.games_in_ready_check_status.remove(game.id)
+        self.games_in_ready_check.remove(game.id)
 
-        return return_value
+        return return_value, accepting_players
 
     async def score_game(self, ctx, result: bool):
         """
         Scores the player’s last game with the given result.
         """
-        player = get_player(self.bot.session, ctx)
+        player = await self.bot.get_player(ctx)
+        scoring_session = get_session()
 
-        game, game_participant = player.get_last_game(self.bot.session)
+        game, game_participant = player.get_last_game(scoring_session)
 
-        # TODO Check that this works.
-        if game.winner or game.id in self.games_in_ready_check_status:
+        # TODO Check that this works properly (it should almost never happen).
+        if game.winner or game.id in self.games_in_ready_check:
             # Conflict between entered results and current results
             await ctx.send(f'**Your last game’s result was already entered and validated**', delete_after=30)
             return
@@ -414,16 +499,18 @@ class QueueCog(commands.Cog, name='Queue'):
 
         ready_check_message = await ctx.send(f'{player.name} wants to score game {game.id} as a win for {winner}\n'
                                              f'{self.get_tags(discord_id_list)}\n'
-                                             f'Result will be validated once 6 players from the game press ✅.',
-                                             delete_after=120)
+                                             f'Result will be validated once 6 players from the game press ✅.')
 
-        if not await self.checkmark_validation(ready_check_message, discord_id_list, 6):
-            await ctx.send('Game result input cancelled.', delete_after=60)
+        score_ok, scoring_players = await self.checkmark_validation(ready_check_message, discord_id_list, 6)
+
+        if not score_ok:
+            await ctx.send('Game result input cancelled.', delete_after=self.bot.warning_duration)
+            await ready_check_message.delete()
             return
 
         game.winner = winner
-        self.bot.session.commit()
-        game.update_trueskill(self.bot.session)
+        scoring_session.commit()
+        game.update_trueskill(scoring_session)
 
         message = f'Game {game.id} has been scored as a win for {game.winner} and ratings have been updated.'
 
@@ -433,7 +520,7 @@ class QueueCog(commands.Cog, name='Queue'):
     async def checkmark_validation(self, message: discord.Message,
                                    validating_members: [],
                                    validation_threshold: int,
-                                   timeout=120.0):
+                                   timeout=120.0) -> Tuple[bool, set]:
         """
         Implements a checkmark validation on the chosen message.
 
@@ -457,14 +544,17 @@ class QueueCog(commands.Cog, name='Queue'):
                 if str(reaction.emoji) == '✅':
                     members_who_validated.add(user.id)
                     if members_who_validated.__len__() >= validation_threshold:
-                        return True
+                        return True, members_who_validated
 
                 elif str(reaction.emoji) == '❎':
-                    return False
+                    break
 
         # We get there if no player accepted in the last two minutes
         except asyncio.TimeoutError:
-            return False
+            pass
+
+        # This handles both timeout and queue refusal
+        return False, members_who_validated
 
     @staticmethod
     def get_tags(discord_ids: list):

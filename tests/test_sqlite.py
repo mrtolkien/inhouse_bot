@@ -78,6 +78,10 @@ async def test_game(caplog):
     session.add(game)
 
     # Printing ahead of time
-    print(game)
+    try:
+        print(game)
+    except AttributeError:
+        assert True
 
     session.commit()
+    print(game)

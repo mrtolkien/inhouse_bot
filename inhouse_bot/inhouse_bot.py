@@ -1,11 +1,11 @@
 import itertools
 import logging
 from discord.ext import commands
-from discord.ext.commands import DefaultHelpCommand, Paginator
-from inhouse_bot.cogs.queue_cog import QueueCog
-from inhouse_bot.cogs.stats_cog import StatsCog
+from discord.ext.commands import DefaultHelpCommand
 from inhouse_bot.common_utils import discord_token
 from lol_id_tools import LolIdTools
+
+from inhouse_bot.sqlite.player import Player
 from inhouse_bot.sqlite.sqlite_utils import get_session
 
 
@@ -18,10 +18,21 @@ class InhouseBot(commands.Bot):
         self.discord_token = discord_token
 
         self.lit = LolIdTools('en_US', 'ko_KR')
-        self.session = get_session()
+        self.players_session = get_session()
+
+        # Local imports to not have circular imports with type hinting
+        from inhouse_bot.cogs.queue_cog import QueueCog
+        from inhouse_bot.cogs.stats_cog import StatsCog
 
         self.add_cog(QueueCog(self))
         self.add_cog(StatsCog(self))
+
+        self.role_not_understood = 'Role name was not properly understood. ' \
+                                   'Working values are top, jungle, mid, bot, and support.'
+
+        self.short_notice_duration = 10
+        self.validation_duration = 60
+        self.warning_duration = 30
 
     def run(self, *args, **kwargs):
         super().run(self.discord_token, *args, **kwargs)
@@ -33,15 +44,30 @@ class InhouseBot(commands.Bot):
         # User-facing error
         await ctx.send('`Error: {}`'
                        '\nUse `!help` for commands help. Contact <@124633440078266368> for bugs.'.format(error),
-                       delete_after=30)
+                       delete_after=self.warning_duration)
 
         raise error
+
+    async def get_player(self, ctx, user_id=None) -> Player:
+        """
+        Returns a Player object from a Discord context’s author and update name changes.
+        """
+        if not user_id:
+            user = ctx.author
+        else:
+            user = await self.fetch_user(user_id)
+
+        player = self.players_session.merge(Player(user))  # This will automatically update name changes
+        self.players_session.commit()
+
+        return player
 
 
 class IndexedHelpCommand(DefaultHelpCommand):
     """
     Very hacky help command that relies on having access to a "help_index" kwarg from the commands.
     """
+
     async def send_bot_help(self, mapping):
         ctx = self.context
         bot = ctx.bot
