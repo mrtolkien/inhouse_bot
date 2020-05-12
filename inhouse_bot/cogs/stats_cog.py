@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from datetime import datetime
 
@@ -74,28 +75,35 @@ class StatsCog(commands.Cog, name='Stats'):
                        f'```{tabulate(table, headers="firstrow")}```')
 
     @commands.command(help_index=2, aliases=['rankings'])
-    async def ranking(self, ctx: commands.Context, role):
+    async def ranking(self, ctx: commands.Context, role='all'):
         """
         Returns the top 20 players for the selected role.
         """
-        clean_role, score = process.extractOne(role, roles_list)
-        if score < 80:
-            await ctx.send(self.bot.role_not_understood, delete_after=30)
+        if role == 'all':
+            clean_role = role
+        else:
+            clean_role, score = process.extractOne(role, roles_list)
+            if score < 80:
+                await ctx.send(self.bot.role_not_understood, delete_after=30)
+                return
 
         session = get_session()
 
         role_ranking = session.query(PlayerRating). \
-            filter(PlayerRating.role == clean_role). \
             order_by(- PlayerRating.mmr). \
             limit(20)
 
-        table = [['Rank', 'Name', 'MMR', 'Games']]
+        if clean_role != 'all':
+            role_ranking = role.filter(PlayerRating.role == clean_role)
+
+        table = [['Rank', 'Name', 'MMR', 'Games'] + ['Role' if clean_role == 'all' else None]]
 
         for rank, rating in enumerate(role_ranking):
             table.append([inflect_engine.ordinal(rank + 1),
                           rating.player.name,
                           f'{rating.mmr:.2f}',
-                          rating.get_games(session)])
+                          rating.get_games(session)]
+                         + [rating.role if clean_role == 'all' else None])
 
         await ctx.send(f'Ranking for {clean_role} is:\n'
                        f'```{tabulate(table, headers="firstrow")}```')

@@ -433,7 +433,7 @@ class QueueCog(commands.Cog, name='Queue'):
             await ctx.send(f'The game has been cancelled.\n'
                            f'Players who pressed ✅ have been put back in queue.\n'
                            f'{self.get_tags([discord_id for discord_id in players_queues if discord_id not in ready_players])}'
-                           f' have been removed from queue')
+                           f' have been removed from queue.')
 
             game_session.delete(game)
             game_session.commit()
@@ -458,9 +458,13 @@ class QueueCog(commands.Cog, name='Queue'):
 
         logging.info('Starting a game ready check')
 
+        blue_win_chance = trueskill_blue_side_winrate({(team, role): game.participants[team, role].player
+                                                         for team, role in game.participants})
+
         embed = Embed(title='Proposed game')
         embed.add_field(name='Team compositions',
-                        value=f'```{game}```')
+                        value=f'Blue side expected winrate is {blue_win_chance*100:.2f}%.\n'
+                              f'```{game}```')
 
         if mismatch:
             embed.add_field(name='WARNING',
@@ -468,10 +472,10 @@ class QueueCog(commands.Cog, name='Queue'):
 
         discord_id_list = [p.discord_id for p in players.values()]
 
-        ready_check_message = await ctx.send(f'A match has been found for {self.get_tags(discord_id_list)}\n'
-                                             'All players have been dropped from queues they were in\n'
-                                             'You can refuse the match and leave the queue by pressing ❎\n'
-                                             'If you are ready, press ✅', embed=embed)
+        ready_check_message = await ctx.send(f'A match has been found for {self.get_tags(discord_id_list)}.\n'
+                                             'All players have been dropped from queues they were in.\n'
+                                             'You can refuse the match and leave the queue by pressing ❎.\n'
+                                             'If you are ready, press ✅.', embed=embed)
 
         return_value, accepting_players = await self.checkmark_validation(ready_check_message, discord_id_list, 10)
 
@@ -488,17 +492,17 @@ class QueueCog(commands.Cog, name='Queue'):
 
         game, game_participant = player.get_last_game(scoring_session)
 
-        # TODO Check that this works properly (it should almost never happen).
         if game.winner or game.id in self.games_in_ready_check:
             # Conflict between entered results and current results
             await ctx.send(f'**Your last game’s result was already entered and validated**', delete_after=30)
             return
 
-        winner = 'blue' if game_participant.team == 'blue' and result else 'red'
+        winner = 'blue' if (game_participant.team == 'blue' and result) else 'red'
+
         discord_id_list = [p.player_id for p in game.participants.values()]
 
-        ready_check_message = await ctx.send(f'{player.name} wants to score game {game.id} as a win for {winner}\n'
-                                             f'{self.get_tags(discord_id_list)}\n'
+        ready_check_message = await ctx.send(f'{player.name} wants to score game {game.id} as a win for {winner}.\n'
+                                             f'{self.get_tags(discord_id_list)}.\n'
                                              f'Result will be validated once 6 players from the game press ✅.')
 
         score_ok, scoring_players = await self.checkmark_validation(ready_check_message, discord_id_list, 6)

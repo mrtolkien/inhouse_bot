@@ -5,7 +5,7 @@ from sqlalchemy.orm.collections import mapped_collection
 import datetime
 from inhouse_bot.common_utils import trueskill_blue_side_winrate
 from inhouse_bot.sqlite.game_participant import GameParticipant
-from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, team_enum
+from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, team_enum, roles_list
 
 
 class Game(sql_alchemy_base):
@@ -33,9 +33,10 @@ class Game(sql_alchemy_base):
                                 cascade="all, delete-orphan")
 
     def __str__(self):
-        # TODO Order by role properly
         return tabulate({team_column.capitalize(): [self.participants[team, role].player.name
-                                                    for (team, role) in self.participants if team == team_column]
+                                                    for (team, role) in
+                                                    sorted(self.participants, key=lambda x: roles_list.index(x[1]))
+                                                    if team == team_column]
                          for team_column in ['blue', 'red']}, headers='keys')
 
     def __init__(self, players: dict):

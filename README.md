@@ -34,7 +34,7 @@ Jungle   1st
 !stats
 Role      MMR    Games  Winrate
 ------  -----  -------  ---------
-Jungle   1.43        2  50.00%
+Jungle   1.43        1  100.00%
 ```
 
 # Use case and behaviour
@@ -72,12 +72,16 @@ If you don’t supply the `game_id`, it will apply to your last game.
 
 `!admin_score game_id winner` is an admin-only command that scores the game without asking for validation.
 
+`!admin_queue user_id role` is an admin-only command to queue a given user.
+
+`!reset_queue` is an admin-only command to reset the queue.
+ 
 # Stats features
 `!history` returns your match history.
 
-`!rank` returns your server-wide rank.
+`!rank` returns your server-wide rank for each role.
 
-`!ranking role` returns the top 20 players in the given role.
+`!ranking` returns the top 20 players.
 
 `!mmr` returns your current MMR.
 
