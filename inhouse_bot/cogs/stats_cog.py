@@ -97,7 +97,6 @@ class StatsCog(commands.Cog, name='Stats'):
         table = [['Rank', 'Name', 'MMR', 'Games'] + ['Role' if clean_role == 'all' else None]]
 
         for rank, rating in enumerate(role_ranking.limit(20)):
-            print(rating)
             table.append([inflect_engine.ordinal(rank + 1),
                           rating.player.name,
                           f'{rating.mmr:.2f}',
