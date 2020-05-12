@@ -89,16 +89,15 @@ class StatsCog(commands.Cog, name='Stats'):
 
         session = get_session()
 
-        role_ranking = session.query(PlayerRating). \
-            order_by(- PlayerRating.mmr). \
-            limit(20)
+        role_ranking = session.query(PlayerRating).order_by(- PlayerRating.mmr)
 
         if clean_role != 'all':
-            role_ranking = role.filter(PlayerRating.role == clean_role)
+            role_ranking = role_ranking.filter(PlayerRating.role == clean_role)
 
         table = [['Rank', 'Name', 'MMR', 'Games'] + ['Role' if clean_role == 'all' else None]]
 
-        for rank, rating in enumerate(role_ranking):
+        for rank, rating in enumerate(role_ranking.limit(20)):
+            print(rating)
             table.append([inflect_engine.ordinal(rank + 1),
                           rating.player.name,
                           f'{rating.mmr:.2f}',
@@ -177,6 +176,7 @@ class StatsCog(commands.Cog, name='Stats'):
             plt.savefig(temp.name)
             file = discord.File(temp.name, filename=temp.name)
             await ctx.send(file=file)
+            plt.close()
             temp.close()
 
     @commands.command(help_index=5, aliases=['champs_stats', 'champion_stats', 'champ_stat'])
