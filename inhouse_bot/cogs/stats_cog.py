@@ -1,4 +1,3 @@
-import logging
 from collections import defaultdict
 from datetime import datetime
 
@@ -65,7 +64,7 @@ class StatsCog(commands.Cog, name='Stats'):
         for role in player.ratings:
             rating = player.ratings[role]
             table.append([f'{rating.role.capitalize()}',
-                          inflect_engine.ordinal(rating.get_rank(session))])
+                          inflect_engine.ordinal(rating.get_rank())])
 
         # Sorting the table by rank
         table = sorted(table, key=lambda x: x[1])
@@ -100,7 +99,7 @@ class StatsCog(commands.Cog, name='Stats'):
             table.append([inflect_engine.ordinal(rank + 1),
                           rating.player.name,
                           f'{rating.mmr:.2f}',
-                          rating.get_games(session)]
+                          rating.get_games()]
                          + [rating.role if clean_role == 'all' else None])
 
         await ctx.send(f'Ranking for {clean_role} is:\n'
@@ -184,11 +183,10 @@ class StatsCog(commands.Cog, name='Stats'):
         Returns your games total and winrate for all champions.
         """
         player = await self.bot.get_player(ctx)
-        session = get_session()
 
         date_start = dateparser.parse(date_start) if date_start else date_start
 
-        stats = player.get_champions_stats(session, date_start)
+        stats = player.get_champions_stats(date_start)
 
         table = []
         for champion_id in stats:

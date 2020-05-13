@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, Float, ForeignKey, func
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import object_session
 
 from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, role_enum
 
@@ -23,6 +24,11 @@ class PlayerRating(sql_alchemy_base):
     def mmr(self):
         return self.trueskill_mu - 3 * self.trueskill_sigma + 25
 
+    # Games count
+    @hybrid_property
+    def games_count(self):
+        pass
+
     def __repr__(self):
         return f'<PlayerRating: player_id={self.player_id} role={self.role}>'
 
@@ -34,7 +40,8 @@ class PlayerRating(sql_alchemy_base):
         self.trueskill_mu = 25
         self.trueskill_sigma = 25 / 3
 
-    def get_rank(self, session) -> int:
+    def get_rank(self) -> int:
+        session = object_session(self)
         rank_query = session.query(func.count().label('rank'))\
             .select_from(PlayerRating) \
             .filter(PlayerRating.role == self.role, PlayerRating.mmr > self.mmr)
@@ -42,10 +49,11 @@ class PlayerRating(sql_alchemy_base):
         # Need to count yourself as well!
         return rank_query.one().rank + 1
 
-    def get_games(self, session) -> int:
+    def get_games(self) -> int:
         # TODO Make that into a property
         from inhouse_bot.sqlite.game_participant import GameParticipant
 
+        session = object_session(self)
         rank_query = session.query(func.count().label('games'))\
             .select_from(GameParticipant) \
             .filter(GameParticipant.role == self.role,

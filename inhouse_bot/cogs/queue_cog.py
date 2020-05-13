@@ -181,7 +181,7 @@ class QueueCog(commands.Cog, name='Queue'):
         player = await self.bot.get_player(ctx)
 
         session = get_session()
-        game, participant = player.get_last_game(session)
+        game, participant = player.get_last_game()
 
         # If the game is already done and scored, we don’t offer cancellation anymore.
         if game.winner:
@@ -459,11 +459,11 @@ class QueueCog(commands.Cog, name='Queue'):
         logging.info('Starting a game ready check')
 
         blue_win_chance = trueskill_blue_side_winrate({(team, role): game.participants[team, role].player
-                                                         for team, role in game.participants})
+                                                       for team, role in game.participants})
 
         embed = Embed(title='Proposed game')
         embed.add_field(name='Team compositions',
-                        value=f'Blue side expected winrate is {blue_win_chance*100:.2f}%.\n'
+                        value=f'Blue side expected winrate is {blue_win_chance * 100:.2f}%.\n'
                               f'```{game}```')
 
         if mismatch:
@@ -488,9 +488,8 @@ class QueueCog(commands.Cog, name='Queue'):
         Scores the player’s last game with the given result.
         """
         player = await self.bot.get_player(ctx)
-        scoring_session = get_session()
 
-        game, game_participant = player.get_last_game(scoring_session)
+        game, game_participant = player.get_last_game()
 
         if game.winner or game.id in self.games_in_ready_check:
             # Conflict between entered results and current results
@@ -513,8 +512,7 @@ class QueueCog(commands.Cog, name='Queue'):
             return
 
         game.winner = winner
-        scoring_session.commit()
-        game.update_trueskill(scoring_session)
+        game.update_trueskill()
 
         message = f'Game {game.id} has been scored as a win for {game.winner} and ratings have been updated.'
 

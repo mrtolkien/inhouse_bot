@@ -1,6 +1,6 @@
 from tabulate import tabulate
 from sqlalchemy import Column, Integer, DateTime, Float
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, object_session
 from sqlalchemy.orm.collections import mapped_collection
 import datetime
 from inhouse_bot.common_utils import trueskill_blue_side_winrate
@@ -53,11 +53,13 @@ class Game(sql_alchemy_base):
         self.participants = {(team, role): GameParticipant(self, team, role, players[team, role])
                              for team, role in players}
 
-    def update_trueskill(self, session):
+    def update_trueskill(self):
         """
         Updates the game’s participants TrueSkill values based on the game result.
         """
         import trueskill
+
+        session = object_session(self)
 
         # participant.trueskill represents pre-game values
         # p.player.ratings[p.role] is the PlayerRating relevant to the game that was scored
