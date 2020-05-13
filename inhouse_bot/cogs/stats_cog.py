@@ -231,7 +231,7 @@ class StatsCog(commands.Cog, name='Stats'):
 
         await ctx.send(f'{player.name}’s team has been set to {player.team}')
 
-    @commands.command()
+    @commands.command(help_index=6)
     async def view_team(self, ctx: commands.Context):
         """
         View your current team and team mates.
