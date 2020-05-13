@@ -27,6 +27,9 @@ class Player(sql_alchemy_base):
                            backref='player',
                            cascade="all, delete-orphan")
 
+    # ORM relationship to the player table
+    participant_objects = relationship('GameParticipant', backref="player")
+
     def __repr__(self):
         return f'<Player: player_id={self.discord_id}>'
 

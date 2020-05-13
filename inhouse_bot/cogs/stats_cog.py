@@ -58,7 +58,6 @@ class StatsCog(commands.Cog, name='Stats'):
         Returns your global rank for all roles.
         """
         player = await self.bot.get_player(ctx)
-        session = get_session()
 
         table = []
         for role in player.ratings:
@@ -88,7 +87,7 @@ class StatsCog(commands.Cog, name='Stats'):
 
         session = get_session()
 
-        role_ranking = session.query(PlayerRating).order_by(- PlayerRating.mmr).filter()
+        role_ranking = session.query(PlayerRating).order_by(- PlayerRating.mmr).filter(PlayerRating.games > 0)
 
         if clean_role != 'all':
             role_ranking = role_ranking.filter(PlayerRating.role == clean_role)
@@ -146,6 +145,7 @@ class StatsCog(commands.Cog, name='Stats'):
         player = await self.bot.get_player(ctx)
         session = get_session()
 
+        # TODO Use the player_rating.game_participant_objects field?
         participants = session.query(Game, GameParticipant)\
             .join(GameParticipant)\
             .filter(GameParticipant.player_id == player.discord_id)\
