@@ -97,7 +97,7 @@ class StatsCog(commands.Cog, name='Stats'):
         for rank, rating in enumerate(role_ranking.limit(20)):
             table.append([inflect_engine.ordinal(rank + 1),
                           rating.player.name,
-                          f'{rating.mmr:.2f}',
+                          f'{rating.mmr:.1f}',
                           rating.get_games()]
                          + [rating.role if clean_role == 'all' else None])
 
@@ -121,9 +121,9 @@ class StatsCog(commands.Cog, name='Stats'):
         table = []
         for role in stats:
             table.append([f'{role.capitalize()}',
-                          f'{player.ratings[role].mmr:.2f}',
+                          f'{player.ratings[role].mmr:.1f}',
                           stats[role].games,
-                          f'{stats[role].wins / stats[role].games * 100:.2f}%'])
+                          f'{stats[role].wins / stats[role].games * 100:.1f}%'])
 
         # Sorting the table by games total
         table = sorted(table, key=lambda x: -x[2])
@@ -193,7 +193,7 @@ class StatsCog(commands.Cog, name='Stats'):
             table.append([self.bot.lit.get_name(champion_id),
                           f'{stats[champion_id].role.capitalize()}',
                           stats[champion_id].games,
-                          f'{stats[champion_id].wins / stats[champion_id].games * 100:.2f}%'])
+                          f'{stats[champion_id].wins / stats[champion_id].games * 100:.1f}%'])
 
         # Sorting the table by games total
         table = sorted(table, key=lambda x: -x[2])

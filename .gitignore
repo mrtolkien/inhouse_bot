@@ -141,3 +141,4 @@ dmypy.json
 cython_debug/
 
 .idea/dictionaries/
+tests/local_db_test.py

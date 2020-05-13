@@ -463,7 +463,7 @@ class QueueCog(commands.Cog, name='Queue'):
 
         embed = Embed(title='Proposed game')
         embed.add_field(name='Team compositions',
-                        value=f'Blue side expected winrate is {blue_win_chance * 100:.2f}%.\n'
+                        value=f'Blue side expected winrate is {blue_win_chance * 100:.1f}%.\n'
                               f'```{game}```')
 
         if mismatch:
