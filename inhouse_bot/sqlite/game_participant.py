@@ -28,7 +28,7 @@ class GameParticipant(sql_alchemy_base):
     # Conservative rating for MMR display
     @hybrid_property
     def mmr(self):
-        return self.trueskill_mu - 3 * self.trueskill_sigma
+        return self.trueskill_mu - 3 * self.trueskill_sigma + 25
 
     # ORM relationship to the player table
     player = relationship('Player', backref="participant_objects")

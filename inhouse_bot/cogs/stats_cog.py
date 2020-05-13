@@ -89,7 +89,7 @@ class StatsCog(commands.Cog, name='Stats'):
 
         session = get_session()
 
-        role_ranking = session.query(PlayerRating).order_by(- PlayerRating.mmr)
+        role_ranking = session.query(PlayerRating).order_by(- PlayerRating.mmr).filter()
 
         if clean_role != 'all':
             role_ranking = role_ranking.filter(PlayerRating.role == clean_role)

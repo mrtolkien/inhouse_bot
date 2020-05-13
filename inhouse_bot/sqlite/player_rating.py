@@ -21,7 +21,7 @@ class PlayerRating(sql_alchemy_base):
     # Conservative rating for MMR display
     @hybrid_property
     def mmr(self):
-        return self.trueskill_mu - 3 * self.trueskill_sigma
+        return self.trueskill_mu - 3 * self.trueskill_sigma + 25
 
     def __repr__(self):
         return f'<PlayerRating: player_id={self.player_id} role={self.role}>'
@@ -43,6 +43,7 @@ class PlayerRating(sql_alchemy_base):
         return rank_query.one().rank + 1
 
     def get_games(self, session) -> int:
+        # TODO Make that into a property
         from inhouse_bot.sqlite.game_participant import GameParticipant
 
         rank_query = session.query(func.count().label('games'))\
