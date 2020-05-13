@@ -364,15 +364,15 @@ class QueueCog(commands.Cog, name='Queue'):
         elif match_quality > -0.2:
             await self.start_game(ctx, players, mismatch=True)
 
-    def find_best_game(self, channel_id) -> tuple:
+    def find_best_game(self, channel_id) -> Tuple[dict, int]:
         """
-        Looks at the queue in the channel and returns the best match-made game (as a {team, role] -> Player}.
+        Looks at the queue in the channel and returns the best match-made game (as a {team, role} -> Player dict).
         """
         # Do not do anything if there’s not at least 2 players in queue per role
         for role in roles_list:
             if self.channel_queues[channel_id][role].__len__() < 2:
                 logging.debug('Not enough players to start matchmaking')
-                return None, -1
+                return {}, -1
 
         logging.info('Starting matchmaking process')
 

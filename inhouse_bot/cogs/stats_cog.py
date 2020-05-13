@@ -16,6 +16,7 @@ import tempfile
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
+from inhouse_bot.sqlite.player import Player
 from inhouse_bot.sqlite.player_rating import PlayerRating
 from inhouse_bot.sqlite.sqlite_utils import roles_list, get_session
 
@@ -32,13 +33,17 @@ class StatsCog(commands.Cog, name='Stats'):
         self.bot = bot
 
     @commands.command(help_index=0, aliases=['match_history', 'mh'])
-    async def history(self, ctx: commands.Context, display_games=20):
+    async def history(self, ctx: commands.Context, user_id=None, display_games=20):
         """
         Returns your match history in a table.
 
+        If user_id is supplied, shows the user’s match history. Requires being on the same team or admin.
         display_games specifies how many games to show and is 20 by default.
         """
-        player = await self.bot.get_player(ctx)
+        try:
+            player = await self.get_player_with_team_check(ctx, user_id)
+        except PermissionError:
+            return
 
         games_list = player.get_latest_games(display_games)
 
@@ -53,11 +58,14 @@ class StatsCog(commands.Cog, name='Stats'):
         await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
 
     @commands.command(help_index=1, aliases=['ranks'])
-    async def rank(self, ctx: commands.Context):
+    async def rank(self, ctx: commands.Context, user_id=None):
         """
         Returns your global rank for all roles.
         """
-        player = await self.bot.get_player(ctx)
+        try:
+            player = await self.get_player_with_team_check(ctx, user_id)
+        except PermissionError:
+            return
 
         table = []
         for role in player.ratings:
@@ -105,14 +113,17 @@ class StatsCog(commands.Cog, name='Stats'):
                        f'```{tabulate(table, headers="firstrow")}```')
 
     @commands.command(help_index=3, aliases=['MMR', 'stats', 'rating', 'ratings'])
-    async def mmr(self, ctx: commands.Context, date_start=None):
+    async def mmr(self, ctx: commands.Context, user_id=None, date_start=None):
         """
         Returns your MMR, games total, and winrate for all roles.
         date_start can be used to define a lower limit on stats.
 
-        !stats "two weeks ago"
+        !stats 709581697410400307 "two weeks ago"
         """
-        player = await self.bot.get_player(ctx)
+        try:
+            player = await self.get_player_with_team_check(ctx, user_id)
+        except PermissionError:
+            return
 
         date_start = dateparser.parse(date_start) if date_start else date_start
 
@@ -133,16 +144,20 @@ class StatsCog(commands.Cog, name='Stats'):
         await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
 
     @commands.command(help_index=4, aliases=['rating_history', 'ratings_history'])
-    async def mmr_history(self, ctx: commands.Context, date_start=None):
+    async def mmr_history(self, ctx: commands.Context, user_id=None, date_start=None):
         """
         Displays a graph of your MMR history over the past month.
         """
+        try:
+            player = await self.get_player_with_team_check(ctx, user_id)
+        except PermissionError:
+            return
+
         if not date_start:
             date_start = dateparser.parse('one month ago')
         else:
             date_start = dateparser.parse(date_start)
 
-        player = await self.bot.get_player(ctx)
         session = get_session()
 
         # TODO Use the player_rating.game_participant_objects field?
@@ -178,11 +193,14 @@ class StatsCog(commands.Cog, name='Stats'):
             temp.close()
 
     @commands.command(help_index=5, aliases=['champs_stats', 'champion_stats', 'champ_stat'])
-    async def champions_stats(self, ctx: commands.Context, date_start=None):
+    async def champions_stats(self, ctx: commands.Context, user_id=None, date_start=None):
         """
         Returns your games total and winrate for all champions.
         """
-        player = await self.bot.get_player(ctx)
+        try:
+            player = await self.get_player_with_team_check(ctx, user_id)
+        except PermissionError:
+            return
 
         date_start = dateparser.parse(date_start) if date_start else date_start
 
@@ -201,3 +219,41 @@ class StatsCog(commands.Cog, name='Stats'):
         table.insert(0, ['Champion', 'Role', 'Games', 'Winrate'])
 
         await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
+
+    @commands.command(hidden=True)
+    @commands.has_permissions(administrator=True)
+    async def team(self, ctx: commands.Context, user_id: int, team_name: str):
+        """
+        Sets a player’s team to the given team name
+        """
+        player = await self.bot.get_player(None, user_id)
+        player.team = team_name.upper()
+
+        await ctx.send(f'{player.name}’s team has been set to {player.team}')
+
+    @commands.command()
+    async def view_team(self, ctx: commands.Context):
+        """
+        View your current team and team mates.
+        """
+        session = get_session()
+        player = await self.bot.get_player(ctx)
+
+        teammates = session.query(Player).filter(Player.team == player.team)
+
+        await ctx.send(f'You are currently part of {player.team}. Please contact an admin for changes.\n'
+                       f'Currently in {player.team}: {", ".join([t.name for t in teammates])}')
+
+    async def get_player_with_team_check(self, ctx: commands.Context, user_id: int) -> Player:
+        # With no ID supplied, we just return the caller
+        if not user_id:
+            return await self.bot.get_player(ctx, None)
+
+        calling_player = await self.bot.get_player(ctx)
+        player = await self.bot.get_player(None, user_id)
+
+        if calling_player.team != player.team and not ctx.author.guild_permissions.administrator:
+            await ctx.send(f'You don’t have the permission to see {player.name}’s stats')
+            raise PermissionError
+
+        return player
