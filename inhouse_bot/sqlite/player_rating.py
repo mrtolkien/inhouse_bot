@@ -56,7 +56,7 @@ class PlayerRating(sql_alchemy_base):
         session = object_session(self)
         rank_query = session.query(func.count().label('rank')) \
             .select_from(PlayerRating) \
-            .filter(PlayerRating.role == self.role, PlayerRating.mmr > self.mmr, PlayerRating.games > self.games)
+            .filter(PlayerRating.role == self.role, PlayerRating.mmr > self.mmr, PlayerRating.games > 0)
 
         # Need to count yourself as well!
         return rank_query.one().rank + 1
