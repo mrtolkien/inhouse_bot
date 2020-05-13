@@ -69,12 +69,6 @@ If you don’t supply the `game_id`, it will apply to your last game.
 `!view_games` shows the ongoing games for all channels.
 
 `!cancel_game` cancels your ongoing game, requiring validation from at least 6 players in the game.
-
-`!admin_score game_id winner` is an admin-only command that scores the game without asking for validation.
-
-`!admin_queue user_id role` is an admin-only command to queue a given user.
-
-`!reset_queue` is an admin-only command to reset the queue.
  
 # Stats features
 `!history` returns your match history.
@@ -88,6 +82,19 @@ If you don’t supply the `game_id`, it will apply to your last game.
 `!mmr_history` displays a graph of your MMR per role in the past month.
 
 `!champions_stats` returns statistics about the champions you played.
+
+`!view_team` returns players in your team. Players in the same team can access their teammate’s stats by using
+`!champions_stats user_id`, with `user_id` being their 
+[discord id](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-).
+
+# Admin features
+`!admin_score game_id winner` is an admin-only command that scores the game without asking for validation.
+
+`!admin_queue user_id role` is an admin-only command to queue a given user.
+
+`!reset_queue` is an admin-only command to reset the queue.
+
+`!team user_id team_name` puts the chosen user in the given team. This is admin-only for information security.
 
 # Installation
 ```shell script
