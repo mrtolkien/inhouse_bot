@@ -4,16 +4,16 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pytest = "*"
+dpytest = "*"
 
 [packages]
 discord-py = "*"
-trueskill = "*"
-rapidfuzz = "*"
 sqlalchemy = "*"
+trueskill = "*"
 tabulate = "*"
-pytest = "*"
 lol-id-tools = "*"
-dpytest = "*"
+rapidfuzz = "*"
 inflect = "*"
 dateparser = "*"
 mplcyberpunk = "*"
