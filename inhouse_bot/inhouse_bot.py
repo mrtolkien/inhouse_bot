@@ -3,7 +3,6 @@ import logging
 from discord.ext import commands
 from discord.ext.commands import DefaultHelpCommand
 from inhouse_bot.common_utils import discord_token
-from lol_id_tools import LolIdTools
 
 from inhouse_bot.sqlite.player import Player
 from inhouse_bot.sqlite.sqlite_utils import get_session
@@ -17,7 +16,6 @@ class InhouseBot(commands.Bot):
 
         self.discord_token = discord_token
 
-        self.lit = LolIdTools('en_US', 'ko_KR')
         self.players_session = get_session()
 
         # Local imports to not have circular imports with type hinting

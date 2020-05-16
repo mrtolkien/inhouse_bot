@@ -17,6 +17,8 @@ from inhouse_bot.sqlite.player import Player
 from inhouse_bot.sqlite.player_rating import PlayerRating
 from inhouse_bot.sqlite.sqlite_utils import roles_list, get_session
 
+import lol_id_tools as lit
+
 
 class QueueCog(commands.Cog, name='Queue'):
     def __init__(self, bot: InhouseBot):
@@ -116,9 +118,9 @@ class QueueCog(commands.Cog, name='Queue'):
             !champion riven
             !champion riven 1
         """
-        champion_id, ratio = self.bot.lit.get_id(champion_name, input_type='champion', return_ratio=True)
-
-        if ratio < 75:
+        try:
+            champion_id = lit.get_id(champion_name, object_type='champion')
+        except lit.NoMatchingNameFound:
             await ctx.send('Champion name was not understood properly.\n'
                            'Use `!help champion` for more information.',
                            delete_after=self.bot.warning_duration)
@@ -141,7 +143,7 @@ class QueueCog(commands.Cog, name='Queue'):
         session.merge(participant)
         session.commit()
 
-        log_message = f'Champion for game {game.id} set to {self.bot.lit.get_name(participant.champion_id)} for {player.name}'
+        log_message = f'Champion for game {game.id} set to {lit.get_name(participant.champion_id)} for {player.name}'
 
         logging.info(log_message)
         await ctx.send(log_message, delete_after=self.bot.short_notice_duration)

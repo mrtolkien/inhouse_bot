@@ -20,6 +20,8 @@ from inhouse_bot.sqlite.player import Player
 from inhouse_bot.sqlite.player_rating import PlayerRating
 from inhouse_bot.sqlite.sqlite_utils import roles_list, get_session
 
+import lol_id_tools as lit
+
 inflect_engine = inflect.engine()
 matplotlib.use('Agg')
 plt.style.use("cyberpunk")
@@ -52,7 +54,7 @@ class StatsCog(commands.Cog, name='Stats'):
             table.append([game.id,
                           game.date.date(),
                           participant.role,
-                          self.bot.lit.get_name(participant.champion_id) or 'Unknown',
+                          lit.get_name(participant.champion_id) or 'Unknown',
                           'Win' if game.winner == participant.team else 'Loss'])
 
         await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
@@ -208,7 +210,7 @@ class StatsCog(commands.Cog, name='Stats'):
 
         table = []
         for champion_id in stats:
-            table.append([self.bot.lit.get_name(champion_id),
+            table.append([lit.get_name(champion_id),
                           f'{stats[champion_id].role.capitalize()}',
                           stats[champion_id].games,
                           f'{stats[champion_id].wins / stats[champion_id].games * 100:.1f}%'])

@@ -12,11 +12,11 @@ discord-py = "*"
 sqlalchemy = "*"
 trueskill = "*"
 tabulate = "*"
-lol-id-tools = "*"
 rapidfuzz = "*"
 inflect = "*"
 dateparser = "*"
 mplcyberpunk = "*"
+lol-id-tools = "*"
 
 [requires]
 python_version = "3.8"
