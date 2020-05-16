@@ -114,10 +114,10 @@
         },
         "lol-id-tools": {
             "hashes": [
-                "sha256:d3fd253c77e781f63c07a1fb845b9175f95a02893466eddaca56f308d4586f3a"
+                "sha256:52a50f24bce1859a5267907860b84b4437af559db4704c72d3efaf27765a18af"
             ],
             "index": "pypi",
-            "version": "==1.0.0"
+            "version": "==1.0.1"
         },
         "matplotlib": {
             "hashes": [
