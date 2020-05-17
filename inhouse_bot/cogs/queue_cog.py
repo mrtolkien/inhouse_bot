@@ -479,7 +479,8 @@ class QueueCog(commands.Cog, name='Queue'):
                                              'You can refuse the match and leave the queue by pressing ❎.\n'
                                              'If you are ready, press ✅.', embed=embed)
 
-        return_value, accepting_players = await self.checkmark_validation(ready_check_message, discord_id_list, 10)
+        return_value, accepting_players = await self.checkmark_validation(ready_check_message, discord_id_list, 10,
+                                                                          timeout=5*60)
 
         self.games_in_ready_check.remove(game.id)
 

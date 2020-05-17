@@ -116,8 +116,8 @@ class StatsCog(commands.Cog, name='Stats'):
 
     @commands.command(help_index=3, aliases=['MMR', 'stats', 'rating', 'ratings'])
     async def mmr(self, ctx: commands.Context, user_id=None, date_start=None):
-        """
-        Returns your MMR, games total, and winrate for all roles.
+        """ Returns your MMR, games total, and winrate for all roles.
+
         date_start can be used to define a lower limit on stats.
 
         !stats 709581697410400307 "two weeks ago"
@@ -147,8 +147,7 @@ class StatsCog(commands.Cog, name='Stats'):
 
     @commands.command(help_index=4, aliases=['rating_history', 'ratings_history'])
     async def mmr_history(self, ctx: commands.Context, user_id=None, date_start=None):
-        """
-        Displays a graph of your MMR history over the past month.
+        """Displays a graph of your MMR history over the past month.
         """
         try:
             player = await self.get_player_with_team_check(ctx, user_id)
@@ -196,8 +195,7 @@ class StatsCog(commands.Cog, name='Stats'):
 
     @commands.command(help_index=5, aliases=['champs_stats', 'champion_stats', 'champ_stat'])
     async def champions_stats(self, ctx: commands.Context, user_id=None, date_start=None):
-        """
-        Returns your games total and winrate for all champions.
+        """Returns your games total and winrate for all champions.
         """
         try:
             player = await self.get_player_with_team_check(ctx, user_id)
@@ -225,8 +223,7 @@ class StatsCog(commands.Cog, name='Stats'):
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
     async def team(self, ctx: commands.Context, user_id: int, team_name: str):
-        """
-        Sets a player’s team to the given team name
+        """Sets a player’s team to the given team name
         """
         player = await self.bot.get_player(None, user_id)
         player.team = team_name.upper()
@@ -235,15 +232,19 @@ class StatsCog(commands.Cog, name='Stats'):
 
     @commands.command(help_index=6)
     async def view_team(self, ctx: commands.Context):
+        """View your current team and team mates.
         """
-        View your current team and team mates.
-        """
-        session = get_session()
         player = await self.bot.get_player(ctx)
 
-        teammates = session.query(Player).filter(Player.team == player.team)
+        if not player.team:
+            await ctx.send(f'Your team has not been set yet. Please contact Inero to get tagged.')
+            return
 
-        await ctx.send(f'You are currently part of {player.team}. Please contact an admin for changes.\n'
+        teammates_session = get_session()
+
+        teammates = teammates_session.query(Player).filter(Player.team == player.team)
+
+        await ctx.send(f'You are currently part of {player.team}. Please contact Inero for changes.\n'
                        f'Currently in {player.team}: {", ".join([t.name for t in teammates])}')
 
     async def get_player_with_team_check(self, ctx: commands.Context, user_id: int) -> Player:
@@ -254,7 +255,7 @@ class StatsCog(commands.Cog, name='Stats'):
         calling_player = await self.bot.get_player(ctx)
         player = await self.bot.get_player(None, user_id)
 
-        if calling_player.team != player.team and not ctx.author.guild_permissions.administrator:
+        if calling_player.team and calling_player.team != player.team and not ctx.author.guild_permissions.administrator:
             await ctx.send(f'You don’t have the permission to see {player.name}’s stats')
             raise PermissionError
 
