@@ -275,6 +275,8 @@ class QueueCog(commands.Cog, name='Queue'):
             clean_role, score = process.extractOne(role, roles_list)
             self.add_player_to_queue(player, clean_role, ctx.channel.id)
 
+        await self.matchmaking_process(ctx)
+
         await self.send_queue(ctx)
 
     @commands.command(hidden=True)
@@ -417,7 +419,7 @@ class QueueCog(commands.Cog, name='Queue'):
         # Start by removing all players from the channel queue before starting the game
         players_queues = {}
         for player in players.values():
-            players_queues[player.discord_id] = await self.remove_player_from_queue(player, channel_id=ctx.channel.id)
+            players_queues[player.discord_id] = await self.remove_player_from_queue(player)
 
         game_session = get_session()
         game = Game(players)
