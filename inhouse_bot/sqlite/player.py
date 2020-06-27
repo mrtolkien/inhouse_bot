@@ -12,7 +12,8 @@ import discord
 
 class Player(sql_alchemy_base):
     """Represents a player taking part in inhouse games"""
-    __tablename__ = 'player'
+
+    __tablename__ = "player"
 
     # Discord account info
     discord_id = Column(Integer, primary_key=True)
@@ -22,16 +23,18 @@ class Player(sql_alchemy_base):
     name = Column(String)
     team = Column(String)
 
-    ratings = relationship('PlayerRating',
-                           collection_class=attribute_mapped_collection('role'),
-                           backref='player',
-                           cascade="all, delete-orphan")
+    ratings = relationship(
+        "PlayerRating",
+        collection_class=attribute_mapped_collection("role"),
+        backref="player",
+        cascade="all, delete-orphan",
+    )
 
     # ORM relationship to the player table
-    participant_objects = relationship('GameParticipant', backref="player")
+    participant_objects = relationship("GameParticipant", backref="player")
 
     def __repr__(self):
-        return f'<Player: player_id={self.discord_id}>'
+        return f"<Player: player_id={self.discord_id}>"
 
     def __init__(self, user: discord.User):
         # Basic discord info
@@ -55,10 +58,13 @@ class Player(sql_alchemy_base):
         return self._get_games_query().limit(games_limit).all()
 
     def _get_games_query(self):
-        return object_session(self).query(Game, GameParticipant) \
-            .join(GameParticipant) \
-            .filter(GameParticipant.player_id == self.discord_id) \
+        return (
+            object_session(self)
+            .query(Game, GameParticipant)
+            .join(GameParticipant)
+            .filter(GameParticipant.player_id == self.discord_id)
             .order_by(Game.date.desc())
+        )
 
     # TODO Try to get a better type hint without circular imports
     def get_roles_stats(self, date_start=None) -> dict:
@@ -70,14 +76,17 @@ class Player(sql_alchemy_base):
         """
         session = object_session(self)
 
-        query = session.query(
-            GameParticipant.role,
-            func.count().label('games'),
-            type_coerce(func.sum(GameParticipant.team == Game.winner), Integer).label('wins')) \
-            .select_from(Game) \
-            .join(GameParticipant) \
-            .filter(GameParticipant.player_id == self.discord_id) \
+        query = (
+            session.query(
+                GameParticipant.role,
+                func.count().label("games"),
+                type_coerce(func.sum(GameParticipant.team == Game.winner), Integer).label("wins"),
+            )
+            .select_from(Game)
+            .join(GameParticipant)
+            .filter(GameParticipant.player_id == self.discord_id)
             .group_by(GameParticipant.role)
+        )
 
         if date_start:
             query = query.filter(Game.date > date_start)
@@ -93,15 +102,18 @@ class Player(sql_alchemy_base):
         """
         session = object_session(self)
 
-        query = session.query(
-            GameParticipant.champion_id,
-            GameParticipant.role,
-            func.count().label('games'),
-            type_coerce(func.sum(GameParticipant.team == Game.winner), Integer).label('wins')) \
-            .select_from(Game) \
-            .join(GameParticipant) \
-            .filter(GameParticipant.player_id == self.discord_id) \
+        query = (
+            session.query(
+                GameParticipant.champion_id,
+                GameParticipant.role,
+                func.count().label("games"),
+                type_coerce(func.sum(GameParticipant.team == Game.winner), Integer).label("wins"),
+            )
+            .select_from(Game)
+            .join(GameParticipant)
+            .filter(GameParticipant.player_id == self.discord_id)
             .group_by(GameParticipant.champion_id, GameParticipant.role)
+        )
 
         if date_start:
             query = query.filter(Game.date > date_start)

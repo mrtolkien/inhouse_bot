@@ -8,17 +8,18 @@ from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, team_enum, role_en
 
 class GameParticipant(sql_alchemy_base):
     """Represents a participant in an inhouse game"""
-    __tablename__ = 'game_participant'
+
+    __tablename__ = "game_participant"
 
     # Reference to the game table
-    game_id = Column(Integer, ForeignKey('game.id'), primary_key=True)
+    game_id = Column(Integer, ForeignKey("game.id"), primary_key=True)
 
     # Identifier among game participants
     team = Column(team_enum, primary_key=True)
     role = Column(role_enum, primary_key=True)
 
     # Unique player_id
-    player_id = Column(Integer, ForeignKey('player.discord_id'))
+    player_id = Column(Integer, ForeignKey("player.discord_id"))
 
     # Champion id, only filled if the player updates it by themselves after the game
     champion_id = Column(Integer)
@@ -32,9 +33,7 @@ class GameParticipant(sql_alchemy_base):
     def mmr(self):
         return self.trueskill_mu - 3 * self.trueskill_sigma + 25
 
-    __table_args__ = (ForeignKeyConstraint((player_id, role),
-                                           (PlayerRating.player_id, PlayerRating.role)),
-                      {})
+    __table_args__ = (ForeignKeyConstraint((player_id, role), (PlayerRating.player_id, PlayerRating.role)), {})
 
     def __init__(self, game, team, role, player):
         """
@@ -53,5 +52,5 @@ class GameParticipant(sql_alchemy_base):
         self.trueskill_mu = player.ratings[role].trueskill_mu
         self.trueskill_sigma = player.ratings[role].trueskill_sigma
 
-##
 
+##

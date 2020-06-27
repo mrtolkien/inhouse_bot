@@ -17,6 +17,10 @@ inflect = "*"
 dateparser = "*"
 mplcyberpunk = "*"
 lol-id-tools = "*"
+python-dotenv = "*"
 
 [requires]
 python_version = "3.8"
+
+[pipenv]
+allow_prereleases = true

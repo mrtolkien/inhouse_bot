@@ -1,6 +1,8 @@
 import pytest
 import discord.ext.test as dpytest
 import collections
+from dotenv import load_dotenv
+load_dotenv()
 
 
 @pytest.fixture()
