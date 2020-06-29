@@ -1,3 +1,5 @@
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 # LoL in-house bot
 A Discord bot to handle League of Legends in-house games, with role queue, balanced matchmaking, and basic stats.
 
