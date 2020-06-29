@@ -6,8 +6,8 @@ import discord.ext.test as dpytest
 
 @pytest.mark.asyncio
 async def test_player(caplog):
-    """
-    Tests the addition of the Bot user as a player itself.
+    """Tests the addition of the Bot user as a player itself.
+
     Also tests PlayerRating and makes sure the on_cascade flags are applied properly.
     """
     caplog.set_level(logging.INFO)
@@ -31,7 +31,7 @@ async def test_player(caplog):
 
     assert player == session.query(Player).filter(Player.discord_id == test_user.id).one()
 
-    player_rating = PlayerRating(player, 'mid')
+    player_rating = PlayerRating(player, "mid")
 
     session.add(player_rating)
     session.commit()
@@ -72,7 +72,7 @@ async def test_game(caplog):
         session.add(player)
         session.add(rating)
         session.commit()
-        players['blue' if member_id % 2 else 'red', role] = player
+        players["blue" if member_id % 2 else "red", role] = player
 
     game = Game(players)
     session.add(game)

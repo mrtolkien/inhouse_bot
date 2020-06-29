@@ -108,7 +108,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+test.env
 .venv
 env/
 venv/
@@ -143,4 +143,10 @@ cython_debug/
 .idea/dictionaries/
 tests/local_db_sandbox.py
 /tests/local_db_sandbox.py
-/.env
+
+# Only keeping the env example
+*.env
+!example.env
+
+# Ignoring sqlite db
+*.db

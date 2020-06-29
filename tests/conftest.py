@@ -2,7 +2,9 @@ import pytest
 import discord.ext.test as dpytest
 import collections
 from dotenv import load_dotenv
-load_dotenv()
+
+# Load .env for the discord token and DB name (used for local tests)
+load_dotenv("test.env")
 
 
 @pytest.fixture()

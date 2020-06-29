@@ -97,10 +97,25 @@ If you don’t supply the `game_id`, it will apply to your last game.
 `!team user_id team_name` puts the chosen user in the given team. This is admin-only for information security.
 
 # Installation
+Get your Discord bot token from https://discord.com/developers/applications.
+
+Run from Docker image:
+```shell script
+docker pull python:inhouse_bot
+docker run --rm \
+        --env INHOUSE_BOT_TOKEN=your_token \
+        --mount source=inhouse_bot,target=/.config \
+        python:inhouse_bot
+```
+
+Run from source:
 ```shell script
 git clone https://github.com/mrtolkien/inhouse_bot.git
 cd inhouse_bot
 pipenv install
+
+export INHOUSE_BOT_TOKEN=your_token
+
 pipenv run python run_bot.py
 ```
 

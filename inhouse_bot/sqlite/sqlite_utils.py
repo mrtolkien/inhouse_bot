@@ -1,24 +1,15 @@
-import warnings
 import os
 import sqlalchemy
 from sqlalchemy import orm, Enum
 from sqlalchemy.ext import declarative
-from inhouse_bot.common_utils import base_folder
 
 sql_alchemy_base = declarative.declarative_base()
 
+# Making sure the data directory exists
+os.makedirs("data", exist_ok=True)
+
 # Opening the database
-if "INHOUSE_BOT_TEST" in os.environ:
-    database_location = os.path.join(base_folder, "database_test.db")
-    # Trying to delete to test from an empty database.
-    try:
-        os.remove(database_location)
-    except PermissionError:
-        warnings.warn("Test database open in another program, using it as-is")
-    except FileNotFoundError:
-        pass
-else:
-    database_location = os.path.join(base_folder, "database.db")
+database_location = os.path.join("data", os.environ["INHOUSE_DATABASE_NAME"])
 
 engine = sqlalchemy.create_engine("sqlite:///{}".format(database_location))
 
