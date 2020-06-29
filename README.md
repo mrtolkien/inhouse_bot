@@ -8,19 +8,20 @@ A Discord bot to handle League of Legends in-house games, with role queue, balan
 
 # Installation
 Get your Discord bot token from https://discord.com/developers/applications.
+
 You can use a \*.env file to store the environment variables, as shown in the example.env file.
 
-From Docker image:
+### Docker image
+The sqlite database is saved in /data inside the container. Use a mount if you want to save it.
 ```shell script
 docker pull mrtolkien/inhouse_bot:1.0
 docker run --rm \
         --env INHOUSE_BOT_TOKEN=your_token INHOUSE_DATABASE_NAME=database_name.db \
-        --mount source=data,target=/data \
-        inhouse_bot:1.0
+        --mount source=$PWD/data,target=/data \
+        mrtolkien/inhouse_bot:1.0
 ```
 
-
-From source:
+### Source
 ```shell script
 git clone https://github.com/mrtolkien/inhouse_bot.git
 cd inhouse_bot
