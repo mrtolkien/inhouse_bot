@@ -6,6 +6,32 @@ A Discord bot to handle League of Legends in-house games, with role queue, balan
 # Demo
 ![Demo](inhouse_bot_demo.gif)
 
+# Installation
+Get your Discord bot token from https://discord.com/developers/applications.
+You can use a \*.env file to store the environment variables, as shown in the example.env file.
+
+From Docker image:
+```shell script
+docker pull mrtolkien/inhouse_bot:1.0
+docker run --rm \
+        --env INHOUSE_BOT_TOKEN=your_token INHOUSE_DATABASE_NAME=database_name.db \
+        --mount source=data,target=/data \
+        inhouse_bot:1.0
+```
+
+
+From source:
+```shell script
+git clone https://github.com/mrtolkien/inhouse_bot.git
+cd inhouse_bot
+pipenv install
+
+export INHOUSE_BOT_TOKEN=your_token
+export INHOUSE_DATABASE_NAME=database_name.db
+
+pipenv run python run_bot.py
+```
+
 # Basic use
 ```
 # Enter the channel’s matchmaking queue
@@ -97,29 +123,6 @@ If you don’t supply the `game_id`, it will apply to your last game.
 `!reset_queue` is an admin-only command to reset the queue.
 
 `!team user_id team_name` puts the chosen user in the given team. This is admin-only for information security.
-
-# Installation
-Get your Discord bot token from https://discord.com/developers/applications.
-
-Run from Docker image:
-```shell script
-docker pull python:inhouse_bot
-docker run --rm \
-        --env INHOUSE_BOT_TOKEN=your_token \
-        --mount source=inhouse_bot,target=/.config \
-        python:inhouse_bot
-```
-
-Run from source:
-```shell script
-git clone https://github.com/mrtolkien/inhouse_bot.git
-cd inhouse_bot
-pipenv install
-
-export INHOUSE_BOT_TOKEN=your_token
-
-pipenv run python run_bot.py
-```
 
 # Wanted contributions (2020-05-11)
 - `dpytest` does not support reactions to messages, which means the test functions are currently failing.
