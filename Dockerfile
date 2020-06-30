@@ -1,12 +1,13 @@
 FROM python:latest
 
-RUN pip install pipenv
+# pipenv install
+WORKDIR /pipenv
+COPY Pipfile* /pipenv/
+# Workaround due to recent pipenv versions having issues with Docker
+RUN pip install 'pipenv==2018.11.26'
+RUN pipenv install --deploy --system
 
-# We base our dependencies on the Pipfile in the repository
-COPY Pipfile .
-COPY Pipfile.lock .
-RUN pipenv install --system --deploy
-
+WORKDIR /
 COPY /inhouse_bot/ /inhouse_bot/
 COPY run_bot.py .
 CMD ["python", "run_bot.py"]
