@@ -15,9 +15,10 @@ You can use a \*.env file to store the environment variables, as shown in the ex
 The sqlite database is saved in /data inside the container. Use a mount if you want to save it.
 ```shell script
 docker pull mrtolkien/inhouse_bot:1.0
-docker run --rm \
+docker run --rm -d \
         --env INHOUSE_BOT_TOKEN=your_token INHOUSE_DATABASE_NAME=database_name.db \
-        --mount source=$PWD/data,target=/data \
+        --mount type=bind,source=$PWD/data,target=/data \
+        --name inhouse_bot \
         mrtolkien/inhouse_bot:1.0
 ```
 
