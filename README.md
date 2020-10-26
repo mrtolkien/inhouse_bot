@@ -13,14 +13,24 @@ You can use a \*.env file to store the environment variables, as shown in the ex
 
 ### Docker image
 The sqlite database is saved in /data inside the container. Use a mount if you want to save it.
-```shell script
-docker pull mrtolkien/inhouse_bot:1.0
-docker run --rm -d \
-        --env INHOUSE_BOT_TOKEN=your_token INHOUSE_DATABASE_NAME=database_name.db \
-        --mount type=bind,source=$PWD/data,target=/data \
-        --name inhouse_bot \
-        mrtolkien/inhouse_bot:1.0
+
+Example `docker-compose.yml` file:
+```yaml
+version: "3.8"
+
+services:
+  inhouse_bot:
+    image: mrtolkien/inhouse_bot
+    env_file:
+      - example.env
+    volumes:
+    - type: bind
+      source: ./data
+      target: /data
+    restart: always
 ```
+
+Afterwards, you can run the bot with `docker-compose up`.
 
 ### Source
 ```shell script
