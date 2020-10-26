@@ -1,13 +1,14 @@
-FROM python:latest
+# Sticking to 3.8 at the moment because some packages don’t have wheels for 3.9 as of November 2020
+FROM python:3.8
 
-# pipenv install
-WORKDIR /pipenv
-COPY Pipfile* /pipenv/
-# Workaround due to recent pipenv versions having issues with Docker
-RUN pip install 'pipenv==2018.11.26'
-RUN pipenv install --deploy --system
+# Installing from files for better readability
+COPY requirements.txt /
+RUN pip install -r /requirements.txt
 
+# Copying the bot source code
 WORKDIR /
 COPY /inhouse_bot/ /inhouse_bot/
 COPY run_bot.py .
+
+# Running the bot itself
 CMD ["python", "run_bot.py"]

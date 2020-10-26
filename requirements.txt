@@ -1,0 +1,12 @@
+# Keeping requirements in a file for readability
+
+discord-py
+sqlalchemy
+trueskill
+tabulate
+rapidfuzz
+inflect
+dateparser
+mplcyberpunk
+python-dotenv
+lol-id-tools
