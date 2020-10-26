@@ -32,18 +32,6 @@ services:
 
 Afterwards, you can run the bot with `docker-compose up`.
 
-### Source
-```shell script
-git clone https://github.com/mrtolkien/inhouse_bot.git
-cd inhouse_bot
-pipenv install
-
-export INHOUSE_BOT_TOKEN=your_token
-export INHOUSE_DATABASE_NAME=database_name.db
-
-pipenv run python run_bot.py
-```
-
 # Basic use
 ```
 # Enter the channel’s matchmaking queue
