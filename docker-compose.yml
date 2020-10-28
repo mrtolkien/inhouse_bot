@@ -4,7 +4,6 @@ services:
   inhouse_bot:
     image: mrtolkien/inhouse_bot
     container_name: inhouse_bot
-    restart: always
     build:
       context: .
     volumes:
@@ -12,4 +11,4 @@ services:
       source: ./data
       target: /data
     env_file:
-      - .env
+    - .env

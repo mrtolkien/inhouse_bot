@@ -10,6 +10,7 @@ from discord.ext import commands
 from rapidfuzz import process
 from tabulate import tabulate
 from inhouse_bot.common_utils import trueskill_blue_side_winrate
+from inhouse_bot.emoji.roles_emoji import get_role_emoji
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
@@ -78,7 +79,7 @@ class QueueCog(commands.Cog, name="Queue"):
 
         for role in clean_roles:
             # Dirty code to get the emoji related to the letters
-            await ctx.message.add_reaction(chr(127462 + (ord(f"{role[0]}") - 97)))
+            await ctx.message.add_reaction(get_role_emoji(role))
 
         await self.send_queue(ctx)
 
@@ -149,7 +150,9 @@ class QueueCog(commands.Cog, name="Queue"):
         session.merge(participant)
         session.commit()
 
-        log_message = f"Champion for game {game.id} set to {lit.get_name(participant.champion_id)} for {player.name}"
+        log_message = (
+            f"Champion for game {game.id} set to {lit.get_name(participant.champion_id)} for {player.name}"
+        )
 
         logging.info(log_message)
         await ctx.send(log_message, delete_after=self.bot.short_notice_duration)
@@ -206,7 +209,9 @@ class QueueCog(commands.Cog, name="Queue"):
             delete_after=self.bot.validation_duration,
         )
 
-        cancel, cancelling_players = await self.checkmark_validation(cancelling_game_message, discord_ids_list, 6)
+        cancel, cancelling_players = await self.checkmark_validation(
+            cancelling_game_message, discord_ids_list, 6
+        )
 
         if not cancel:
             # If there’s no validation, we just inform players nothing happened and leave
@@ -272,7 +277,9 @@ class QueueCog(commands.Cog, name="Queue"):
             !admin_queue 127200016472211456 kick
         """
         # This needs to use the players_session to work with player objects equality
-        player = self.bot.players_session.query(Player).get(user_id) or await self.bot.get_player(None, user_id)
+        player = self.bot.players_session.query(Player).get(user_id) or await self.bot.get_player(
+            None, user_id
+        )
 
         if role == "kick":
             await self.remove_player_from_queue(player, ctx.channel.id)
@@ -319,7 +326,9 @@ class QueueCog(commands.Cog, name="Queue"):
 
         table = [[]]
         for role in roles_list:
-            table.append([role.capitalize()] + sorted([p.name for p in self.channel_queues[channel_id][role]]))
+            table.append(
+                [role.capitalize()] + sorted([p.name for p in self.channel_queues[channel_id][role]])
+            )
 
         embed = Embed(colour=discord.colour.Colour.dark_red())
         embed.add_field(name="Queue", value=f'```{tabulate(table, tablefmt="plain")}```')
@@ -391,7 +400,9 @@ class QueueCog(commands.Cog, name="Queue"):
         # TODO Spot mirrored team compositions (full blue/red -> red/blue) to not calculate them twice
         role_permutations = []
         for role in roles_list:
-            role_permutations.append([p for p in itertools.permutations(self.channel_queues[channel_id][role], 2)])
+            role_permutations.append(
+                [p for p in itertools.permutations(self.channel_queues[channel_id][role], 2)]
+            )
 
         # Very simple maximum search
         best_score = -1
@@ -484,7 +495,9 @@ class QueueCog(commands.Cog, name="Queue"):
         )
 
         if mismatch:
-            embed.add_field(name="WARNING", value="According to TrueSkill, this game might be a slight mismatch.")
+            embed.add_field(
+                name="WARNING", value="According to TrueSkill, this game might be a slight mismatch."
+            )
 
         discord_id_list = [p.discord_id for p in players.values()]
 

@@ -87,8 +87,12 @@ class StatsCog(commands.Cog, name="Stats"):
     @commands.command(help_index=2, aliases=["rankings"])
     async def ranking(self, ctx: commands.Context, role="all"):
         """
-        Returns the top 20 players for the selected role.
+        Returns the top 20 players for the selected role in the current server.
         """
+        if not ctx.guild:
+            await ctx.send("!ranking can only be called inside a Discord server.", delete_after=30)
+            return
+
         if role == "all":
             clean_role = role
         else:
@@ -99,7 +103,15 @@ class StatsCog(commands.Cog, name="Stats"):
 
         session = get_session()
 
-        role_ranking = session.query(PlayerRating).order_by(-PlayerRating.mmr).filter(PlayerRating.games > 0)
+        guild_player_ids = [m.id for m in ctx.guild.members]
+
+        role_ranking = (
+            session.query(PlayerRating)
+            .join(Player)
+            .order_by(-PlayerRating.mmr)
+            .filter(PlayerRating.games > 0)
+            .filter(Player.discord_id.in_(guild_player_ids))
+        )
 
         if clean_role != "all":
             role_ranking = role_ranking.filter(PlayerRating.role == clean_role)
@@ -108,7 +120,12 @@ class StatsCog(commands.Cog, name="Stats"):
 
         for rank, rating in enumerate(role_ranking.limit(20)):
             table.append(
-                [inflect_engine.ordinal(rank + 1), rating.player.name, f"{rating.mmr:.1f}", rating.get_games()]
+                [
+                    inflect_engine.ordinal(rank + 1),
+                    rating.player.name,
+                    f"{rating.mmr:.1f}",
+                    rating.get_games(),
+                ]
                 + [rating.role if clean_role == "all" else None]
             )
 
