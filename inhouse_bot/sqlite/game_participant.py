@@ -21,6 +21,9 @@ class GameParticipant(sql_alchemy_base):
     # Unique player_id
     player_id = Column(Integer, ForeignKey("player.discord_id"))
 
+    # Player relationship
+    player = relationship("Player", viewonly=True)
+
     # Champion id, only filled if the player updates it by themselves after the game
     champion_id = Column(Integer)
 
@@ -33,7 +36,10 @@ class GameParticipant(sql_alchemy_base):
     def mmr(self):
         return self.trueskill_mu - 3 * self.trueskill_sigma + 25
 
-    __table_args__ = (ForeignKeyConstraint((player_id, role), (PlayerRating.player_id, PlayerRating.role)), {})
+    __table_args__ = (
+        ForeignKeyConstraint((player_id, role), (PlayerRating.player_id, PlayerRating.role)),
+        {},
+    )
 
     def __init__(self, game, team, role, player):
         """

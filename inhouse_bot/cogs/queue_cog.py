@@ -1,13 +1,13 @@
 import asyncio
-from collections import defaultdict
 import itertools
 import logging
-from typing import List, Tuple
+from typing import Tuple, Dict, Optional
 
 import discord
 from discord import Embed
 from discord.ext import commands
 from rapidfuzz import process
+from sqlalchemy.orm import joinedload
 from tabulate import tabulate
 from inhouse_bot.common_utils import trueskill_blue_side_winrate
 from inhouse_bot.emoji.roles_emoji import get_role_emoji
@@ -16,6 +16,7 @@ from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
 from inhouse_bot.sqlite.player import Player
 from inhouse_bot.sqlite.player_rating import PlayerRating
+from inhouse_bot.sqlite.queue_player import QueuePlayer
 from inhouse_bot.sqlite.sqlite_utils import roles_list, get_session
 
 import lol_id_tools as lit
@@ -27,14 +28,9 @@ class QueueCog(commands.Cog, name="Queue"):
         :param bot: the bot to attach the cog to
         """
         self.bot = bot
-        # [channel_id][role][list of Player objects]
-        self.channel_queues = defaultdict(lambda: {role: set() for role in roles_list})
 
         # [channel_id][message]
         self.latest_queue_message = {}
-
-        # (discord_id)
-        self.games_in_ready_check = set()
 
     @commands.command(help_index=0)
     async def queue(self, ctx: commands.Context, *, roles):
@@ -81,14 +77,14 @@ class QueueCog(commands.Cog, name="Queue"):
             # Dirty code to get the emoji related to the letters
             await ctx.message.add_reaction(get_role_emoji(role))
 
-        await self.send_queue(ctx)
-
         await self.matchmaking_process(ctx)
+
+        await self.send_queue(ctx)
 
     @commands.command(help_index=1, aliases=["leave"])
     async def leave_queue(self, ctx: commands.Context, *args):
         """
-        Removes you from the queue in the current channel or all channels with !stop_queue all.
+        Removes you from the queue in the current channel or all channels with !leave_queue all.
 
         Example usage:
             !stop_queue
@@ -297,7 +293,14 @@ class QueueCog(commands.Cog, name="Queue"):
         """
         Admin-only way to reset the queue in the current channel
         """
-        self.channel_queues[ctx.channel.id] = {role: set() for role in roles_list}
+        session = get_session()
+
+        query = session.query(QueuePlayer).filter(QueuePlayer.channel_id == ctx.channel.id)
+        query.delete()
+
+        session.commit()
+        session.close()
+
         await self.send_queue(ctx)
 
     def add_player_to_queue(self, player, role, channel_id):
@@ -310,7 +313,18 @@ class QueueCog(commands.Cog, name="Queue"):
             player = self.bot.players_session.merge(player)
 
         # Actually adding the player to the queue
-        self.channel_queues[channel_id][role].add(player)
+        # TODO A player can reset his ready_check status that way since it’s not blocking, see if it makes sense
+        session = get_session()
+
+        # noinspection PyTypeChecker
+        queue_player = QueuePlayer(
+            channel_id=channel_id, player_id=player.discord_id, role=role, ready_check=None
+        )
+        session.merge(queue_player)
+        session.commit()
+
+        session.close()
+
         logging.info(f"Player <{player.discord_string}> has been added to the <{role}><{channel_id}> queue")
 
     async def send_queue(self, ctx: commands.context):
@@ -324,14 +338,30 @@ class QueueCog(commands.Cog, name="Queue"):
         except KeyError:
             old_queue_message = None
 
+        # Getting players in queue and not in a ready check
+        session = get_session()
+        players_in_queue = (
+            session.query(QueuePlayer)
+            .options(joinedload(QueuePlayer.player))
+            .filter(QueuePlayer.channel_id == ctx.channel.id)
+            .filter(QueuePlayer.ready_check == None)
+            .all()
+        )
+        session.close()
+
         table = [[]]
         for role in roles_list:
-            table.append(
-                [role.capitalize()] + sorted([p.name for p in self.channel_queues[channel_id][role]])
-            )
+            # We add an empty string list or tabulate gets sad
+            table.append(sorted([p.player.name for p in players_in_queue if p.role == role] or [" "]))
 
         embed = Embed(colour=discord.colour.Colour.dark_red())
-        embed.add_field(name="Queue", value=f'```{tabulate(table, tablefmt="plain")}```')
+
+        table_text = "\n".join(
+            f"{get_role_emoji(role)} `{row} `"
+            for role, row in zip(roles_list, tabulate(table, tablefmt="plain").split("\n")[1:])
+        )
+
+        embed.add_field(name="Queue", value=table_text)
 
         self.latest_queue_message[channel_id] = await ctx.send(embed=embed)
 
@@ -339,7 +369,7 @@ class QueueCog(commands.Cog, name="Queue"):
         if old_queue_message:
             await old_queue_message.delete()
 
-    async def remove_player_from_queue(self, player, channel_id=None, ctx=None) -> List[Tuple[int, str]]:
+    async def remove_player_from_queue(self, player, channel_id=None, ctx=None):
         """
         Removes the given player from queue.
 
@@ -348,13 +378,16 @@ class QueueCog(commands.Cog, name="Queue"):
 
         Returns a list of [channel_id, role] it was removed from
         """
-        channels_roles_list = []
+        session = get_session()
 
-        for channel_id in self.channel_queues if not channel_id else [channel_id]:
-            for role in self.channel_queues[channel_id]:
-                if player in self.channel_queues[channel_id][role]:
-                    channels_roles_list.append((channel_id, role))
-                    self.channel_queues[channel_id][role].remove(player)
+        query = session.query(QueuePlayer).filter(QueuePlayer.player_id == player.discord_id)
+        if channel_id:
+            query = query.filter(QueuePlayer.channel_id == channel_id)
+
+        query.delete()
+
+        session.commit()
+        session.close()
 
         logging.info(
             "Player <{}> has been removed from {}".format(
@@ -365,8 +398,6 @@ class QueueCog(commands.Cog, name="Queue"):
         if ctx:
             await ctx.message.add_reaction("👍")
             await self.send_queue(ctx)
-
-        return channels_roles_list
 
     async def matchmaking_process(self, ctx):
         """
@@ -384,13 +415,29 @@ class QueueCog(commands.Cog, name="Queue"):
         elif match_quality > -0.2:
             await self.start_game(ctx, players, mismatch=True)
 
-    def find_best_game(self, channel_id) -> Tuple[dict, int]:
+    @staticmethod
+    def find_best_game(channel_id) -> Tuple[Dict[Tuple[str, str], Player], int]:
         """
         Looks at the queue in the channel and returns the best match-made game (as a {team, role} -> Player dict).
         """
-        # Do not do anything if there’s not at least 2 players in queue per role
+        # Getting players in queue
+        session = get_session()
+
+        players_in_queue = (
+            session.query(QueuePlayer)
+            .options(joinedload(QueuePlayer.player))
+            .filter(QueuePlayer.channel_id == channel_id)
+            .filter(QueuePlayer.ready_check == None)
+            .all()
+        )
+
+        queue = {}
         for role in roles_list:
-            if self.channel_queues[channel_id][role].__len__() < 2:
+            queue[role] = [p.player for p in players_in_queue if p.role == role]
+
+        # Do not do anything if there’s not at least 2 players in queue per role
+        for role in queue:
+            if len(queue[role]) < 2:
                 logging.debug("Not enough players to start matchmaking")
                 return {}, -1
 
@@ -400,9 +447,7 @@ class QueueCog(commands.Cog, name="Queue"):
         # TODO Spot mirrored team compositions (full blue/red -> red/blue) to not calculate them twice
         role_permutations = []
         for role in roles_list:
-            role_permutations.append(
-                [p for p in itertools.permutations(self.channel_queues[channel_id][role], 2)]
-            )
+            role_permutations.append([p for p in itertools.permutations(queue[role], 2)])
 
         # Very simple maximum search
         best_score = -1
@@ -428,70 +473,115 @@ class QueueCog(commands.Cog, name="Queue"):
                 if best_score > -0.01:
                     break
 
+        session.close()
+
         logging.info("The best match found had a score of {}".format(best_score))
 
         return best_players, best_score
 
-    async def start_game(self, ctx, players, mismatch=False):
+    async def start_game(self, ctx, players: Dict[Tuple[str, str], Player], mismatch=False):
         """
         Attempts to start the given game by pinging players and waiting for their reactions.
         """
-        # Start by removing all players from the channel queue before starting the game
-        players_queues = {}
-        for player in players.values():
-            players_queues[player.discord_id] = await self.remove_player_from_queue(player)
+        player_ids = [p.discord_id for p in players.values()]
 
-        game_session = get_session()
-        game = Game(players)
-        game_session.add(game)
-        game_session.commit()
+        session = get_session()
 
-        ready, ready_players = await self.ready_check(ctx, players, mismatch, game)
+        session.query(QueuePlayer).filter(QueuePlayer.player_id.in_(player_ids)).update(
+            {"ready_check": False}, synchronize_session=False
+        )
 
-        if not ready:
-            # If the ready check fails, we delete the game and let !queue handle restarting matchmaking.
-            for player_id in ready_players:
-                for queue, role in players_queues[player_id]:
-                    self.add_player_to_queue(await self.bot.get_player(None, player_id), role, queue)
+        session.commit()
+        session.close()
 
-            await ctx.send(
-                f"The game has been cancelled.\n"
-                f"Players who pressed ✅ have been put back in queue.\n"
-                f"{self.get_tags([discord_id for discord_id in players_queues if discord_id not in ready_players])}"
-                f" have been removed from queue."
+        await self.send_queue(ctx)
+
+        ready, ready_players = await self.ready_check(ctx, players, mismatch)
+
+        if ready is True:
+            game = Game(players)
+
+            session = get_session()
+            # We create the game
+            session.add(game)
+            # We drop the players from queue
+            session.query(QueuePlayer).filter(QueuePlayer.player_id.in_(player_ids)).delete()
+            session.commit()
+            session.close()
+
+            validation_message = (
+                f"Game {game.id} has been accepted and can start!\n"
+                f"Score it with `!won` or `!lost` after it has been played."
             )
 
-            game_session.delete(game)
-            game_session.commit()
+            logging.info(validation_message)
+            await ctx.send(validation_message)
+
+            await self.send_queue(ctx)
+
+        # The queue failed
+        else:
+            if ready is False:
+                # Someone refused
+                session = get_session()
+
+                message = (
+                    f"The game has been cancelled.\n"
+                    f"The player has been removed from queue and others have been put back in queue."
+                )
+
+            else:
+                # It timed out, so we quick the players who did not accept
+                session = get_session()
+
+                session.query(QueuePlayer).filter(QueuePlayer.ready_check == False).delete()
+
+                message = f"The game has timed out.\n" f"Players who pressed ✅ have been put back in queue."
+
+            # We get there only if ready is False or None
+            session.query(QueuePlayer).filter(QueuePlayer.player_id.in_(player_ids)).update(
+                {"ready_check": None}, synchronize_session=False
+            )
+
+            session.commit()
+            session.close()
+
+            await ctx.send(message)
 
             # We return and restart matchmaking with the new queue
             await self.send_queue(ctx)
             return await self.matchmaking_process(ctx)
 
-        validation_message = f"Game {game.id} has been accepted and can start!"
-
-        logging.info(validation_message)
-        await ctx.send(validation_message)
-
-    async def ready_check(self, ctx: commands.Context, players, mismatch, game):
+    async def ready_check(self, ctx: commands.Context, players, mismatch):
         """
         Posts a message in the given context, pinging the 10 players, trying to start the game.
 
         If all 10 players accept the game, returns True.
         If not, returns False.
         """
-        self.games_in_ready_check.add(game.id)
 
         logging.info("Starting a game ready check")
 
-        blue_win_chance = trueskill_blue_side_winrate(
-            {(team, role): game.participants[team, role].player for team, role in game.participants}
+        blue_win_chance = trueskill_blue_side_winrate(players)
+
+        # TODO Mix it with game.__str__
+        game_representation = tabulate(
+            {
+                team_column.capitalize(): [
+                    players[team, role].name
+                    for (team, role) in sorted(players, key=lambda x: roles_list.index(x[1]))
+                    if team == team_column
+                ]
+                for team_column in ["blue", "red"]
+            },
+            headers="keys",
         )
 
         embed = Embed(title="Proposed game")
         embed.add_field(
             name="Team compositions",
-            value=f"Blue side expected winrate is {blue_win_chance * 100:.1f}%.\n" f"```{game}```",
+            value=f"Blue side expected winrate is {blue_win_chance * 100:.1f}%.\n"
+            f"```{game_representation}```",
         )
 
         if mismatch:
@@ -510,10 +600,8 @@ class QueueCog(commands.Cog, name="Queue"):
         )
 
         return_value, accepting_players = await self.checkmark_validation(
-            ready_check_message, discord_id_list, 10, timeout=5 * 60
+            ready_check_message, discord_id_list, 10, timeout=5 * 60, queue=True
         )
-
-        self.games_in_ready_check.remove(game.id)
 
         return return_value, accepting_players
 
@@ -525,7 +613,7 @@ class QueueCog(commands.Cog, name="Queue"):
 
         game, game_participant = player.get_last_game()
 
-        if game.winner or game.id in self.games_in_ready_check:
+        if game.winner:
             # Conflict between entered results and current results
             await ctx.send(f"**Your last game’s result was already entered and validated**", delete_after=30)
             return
@@ -556,8 +644,13 @@ class QueueCog(commands.Cog, name="Queue"):
         await ctx.send(message)
 
     async def checkmark_validation(
-        self, message: discord.Message, validating_members: [], validation_threshold: int, timeout=120.0
-    ) -> Tuple[bool, set]:
+        self,
+        message: discord.Message,
+        validating_members: [],
+        validation_threshold: int,
+        timeout=120.0,
+        queue=False,
+    ) -> Tuple[Optional[bool], set]:
         """
         Implements a checkmark validation on the chosen message.
 
@@ -581,19 +674,32 @@ class QueueCog(commands.Cog, name="Queue"):
                 reaction, user = await self.bot.wait_for("reaction_add", timeout=timeout, check=check)
 
                 if str(reaction.emoji) == "✅":
+                    if queue:
+                        session = get_session()
+                        session.query(QueuePlayer).filter(QueuePlayer.player_id == user.id).filter(
+                            QueuePlayer.channel_id == message.channel.id
+                        ).update({"ready_check": True}, synchronize_session=False)
+                        session.commit()
+                        session.close()
+
                     members_who_validated.add(user.id)
                     if members_who_validated.__len__() >= validation_threshold:
                         return True, members_who_validated
 
                 elif str(reaction.emoji) == "❎":
-                    break
+                    if queue:
+                        session = get_session()
+                        session.query(QueuePlayer).filter(QueuePlayer.player_id == user.id).filter(
+                            QueuePlayer.channel_id == message.channel.id
+                        ).delete()
+                        session.commit()
+                        session.close()
 
-        # We get there if no player accepted in the last two minutes
+                    return False, members_who_validated
+
+        # We get there if no player accepted in the last x minutes
         except asyncio.TimeoutError:
-            pass
-
-        # This handles both timeout and queue refusal
-        return False, members_who_validated
+            return None, members_who_validated
 
     @staticmethod
     def get_tags(discord_ids: list):

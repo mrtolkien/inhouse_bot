@@ -49,6 +49,11 @@ class InhouseBot(commands.Bot):
             await ctx.send(f"Command `{ctx.invoked_with}` not found", delete_after=self.warning_duration)
         elif isinstance(error, commands.ConversionError):
             pass
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(
+                f"Arguments missing. Type `!help {ctx.invoked_with}` for help",
+                delete_after=self.warning_duration,
+            )
         else:
             print(type(error))
 

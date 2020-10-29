@@ -1,3 +1,5 @@
+from typing import List
+
 from sqlalchemy import Column, Integer, Float, ForeignKey, func, ForeignKeyConstraint, select
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import object_session, relationship, column_property
@@ -9,7 +11,6 @@ class PlayerRating(sql_alchemy_base):
 
     __tablename__ = "player_rating"
 
-    # Auto-incremented ID, needed to allow discord account changes in the future
     player_id = Column(Integer, ForeignKey("player.discord_id"), primary_key=True)
 
     # We will get one row per role
@@ -56,18 +57,24 @@ class PlayerRating(sql_alchemy_base):
         self.trueskill_mu = 25
         self.trueskill_sigma = 25 / 3
 
-    def get_rank(self) -> int:
+    # TODO Move that out of here
+    def get_rank(self, member_ids=List[int]) -> int:
+        from inhouse_bot.sqlite.player import Player
+
         session = object_session(self)
+
         rank_query = (
             session.query(func.count().label("rank"))
             .select_from(PlayerRating)
+            .join(Player)
             .filter(PlayerRating.role == self.role, PlayerRating.mmr > self.mmr, PlayerRating.games > 0)
+            .filter(Player.discord_id.in_(member_ids))
         )
 
         # Need to count yourself as well!
         return rank_query.one().rank + 1
 
-    def get_games(self) -> int:
+    def get_games_total(self) -> int:
         # TODO Make that into a property
         from inhouse_bot.sqlite.game_participant import GameParticipant
 

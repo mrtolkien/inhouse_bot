@@ -11,4 +11,4 @@ COPY /inhouse_bot/ /inhouse_bot/
 COPY run_bot.py .
 
 # Running the bot itself
-CMD ["python", "run_bot.py"]
+CMD python -u run_bot.py
