@@ -58,6 +58,20 @@ class QueueCog(commands.Cog, name="Queue"):
         except TypeError:
             pass
 
+        session = get_session()
+        queue_player = (
+            session.query(QueuePlayer)
+            .filter(QueuePlayer.player_id == Player.discord_id)
+            .filter(QueuePlayer.ready_check != None)
+        ).first()
+        session.close()
+
+        if queue_player:
+            await ctx.send(
+                "It seems you are in a pre-game check. You will be able to queue again once it is over."
+            )
+            return
+
         clean_roles = set()
         for role in roles.split(" "):
             clean_role, score = process.extractOne(role, roles_list)
@@ -511,7 +525,7 @@ class QueueCog(commands.Cog, name="Queue"):
             session.close()
 
             validation_message = (
-                f"Game {game.id} has been accepted and can start!\n"
+                f"Game has been accepted and can start!\n"
                 f"Score it with `!won` or `!lost` after it has been played."
             )
 
@@ -647,7 +661,7 @@ class QueueCog(commands.Cog, name="Queue"):
     async def checkmark_validation(
         self,
         message: discord.Message,
-        validating_members: [],
+        validating_members: list,
         validation_threshold: int,
         timeout=120.0,
         queue=False,
@@ -671,6 +685,7 @@ class QueueCog(commands.Cog, name="Queue"):
 
         members_who_validated = set()
         try:
+            # TODO Remove that while True for something smarter
             while True:
                 reaction, user = await self.bot.wait_for("reaction_add", timeout=timeout, check=check)
 
@@ -692,7 +707,7 @@ class QueueCog(commands.Cog, name="Queue"):
                         session = get_session()
                         session.query(QueuePlayer).filter(QueuePlayer.player_id == user.id).filter(
                             QueuePlayer.channel_id == message.channel.id
-                        ).delete()
+                        ).delete(synchronize_session=False)
                         session.commit()
                         session.close()
 
@@ -705,6 +720,3 @@ class QueueCog(commands.Cog, name="Queue"):
     @staticmethod
     def get_tags(discord_ids: list):
         return ", ".join(["<@{}>".format(discord_id) for discord_id in discord_ids])
-
-
-##
