@@ -272,7 +272,7 @@ class StatsCog(commands.Cog, name="Stats"):
         player = await self.bot.get_player(ctx)
 
         if not player.team:
-            await ctx.send(f"Your team has not been set yet. Please contact Inero to get tagged.")
+            await ctx.send(f"Your team has not been set yet. Please contact a server admin to get tagged.")
             return
 
         teammates_session = get_session()
@@ -280,7 +280,7 @@ class StatsCog(commands.Cog, name="Stats"):
         teammates = teammates_session.query(Player).filter(Player.team == player.team)
 
         await ctx.send(
-            f"You are currently part of {player.team}. Please contact Inero for changes.\n"
+            f"You are currently part of {player.team}. Please contact a server admin for changes.\n"
             f'Currently in {player.team}: {", ".join([t.name for t in teammates])}'
         )
 
