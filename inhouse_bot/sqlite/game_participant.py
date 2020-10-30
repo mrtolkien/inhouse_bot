@@ -57,6 +57,3 @@ class GameParticipant(sql_alchemy_base):
         self.player_id = player.discord_id
         self.trueskill_mu = player.ratings[role].trueskill_mu
         self.trueskill_sigma = player.ratings[role].trueskill_sigma
-
-
-##

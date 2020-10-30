@@ -134,3 +134,7 @@ before committing them.
 - The matchmaking algorithm is currently fully brute-force and can definitely be improved in terms of calculation time.
 
 - Additions to stats visualisations are always welcomed!
+
+- Make it more flexible so it can work with other games/games without roles (Valorant, ...)
+
+- Make sure it works with multiple queues popping together

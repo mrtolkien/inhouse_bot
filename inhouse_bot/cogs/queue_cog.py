@@ -296,7 +296,7 @@ class QueueCog(commands.Cog, name="Queue"):
         session = get_session()
 
         query = session.query(QueuePlayer).filter(QueuePlayer.channel_id == ctx.channel.id)
-        query.delete()
+        query.delete(synchronize_session=False)
 
         session.commit()
         session.close()
@@ -349,19 +349,17 @@ class QueueCog(commands.Cog, name="Queue"):
         )
         session.close()
 
-        table = [[]]
+        rows = []
         for role in roles_list:
             # We add an empty string list or tabulate gets sad
-            table.append(sorted([p.player.name for p in players_in_queue if p.role == role] or [" "]))
+            rows.append(
+                f"{get_role_emoji(role)} "
+                + ", ".join(p.player.name for p in players_in_queue if p.role == role)
+            )
 
         embed = Embed(colour=discord.colour.Colour.dark_red())
 
-        table_text = "\n".join(
-            f"{get_role_emoji(role)} `{row} `"
-            for role, row in zip(roles_list, tabulate(table, tablefmt="plain").split("\n")[1:])
-        )
-
-        embed.add_field(name="Queue", value=table_text)
+        embed.add_field(name="Queue", value="\n".join(rows))
 
         self.latest_queue_message[channel_id] = await ctx.send(embed=embed)
 
@@ -384,7 +382,7 @@ class QueueCog(commands.Cog, name="Queue"):
         if channel_id:
             query = query.filter(QueuePlayer.channel_id == channel_id)
 
-        query.delete()
+        query.delete(synchronize_session=False)
 
         session.commit()
         session.close()
@@ -504,8 +502,11 @@ class QueueCog(commands.Cog, name="Queue"):
             session = get_session()
             # We create the game
             session.add(game)
+
             # We drop the players from queue
-            session.query(QueuePlayer).filter(QueuePlayer.player_id.in_(player_ids)).delete()
+            session.query(QueuePlayer).filter(QueuePlayer.player_id.in_(player_ids)).delete(
+                synchronize_session=False
+            )
             session.commit()
             session.close()
 
@@ -704,3 +705,6 @@ class QueueCog(commands.Cog, name="Queue"):
     @staticmethod
     def get_tags(discord_ids: list):
         return ", ".join(["<@{}>".format(discord_id) for discord_id in discord_ids])
+
+
+##
