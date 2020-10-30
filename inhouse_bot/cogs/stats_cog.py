@@ -56,7 +56,7 @@ class StatsCog(commands.Cog, name="Stats"):
                     game.id,
                     game.date.date(),
                     participant.role,
-                    lit.get_name(participant.champion_id) or "Unknown",
+                    lit.get_name(participant.champion_id) if participant.champion_id else "Unknown",
                     "Win" if game.winner == participant.team else "Loss",
                 ]
             )
