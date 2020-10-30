@@ -241,7 +241,7 @@ class StatsCog(commands.Cog, name="Stats"):
         for champion_id in stats:
             table.append(
                 [
-                    lit.get_name(champion_id),
+                    lit.get_name(champion_id) if champion_id else "Unknown",
                     f"{stats[champion_id].role.capitalize()}",
                     stats[champion_id].games,
                     f"{stats[champion_id].wins / stats[champion_id].games * 100:.1f}%",

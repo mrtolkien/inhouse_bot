@@ -6,7 +6,7 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 
 from inhouse_bot.sqlite.game import Game
 from inhouse_bot.sqlite.game_participant import GameParticipant
-from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, get_session
+from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base
 import discord
 
 
