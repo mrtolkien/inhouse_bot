@@ -3,9 +3,9 @@ from sqlalchemy import Column, Integer, DateTime, Float
 from sqlalchemy.orm import relationship, object_session
 from sqlalchemy.orm.collections import mapped_collection
 import datetime
-from inhouse_bot.common_utils import trueskill_blue_side_winrate
-from inhouse_bot.sqlite.game_participant import GameParticipant
-from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, team_enum, roles_list
+from inhouse_bot_old.common_utils import trueskill_blue_side_winrate
+from inhouse_bot_old.sqlite.game_participant import GameParticipant
+from inhouse_bot_old.sqlite.sqlite_utils import sql_alchemy_base, team_enum, roles_list
 
 
 class Game(sql_alchemy_base):

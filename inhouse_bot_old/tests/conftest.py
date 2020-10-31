@@ -9,8 +9,8 @@ load_dotenv("test.env")
 
 @pytest.fixture()
 def config():
-    from inhouse_bot.inhouse_bot import InhouseBot
-    from inhouse_bot.sqlite.sqlite_utils import get_session
+    from inhouse_bot_old.inhouse_bot import InhouseBot
+    from inhouse_bot_old.sqlite.sqlite_utils import get_session
 
     session = get_session()
 

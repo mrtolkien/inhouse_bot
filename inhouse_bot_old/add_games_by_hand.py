@@ -1,8 +1,8 @@
 from typing import Dict, Tuple
 
-from inhouse_bot.sqlite.game import Game
-from inhouse_bot.sqlite.player import Player
-from inhouse_bot.sqlite.sqlite_utils import get_session
+from inhouse_bot_old.sqlite.game import Game
+from inhouse_bot_old.sqlite.player import Player
+from inhouse_bot_old.sqlite.sqlite_utils import get_session
 
 player_ids_second = {
     ("blue", "top"): 245566651867594752,

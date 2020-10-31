@@ -1,7 +1,7 @@
 import logging
 import pytest
-from inhouse_bot.sqlite.player import Player
-from inhouse_bot.sqlite.sqlite_utils import roles_list
+from inhouse_bot_old.sqlite.player import Player
+from inhouse_bot_old.sqlite.sqlite_utils import roles_list
 
 
 @pytest.mark.asyncio

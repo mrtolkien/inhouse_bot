@@ -39,8 +39,8 @@ async def test_accept_matchmaking(caplog, config):
     """
     caplog.set_level(logging.INFO)
 
-    from inhouse_bot.sqlite.game import Game
-    from inhouse_bot.sqlite.sqlite_utils import roles_list
+    from inhouse_bot_old.sqlite.game import Game
+    from inhouse_bot_old.sqlite.sqlite_utils import roles_list
 
     # Queue two players per role
     for member in range(0, 10):
@@ -81,8 +81,8 @@ async def test_refuse_matchmaking(caplog, config):
     """
     caplog.set_level(logging.INFO)
 
-    from inhouse_bot.sqlite.game import Game
-    from inhouse_bot.sqlite.sqlite_utils import roles_list
+    from inhouse_bot_old.sqlite.game import Game
+    from inhouse_bot_old.sqlite.sqlite_utils import roles_list
 
     # Queue two players per role
     for member in range(0, 10):

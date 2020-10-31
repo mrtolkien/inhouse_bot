@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy import Column, Integer, Float, ForeignKey, func, ForeignKeyConstraint, select
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import object_session, relationship, column_property
-from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, role_enum
+from inhouse_bot_old.sqlite.sqlite_utils import sql_alchemy_base, role_enum
 
 
 class PlayerRating(sql_alchemy_base):
@@ -37,7 +37,7 @@ class PlayerRating(sql_alchemy_base):
 
     @games.expression
     def games(cls):
-        from inhouse_bot.sqlite.game_participant import GameParticipant
+        from inhouse_bot_old.sqlite.game_participant import GameParticipant
 
         return (
             select([func.count(GameParticipant.game_id)])
@@ -59,7 +59,7 @@ class PlayerRating(sql_alchemy_base):
 
     # TODO Move that out of here
     def get_rank(self, member_ids=List[int]) -> int:
-        from inhouse_bot.sqlite.player import Player
+        from inhouse_bot_old.sqlite.player import Player
 
         session = object_session(self)
 
@@ -76,7 +76,7 @@ class PlayerRating(sql_alchemy_base):
 
     def get_games_total(self) -> int:
         # TODO Make that into a property
-        from inhouse_bot.sqlite.game_participant import GameParticipant
+        from inhouse_bot_old.sqlite.game_participant import GameParticipant
 
         session = object_session(self)
         rank_query = (

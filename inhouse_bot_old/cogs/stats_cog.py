@@ -13,12 +13,12 @@ import matplotlib.pyplot as plt
 import mplcyberpunk
 import tempfile
 
-from inhouse_bot.inhouse_bot import InhouseBot
-from inhouse_bot.sqlite.game import Game
-from inhouse_bot.sqlite.game_participant import GameParticipant
-from inhouse_bot.sqlite.player import Player
-from inhouse_bot.sqlite.player_rating import PlayerRating
-from inhouse_bot.sqlite.sqlite_utils import roles_list, get_session
+from inhouse_bot_old.inhouse_bot import InhouseBot
+from inhouse_bot_old.sqlite.game import Game
+from inhouse_bot_old.sqlite.game_participant import GameParticipant
+from inhouse_bot_old.sqlite.player import Player
+from inhouse_bot_old.sqlite.player_rating import PlayerRating
+from inhouse_bot_old.sqlite.sqlite_utils import roles_list, get_session
 
 import lol_id_tools as lit
 

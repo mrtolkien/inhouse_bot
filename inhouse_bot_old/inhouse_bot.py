@@ -4,10 +4,10 @@ import logging
 import discord
 from discord.ext import commands
 from discord.ext.commands import DefaultHelpCommand
-from inhouse_bot.common_utils import discord_token
+from inhouse_bot_old.common_utils import discord_token
 
-from inhouse_bot.sqlite.player import Player
-from inhouse_bot.sqlite.sqlite_utils import get_session
+from inhouse_bot_old.sqlite.player import Player
+from inhouse_bot_old.sqlite.sqlite_utils import get_session
 
 
 # Defining intents to get full members list
@@ -24,8 +24,8 @@ class InhouseBot(commands.Bot):
         self.players_session = get_session()
 
         # Local imports to not have circular imports with type hinting
-        from inhouse_bot.cogs.queue_cog import QueueCog
-        from inhouse_bot.cogs.stats_cog import StatsCog
+        from inhouse_bot_old.cogs.queue_cog import QueueCog
+        from inhouse_bot_old.cogs.stats_cog import StatsCog
 
         self.add_cog(QueueCog(self))
         self.add_cog(StatsCog(self))

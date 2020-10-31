@@ -9,15 +9,15 @@ from discord.ext import commands
 from rapidfuzz import process
 from sqlalchemy.orm import joinedload
 from tabulate import tabulate
-from inhouse_bot.common_utils import trueskill_blue_side_winrate
-from inhouse_bot.emoji.roles_emoji import get_role_emoji
-from inhouse_bot.inhouse_bot import InhouseBot
-from inhouse_bot.sqlite.game import Game
-from inhouse_bot.sqlite.game_participant import GameParticipant
-from inhouse_bot.sqlite.player import Player
-from inhouse_bot.sqlite.player_rating import PlayerRating
-from inhouse_bot.sqlite.queue_player import QueuePlayer
-from inhouse_bot.sqlite.sqlite_utils import roles_list, get_session
+from inhouse_bot_old.common_utils import trueskill_blue_side_winrate
+from inhouse_bot_old.emoji.roles_emoji import get_role_emoji
+from inhouse_bot_old.inhouse_bot import InhouseBot
+from inhouse_bot_old.sqlite.game import Game
+from inhouse_bot_old.sqlite.game_participant import GameParticipant
+from inhouse_bot_old.sqlite.player import Player
+from inhouse_bot_old.sqlite.player_rating import PlayerRating
+from inhouse_bot_old.sqlite.queue_player import QueuePlayer
+from inhouse_bot_old.sqlite.sqlite_utils import roles_list, get_session
 
 import lol_id_tools as lit
 

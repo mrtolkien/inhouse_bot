@@ -2,8 +2,8 @@ from sqlalchemy import Column, Integer, ForeignKey, Float, ForeignKeyConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
-from inhouse_bot.sqlite.player_rating import PlayerRating
-from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, team_enum, role_enum
+from inhouse_bot_old.sqlite.player_rating import PlayerRating
+from inhouse_bot_old.sqlite.sqlite_utils import sql_alchemy_base, team_enum, role_enum
 
 
 class GameParticipant(sql_alchemy_base):
