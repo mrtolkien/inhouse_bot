@@ -141,8 +141,8 @@ dmypy.json
 cython_debug/
 
 .idea/
-tests/local_db_sandbox.py
-/tests/local_db_sandbox.py
+inhouse_bot_old/tests/local_db_sandbox.py
+/inhouse_bot_old/tests/local_db_sandbox.py
 
 # Only keeping the env example
 *.env

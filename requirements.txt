@@ -1,12 +1,30 @@
 # Keeping requirements in a file for readability
+# This is only *production* requirements, dev requirements (pytest) are in the Dockerfile
 
+# The main package
 discord-py
+
+# ORM for our data storage flow
 sqlalchemy
+
+# The backend for our matchmaking
 trueskill
+
+# Nice tables
 tabulate
+
+# Fuzzy string matching
 rapidfuzz
+
+# Inflecting numerals
 inflect
+
+# Understanding dates
 dateparser
+
+# Fun plots
+matplotlib
 mplcyberpunk
-python-dotenv
+
+# Fuzzy matching and LoL IDs tools
 lol-id-tools

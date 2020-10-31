@@ -1,4 +1,4 @@
-from inhouse_bot.inhouse_bot import InhouseBot
+from inhouse_bot_old.inhouse_bot import InhouseBot
 import logging
 
 root = logging.getLogger()

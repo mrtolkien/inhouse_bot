@@ -4,9 +4,9 @@ from sqlalchemy import Column, Integer, String, func, type_coerce
 from sqlalchemy.orm import relationship, object_session
 from sqlalchemy.orm.collections import attribute_mapped_collection
 
-from inhouse_bot.sqlite.game import Game
-from inhouse_bot.sqlite.game_participant import GameParticipant
-from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base
+from inhouse_bot_old.sqlite.game import Game
+from inhouse_bot_old.sqlite.game_participant import GameParticipant
+from inhouse_bot_old.sqlite.sqlite_utils import sql_alchemy_base
 import discord
 
 

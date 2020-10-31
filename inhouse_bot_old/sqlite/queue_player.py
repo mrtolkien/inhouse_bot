@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 
-from inhouse_bot.sqlite.sqlite_utils import sql_alchemy_base, role_enum
+from inhouse_bot_old.sqlite.sqlite_utils import sql_alchemy_base, role_enum
 
 
 class QueuePlayer(sql_alchemy_base):

@@ -31,14 +31,16 @@ def trueskill_blue_side_winrate(players: dict) -> float:
     return win_probability(
         [
             trueskill.Rating(
-                players[team, role].ratings[role].trueskill_mu, players[team, role].ratings[role].trueskill_sigma
+                players[team, role].ratings[role].trueskill_mu,
+                players[team, role].ratings[role].trueskill_sigma,
             )
             for team, role in players
             if team == "blue"
         ],
         [
             trueskill.Rating(
-                players[team, role].ratings[role].trueskill_mu, players[team, role].ratings[role].trueskill_sigma
+                players[team, role].ratings[role].trueskill_mu,
+                players[team, role].ratings[role].trueskill_sigma,
             )
             for team, role in players
             if team == "red"

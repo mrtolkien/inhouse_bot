@@ -12,10 +12,10 @@ async def test_player(caplog):
     """
     caplog.set_level(logging.INFO)
 
-    from inhouse_bot.common_utils import discord_token
-    from inhouse_bot.sqlite.player_rating import PlayerRating
-    from inhouse_bot.sqlite.sqlite_utils import get_session
-    from inhouse_bot.sqlite.player import Player
+    from inhouse_bot_old.common_utils import discord_token
+    from inhouse_bot_old.sqlite.player_rating import PlayerRating
+    from inhouse_bot_old.sqlite.sqlite_utils import get_session
+    from inhouse_bot_old.sqlite.player import Player
 
     client = discord.Client()
     await client.login(discord_token)
@@ -51,12 +51,12 @@ async def test_game(caplog):
     Tests the addition of a game.
     """
     # TODO Make this test cleaner
-    from inhouse_bot.inhouse_bot import InhouseBot
-    from inhouse_bot.sqlite.sqlite_utils import get_session
-    from inhouse_bot.sqlite.sqlite_utils import roles_list
-    from inhouse_bot.sqlite.game import Game
-    from inhouse_bot.sqlite.player import Player
-    from inhouse_bot.sqlite.player_rating import PlayerRating
+    from inhouse_bot_old.inhouse_bot import InhouseBot
+    from inhouse_bot_old.sqlite.sqlite_utils import get_session
+    from inhouse_bot_old.sqlite.sqlite_utils import roles_list
+    from inhouse_bot_old.sqlite.game import Game
+    from inhouse_bot_old.sqlite.player import Player
+    from inhouse_bot_old.sqlite.player_rating import PlayerRating
 
     session = get_session()
 

@@ -3,12 +3,13 @@ version: "3.8"
 services:
   inhouse_bot:
     image: mrtolkien/inhouse_bot
-    container_name: inhouse_bot
     build:
       context: .
-    volumes:
-    - type: bind
-      source: ./data
-      target: /data
+      target: inhouse_bot_dev
     env_file:
     - .env
+
+  db:
+    image: postgres:alpine
+    environment:
+      POSTGRES_PASSWORD: pwd
