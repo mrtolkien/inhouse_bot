@@ -1,3 +1,4 @@
+import os
 from typing import List, Optional, Tuple
 
 
@@ -32,12 +33,18 @@ def add_player(player_id: int, role: str, channel_id: int):
     ...
 
 
+def remove_player(player_id: int, channel_id: int):
+    """
+    Removes the player from the queue in *all* roles in the channel
+    """
+    ...
+
+
 def start_ready_check(player_ids: List[int], channel_id: int) -> Tuple[List[int], int]:
     # Checking to make sure everything is fine
-    # TODO Make that part of config/env
-    assert len(player_ids) == 10
+    assert len(player_ids) == int(os.environ["INHOUSE_QUEUE_SIZE"])
 
-    ready_check_id = 0
+    ready_check_id = 0  # TODO Determine it dynamically
 
     return get_queue(channel_id), ready_check_id
 
@@ -52,4 +59,6 @@ def cancel_ready_check(
     ids_to_drop: Optional[List[int]],
     drop_from_all_channels=False,
 ):
+    # Use drop_from_all_channels with timeouts, single id + False in other cases
+    # TODO Have a way to cancel ready-check if the message disappeared or there was a bug
     ...
