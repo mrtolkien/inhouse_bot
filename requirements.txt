@@ -28,3 +28,6 @@ mplcyberpunk
 
 # Fuzzy matching and LoL IDs tools
 lol-id-tools
+
+# PostgreSQL driver
+psycopg2
