@@ -1,4 +1,4 @@
-from game_queue.queue_hander import (
+from game_queue.queue_handler import (
     PlayerInReadyCheck,
     get_queue,
     add_player,
@@ -8,3 +8,5 @@ from game_queue.queue_hander import (
     cancel_ready_check,
     reset_queue,
 )
+
+from game_queue.queue_player import QueuePlayer

@@ -11,5 +11,18 @@ services:
 
   db:
     image: postgres:alpine
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: pwd
+      POSTGRES_DB: inhouse_bot
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+volumes:
+    pgdata:
