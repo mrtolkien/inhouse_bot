@@ -1,34 +1,51 @@
 import os
 from typing import List, Optional, Tuple
 
+from sqlalchemy import func
+
 from bot_orm import session_scope
-from common import roles_list
+from fields import roles_list
 from game_object import is_in_game
-from game_queue.queue_player import QueuePlayer
+from bot_orm import QueuePlayer
+from game_object.common_utils import PlayerInGame
 
 
 class PlayerInReadyCheck(Exception):
     ...
 
 
-# TODO Make that into a decorator
 def get_queue(channel_id: int) -> List[Tuple[str, int]]:
     """
     Returns the current queue, in [(role, player_id)] format
     """
     with session_scope() as session:
-        query = session.query(QueuePlayer).filter(QueuePlayer.channel_id == channel_id)
+        # TODO Ideally, there should be an is_in_queue hybrid property or a subquery and a single query here
 
-        # TODO Do that smartly
-        players = []
+        players_query = session.query(
+            QueuePlayer.player_id,
+            QueuePlayer.role,
+        ).filter(QueuePlayer.channel_id == channel_id)
 
-        for row in query:
-            if is_in_ready_check(row.player_id, session):
-                continue
-            else:
-                players.append((row.role, row.player_id))
+        tentative_players = [(r.role, r.player_id) for r in players_query]
 
-        return players
+        print(tentative_players)
+
+        queue_query = (
+            session.query(
+                QueuePlayer.player_id,
+                func.max(QueuePlayer.ready_check_id).label("is_in_ready_check"),
+            )
+            .filter(QueuePlayer.player_id.in_([r[1] for r in tentative_players]))
+            .group_by(QueuePlayer.player_id)
+        )
+
+        players_in_ready_check = [
+            r.player_id for r in queue_query if r.is_in_ready_check is not None
+        ]
+
+        print(players_in_ready_check)
+
+        return [r for r in tentative_players if r[1] not in players_in_ready_check]
 
 
 # TODO That should be a decorator too
@@ -68,8 +85,7 @@ def add_player(player_id: int, role: str, channel_id: int) -> List[Tuple[str, in
     with session_scope() as session:
         # Start by checking if the player is in game
         if is_in_game(player_id, session):
-            # TODO handle the case
-            raise Exception
+            raise PlayerInGame
 
         # Then check if the player is in a ready-check
         if is_in_ready_check(player_id, session):
@@ -93,8 +109,7 @@ def remove_player(player_id: int, channel_id: int):
     with session_scope() as session:
         # First, check if he’s in a ready-check.
         if is_in_ready_check(player_id, session):
-            # TODO handle the case
-            raise Exception
+            raise PlayerInReadyCheck
 
         # Else, we simply delete his rows
         (
@@ -127,11 +142,21 @@ def start_ready_check(
 
 
 def validate_ready_check(ready_check_id: int, channel_id: int) -> List[Tuple[str, int]]:
+    """
+    When a ready check is validated, we drop all players from all queues
+    """
+
     with session_scope() as session:
+        player_ids = [
+            r.player_id
+            for r in session.query(QueuePlayer.player_id).filter(
+                QueuePlayer.ready_check_id == ready_check_id
+            )
+        ]
+
         (
             session.query(QueuePlayer)
-            .filter(QueuePlayer.channel_id == channel_id)
-            .filter(QueuePlayer.ready_check_id == ready_check_id)
+            .filter(QueuePlayer.player_id.in_(player_ids))
             .delete(synchronize_session=False)
         )
 
@@ -144,6 +169,11 @@ def cancel_ready_check(
     ids_to_drop: Optional[List[int]],
     drop_from_all_channels=False,
 ) -> List[Tuple[str, int]]:
+    """
+    Cancels an ongoing ready check by reverting players to ready_check_id=None
+
+    Drops players in ids_to_drop[]
+    """
     # Use drop_from_all_channels with timeouts, single id + False in other cases
     # TODO Have a way to cancel ready-check if the message disappeared or there was a bug
 

@@ -9,4 +9,3 @@ from game_queue.queue_handler import (
     reset_queue,
 )
 
-from game_queue.queue_player import QueuePlayer
