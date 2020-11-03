@@ -1,8 +1,10 @@
+from sqlalchemy.ext.hybrid import hybrid_property
+
 from bot_orm import bot_declarative_base
-from sqlalchemy import Column, ForeignKey, BigInteger, SmallInteger
+from sqlalchemy import Column, ForeignKey, BigInteger, SmallInteger, select, func
 from sqlalchemy.orm import relationship
 
-from common import role_enum
+from fields import role_enum
 
 
 class QueuePlayer(bot_declarative_base):
@@ -18,9 +20,9 @@ class QueuePlayer(bot_declarative_base):
     # player_id = Column(
     #     BigInteger, ForeignKey("player.discord_id"), primary_key=True, index=True
     # )
+    # player = relationship("Player", viewonly=True)
+
     role = Column(role_enum, primary_key=True)
 
     # None if the player is not in a ready_check. If not, will be the ID of the ready check the player is in.
     ready_check_id = Column(SmallInteger)
-
-    # player = relationship("Player", viewonly=True) # TODO Once we have a Player object, add the relationship

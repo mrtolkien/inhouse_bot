@@ -1,6 +1,6 @@
 import pytest
 
-from common import roles_list
+from fields import roles_list
 import game_queue
 
 # All tests are made assuming users numbered from 0 to 15 and queuing in channels 0 and 1
