@@ -33,9 +33,7 @@ def test_queue_full():
         game_queue.add_player(0, roles_list[0], 2)
 
     # We cancel the ready check and drop player 0
-    queue = game_queue.cancel_ready_check(
-        ready_check_id, 0, [0], drop_from_all_channels=True
-    )
+    queue = game_queue.cancel_ready_check(ready_check_id, 0, [0], drop_from_all_channels=True)
 
     assert len(queue) == 9
 
@@ -70,4 +68,4 @@ def test_queue_remove():
     assert len(queue) == 0
 
 
-# TODO Test queuing for multiple roles and assert the behaviour
+# TODO Test queuing for multiple roles and assert the behaviour is OK
