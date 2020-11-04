@@ -5,6 +5,3 @@ def is_in_game(player_id: int, session) -> bool:
 
 class PlayerInGame(Exception):
     ...
-
-
-# TODO score_game() should be here

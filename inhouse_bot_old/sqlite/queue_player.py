@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 
 from bot_orm import bot_declarative_base
-from fields import role_enum
+from common_utils import role_enum
 
 
 class QueuePlayer(bot_declarative_base):

@@ -3,12 +3,11 @@ from typing import List, Optional, TypedDict
 
 from sqlalchemy import func
 
-from fields import roles_list
+from common_utils import roles_list
 
 from bot_orm.session import session_scope
 from bot_orm.tables import QueuePlayer
-from game_object import is_in_game
-from game_object.common_utils import PlayerInGame
+from common_utils.is_in_game import PlayerInGame, is_in_game
 
 
 class PlayerInReadyCheck(Exception):
@@ -21,6 +20,8 @@ class GameQueue(TypedDict):
     JGL: List[int]
     BOT: List[int]
     SUP: List[int]
+
+    server_id: Optional[int]
 
 
 def get_queue(channel_id: int) -> GameQueue:
@@ -87,7 +88,7 @@ def reset_queue(channel_id: Optional[int] = None):
         query.delete(synchronize_session=False)
 
 
-def add_player(player_id: int, role: str, channel_id: int) -> GameQueue:
+def add_player(player_id: int, role: str, channel_id: int, server_id: int = None) -> GameQueue:
     # Just in case
     assert role in roles_list
 
@@ -101,7 +102,9 @@ def add_player(player_id: int, role: str, channel_id: int) -> GameQueue:
             raise PlayerInReadyCheck
 
         # Finally, we actually add the player to the queue
-        queue_player = QueuePlayer(channel_id=channel_id, player_id=player_id, role=role)
+        queue_player = QueuePlayer(
+            channel_id=channel_id, player_id=player_id, player_server_id=server_id, role=role
+        )
 
         # We merge for simplicity (allows players to re-queue for the same role)
         session.merge(queue_player)
@@ -194,3 +197,7 @@ def cancel_ready_check(
             query.delete(synchronize_session=False)
 
     return get_queue(channel_id)
+
+
+def get_player_id_list_from_queue(queue: GameQueue) -> List[int]:
+    return sum((v for v in queue.values()), start=[])
