@@ -6,7 +6,7 @@ from sqlalchemy import func
 from common_utils import roles_list
 
 from bot_orm.session import session_scope
-from bot_orm.tables import QueuePlayer
+from bot_orm.tables import QueuePlayer, Player
 from common_utils.is_in_game import PlayerInGame, is_in_game
 
 
@@ -31,11 +31,17 @@ def get_queue(channel_id: int) -> GameQueue:
     with session_scope() as session:
         # TODO Ideally, there should be an is_in_queue hybrid property or a subquery and a single query here
 
-        players_query = session.query(QueuePlayer.player_id, QueuePlayer.role,).filter(
-            QueuePlayer.channel_id == channel_id
-        )
+        players_query = session.query(
+            QueuePlayer.player_id, QueuePlayer.role, QueuePlayer.player_server_id
+        ).filter(QueuePlayer.channel_id == channel_id)
 
         tentative_players = [(r.role, r.player_id) for r in players_query]
+
+        try:
+            server_id = players_query.first().player_server_id
+        except AttributeError:
+            # Happens when querying the queue of an empty channel, but it shouldn’t be an issue
+            server_id = None
 
         queue_query = (
             session.query(
@@ -48,6 +54,7 @@ def get_queue(channel_id: int) -> GameQueue:
         players_in_ready_check = [r.player_id for r in queue_query if r.is_in_ready_check is not None]
 
         return GameQueue(
+            server_id=server_id,
             **{
                 role: [
                     row[1]
@@ -88,7 +95,12 @@ def reset_queue(channel_id: Optional[int] = None):
         query.delete(synchronize_session=False)
 
 
-def add_player(player_id: int, role: str, channel_id: int, server_id: int = None) -> GameQueue:
+def add_player(
+    player_id: int, role: str, channel_id: int, server_id: int = None, name: str = None
+) -> GameQueue:
+    # TODO Fill "name" when it’s called with a Discord user
+    # use user.id and user.display_name from discord.User
+
     # Just in case
     assert role in roles_list
 
@@ -100,6 +112,10 @@ def add_player(player_id: int, role: str, channel_id: int, server_id: int = None
         # Then check if the player is in a ready-check
         if is_in_ready_check(player_id, session):
             raise PlayerInReadyCheck
+
+        # This is where we add new Players to the server
+        #   This is also useful to automatically update name changes
+        session.merge(Player(id=player_id, server_id=server_id, name=name))
 
         # Finally, we actually add the player to the queue
         queue_player = QueuePlayer(
@@ -200,4 +216,4 @@ def cancel_ready_check(
 
 
 def get_player_id_list_from_queue(queue: GameQueue) -> List[int]:
-    return sum((v for v in queue.values()), start=[])
+    return sum((queue[role] for role in roles_list), start=[])
