@@ -45,7 +45,6 @@ def get_queue(channel_id: int) -> List[Tuple[str, int]]:
         return [r for r in tentative_players if r[1] not in players_in_ready_check]
 
 
-# TODO That should be a decorator too
 def is_in_ready_check(player_id, session) -> bool:
     return (
         True
@@ -117,21 +116,22 @@ def remove_player(player_id: int, channel_id: int):
     return get_queue(channel_id)
 
 
-def start_ready_check(player_ids: List[int], channel_id: int) -> Tuple[List[Tuple[str, int]], int]:
+def start_ready_check(
+    player_ids: List[int], channel_id: int, ready_check_message_id: int
+) -> List[Tuple[str, int]]:
     # Checking to make sure everything is fine
     assert len(player_ids) == int(os.environ["INHOUSE_BOT_QUEUE_SIZE"])
 
     with session_scope() as session:
-        ready_check_id = 0  # TODO Determine and create it dynamically
 
         (
             session.query(QueuePlayer)
             .filter(QueuePlayer.channel_id == channel_id)
             .filter(QueuePlayer.player_id.in_(player_ids))
-            .update({"ready_check_id": ready_check_id}, synchronize_session=False)
+            .update({"ready_check_id": ready_check_message_id}, synchronize_session=False)
         )
 
-    return get_queue(channel_id), ready_check_id
+    return get_queue(channel_id)
 
 
 def validate_ready_check(ready_check_id: int, channel_id: int) -> List[Tuple[str, int]]:
@@ -163,7 +163,7 @@ def cancel_ready_check(
     Drops players in ids_to_drop[]
     """
     # Use drop_from_all_channels with timeouts, single id + False in other cases
-    # TODO Have a way to cancel ready-check if the message disappeared or there was a bug
+    # TODO Have a way to cancel ready-check (with the bot) if the message disappeared or there was a bug
 
     with session_scope() as session:
         (
