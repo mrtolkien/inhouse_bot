@@ -3,13 +3,9 @@ import random
 from typing import Optional, List, Dict
 
 from bot_orm.session import get_session
-from bot_orm.tables import Game
+from bot_orm.tables import Game, Player, PlayerRating
 from common_utils import roles_list
 from game_queue.queue_handler import GameQueue, get_player_id_list_from_queue
-
-
-class Player:
-    ...
 
 
 def get_queue_players(queue: GameQueue, session) -> Dict[str, List[Player]]:
@@ -23,16 +19,28 @@ def get_queue_players(queue: GameQueue, session) -> Dict[str, List[Player]]:
         .all()
     )
 
-    # TODO Create new Player objects if they do not exist yet
-
     # We put them in similar dictionary as GameQueue: [role] -> list of Player
-    return {role: [player for player in players_list if player.id in queue[role]] for role in roles_list}
+    queue_players = {
+        role: [player for player in players_list if player.id in queue[role]] for role in roles_list
+    }
+
+    # Before returning, we make sure they all have ratings (which also pre-loads them in the session)
+    for role in queue_players:
+        for player in queue_players[role]:
+            try:
+                assert player.ratings[role]
+            except KeyError:
+                session.add(PlayerRating(player, role))
+                session.commit()
+
+    return queue_players
 
 
 def find_best_game(queue: GameQueue) -> Optional[Game]:
     # Do not do anything if there’s not at least 2 players in queue per role
-    for role_queue in queue.values():
-        if len(role_queue) < 2:
+
+    for role in roles_list:
+        if len(queue[role]) < 2:
             return None
 
     # TODO Add some logging to the process
@@ -50,8 +58,8 @@ def find_best_game(queue: GameQueue) -> Optional[Game]:
     # We keep it as a list to make it easier to make a product on the values afterwards
     role_permutations = []  # list of tuples of 2-players permutations in the role
 
-    for role_queue in players_queue.values():
-        role_permutations.append((player for player in itertools.permutations(role_queue, 2)))
+    for role in roles_list:
+        role_permutations.append((player for player in itertools.permutations(players_queue[role], 2)))
 
     # We do a very simple maximum search
     best_score = -1

@@ -1,4 +1,5 @@
-from typing import Tuple, Dict
+from dataclasses import dataclass
+from typing import Tuple, Dict, List
 import datetime
 
 
@@ -11,7 +12,7 @@ from sqlalchemy.orm.collections import mapped_collection
 from bot_orm.session import bot_declarative_base
 from bot_orm.tables.player import Player
 
-from common_utils import roles_list, team_enum
+from common_utils import roles_list, side_enum
 
 
 class Game(bot_declarative_base):
@@ -34,14 +35,12 @@ class Game(bot_declarative_base):
     blue_expected_winrate = Column(Float)
 
     # Winner, updated at the end of the game
-    winner = Column(team_enum)
+    winner = Column(side_enum)
 
     # ORM relationship to participants in the game, defined as a [team, role] dictionary
-    game_participants = relationship(
+    participants = relationship(
         "GameParticipant",
-        collection_class=mapped_collection(
-            lambda game_participant: (game_participant.team, game_participant.role)
-        ),
+        collection_class=mapped_collection(lambda participant: (participant.side, participant.role)),
         backref="game",
         cascade="all, delete-orphan",
     )
@@ -49,15 +48,22 @@ class Game(bot_declarative_base):
     # We define teams only as properties as it should be easier to work with
     @property
     def teams(self):
-        # TODO teams property that has .BLUE and .RED values returning list of Player objects
-        ...
+        @dataclass
+        class Teams:
+            BLUE: List[Player]
+            RED: List[Player]
+
+        return Teams(
+            BLUE=[self.participants["BLUE", role] for role in roles_list],
+            RED=[self.participants["RED", role] for role in roles_list],
+        )
 
     def __str__(self):
         return tabulate(
             {
                 team_column.capitalize(): [
-                    self.game_participants[team, role].player.name
-                    for (team, role) in sorted(self.game_participants, key=lambda x: roles_list.index(x[1]))
+                    self.participants[team, role].player.name
+                    for (team, role) in sorted(self.participants, key=lambda x: roles_list.index(x[1]))
                     if team == team_column
                 ]
                 for team_column in ["blue", "red"]
@@ -78,11 +84,13 @@ class Game(bot_declarative_base):
 
         self.date = datetime.datetime.now()
 
-        self.blue_expected_winrate = evaluate_game(self)
-
-        self.game_participants = {
+        # First, we write down the participants
+        self.participants = {
             (team, role): GameParticipant(team, role, players[team, role]) for team, role in players
         }
+
+        # Then, we compute the expected blue side winrate (which we use for matchmaking)
+        self.blue_expected_winrate = evaluate_game(self)
 
     def update_trueskill(self):
         """
@@ -97,12 +105,12 @@ class Game(bot_declarative_base):
         # participant.trueskill represents pre-game values
         # p.player.ratings[p.role] is the PlayerRating relevant to the game that was scored
         team_ratings = {
-            team: {
+            side: {
                 p.player.ratings[p.role]: trueskill.Rating(p.trueskill_mu, p.trueskill_sigma)
-                for p in self.game_participants.values()
-                if p.team == team
+                for p in self.participants.values()
+                if p.side == side
             }
-            for team in ["BLUE", "RED"]
+            for side in ["BLUE", "RED"]
         }
 
         if self.winner == "BLUE":

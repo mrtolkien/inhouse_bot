@@ -13,12 +13,12 @@ def test_queue_full():
     queue = None
 
     for player_id in range(0, 10):
-        queue = game_queue.add_player(player_id, roles_list[player_id % 5], 0)
+        queue = game_queue.add_player(player_id, roles_list[player_id % 5], 0, 0)
 
     assert len(get_player_id_list_from_queue(queue)) == 10
 
     # We queue our player 0 in channel 1, which he should be allowed to do
-    queue_1 = game_queue.add_player(0, roles_list[0], 1)
+    queue_1 = game_queue.add_player(0, roles_list[0], 1, 0)
     assert len(get_player_id_list_from_queue(queue_1)) == 1
 
     # Assuming our matchmaking logic found a good game (id 0)
@@ -31,7 +31,7 @@ def test_queue_full():
 
     # We check that our player 0 is not allowed to queue in other channels
     with pytest.raises(game_queue.PlayerInReadyCheck):
-        game_queue.add_player(0, roles_list[0], 2)
+        game_queue.add_player(0, roles_list[0], 2, 0)
 
     # We cancel the ready check and drop player 0
     queue = game_queue.cancel_ready_check(0, 0, [0], drop_from_all_channels=True)
@@ -43,7 +43,7 @@ def test_queue_full():
     assert len(get_player_id_list_from_queue(queue_1)) == 0
 
     # We queue again, with player 10
-    game_queue.add_player(10, roles_list[0], 0)
+    game_queue.add_player(10, roles_list[0], 0, 0)
 
     # We start and validate the ready check (id 1)
     game_queue.start_ready_check(list(range(1, 11)), 0, 1)
@@ -59,7 +59,7 @@ def test_queue_full():
 def test_queue_remove():
     game_queue.reset_queue()
 
-    queue = game_queue.add_player(0, roles_list[0], 0)
+    queue = game_queue.add_player(0, roles_list[0], 0, 0)
 
     assert len(get_player_id_list_from_queue(queue)) == 1
 

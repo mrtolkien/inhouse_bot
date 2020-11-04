@@ -633,7 +633,7 @@ class QueueCog(commands.Cog, name="Queue"):
             await ctx.send(f"**Your last game’s result was already entered and validated**", delete_after=30)
             return
 
-        winner = "blue" if (game_participant.team == "blue" and result) else "red"
+        winner = "blue" if (game_participant.side == "blue" and result) else "red"
 
         discord_id_list = [p.player_id for p in game.participants.values()]
 

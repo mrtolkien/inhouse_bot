@@ -2,6 +2,7 @@ from sqlalchemy import Column, Float, BigInteger, ForeignKeyConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from bot_orm.session import bot_declarative_base
+from bot_orm.tables.player import Player
 from common_utils import role_enum, foreignkey_cascade_options
 
 
@@ -37,8 +38,9 @@ class PlayerRating(bot_declarative_base):
     def __repr__(self):
         return f"<PlayerRating: player_id={self.player_id} role={self.role}>"
 
-    def __init__(self, player, role):
+    def __init__(self, player: Player, role):
         self.player_id = player.id
+        self.player_server_id = player.server_id
         self.role = role
 
         # Initializing TrueSkill to default base values

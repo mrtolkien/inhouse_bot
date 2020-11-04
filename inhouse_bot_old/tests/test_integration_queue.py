@@ -66,7 +66,7 @@ async def test_accept_matchmaking(caplog, config):
     assert game.winner
 
     # Check that players trueskill rating was changed
-    for participant in game.game_participants.values():
+    for participant in game.participants.values():
         assert participant.player.ratings[participant.role].trueskill_mu != 25.0
 
     # Stupidly trying everybody saying they won. They won’t be able to react though.

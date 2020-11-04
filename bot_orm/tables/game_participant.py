@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from bot_orm.session import bot_declarative_base
 from bot_orm.tables.player_rating import PlayerRating
 from bot_orm.tables.player import Player
-from common_utils import team_enum, role_enum, foreignkey_cascade_options
+from common_utils import side_enum, role_enum, foreignkey_cascade_options
 
 
 class GameParticipant(bot_declarative_base):
@@ -17,7 +17,7 @@ class GameParticipant(bot_declarative_base):
     game_id = Column(Integer, ForeignKey("game.id"), primary_key=True)
 
     # Identifier among game participants
-    team = Column(team_enum, primary_key=True)
+    side = Column(side_enum, primary_key=True)
     role = Column(role_enum, primary_key=True)
 
     # Unique player_id and server_id, which heavily simplifies joining to Player
@@ -51,16 +51,16 @@ class GameParticipant(bot_declarative_base):
     def mmr(self):
         return self.trueskill_mu - 3 * self.trueskill_sigma + 25
 
-    def __init__(self, team, role, player):
+    def __init__(self, side, role, player):
         """
         # TODO Google docstring
         Should be called only from the game.__init__() function.
 
-        :param team: BLUE/RED
+        :param side: BLUE/RED
         :param role: a role in [top, jungle, mid, bot, support]
         :param player: participant’s player object
         """
-        self.team = team
+        self.side = side
         self.role = role
         self.player_id = player.id
 
