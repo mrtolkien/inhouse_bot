@@ -1,5 +1,5 @@
 from bot_orm.session import bot_declarative_base
-from sqlalchemy import Column, ForeignKey, BigInteger, SmallInteger
+from sqlalchemy import Column, ForeignKey, BigInteger
 from sqlalchemy.orm import relationship
 
 from fields import role_enum
@@ -23,5 +23,5 @@ class QueuePlayer(bot_declarative_base):
 
     role = Column(role_enum, primary_key=True)
 
-    # None if the player is not in a ready_check. If not, will be the ID of the ready check the player is in.
-    ready_check_id = Column(SmallInteger)
+    # None if not in a ready_check, ID of the ready check message otherwise
+    ready_check_id = Column(BigInteger)
