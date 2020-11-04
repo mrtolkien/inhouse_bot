@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional, Tuple
+from typing import List, Optional, TypedDict
 
 from sqlalchemy import func
 
@@ -15,9 +15,17 @@ class PlayerInReadyCheck(Exception):
     ...
 
 
-def get_queue(channel_id: int) -> List[Tuple[str, int]]:
+class GameQueue(TypedDict):
+    TOP: List[int]
+    MID: List[int]
+    JGL: List[int]
+    BOT: List[int]
+    SUP: List[int]
+
+
+def get_queue(channel_id: int) -> GameQueue:
     """
-    Returns the current queue, in [(role, player_id)] format
+    Returns the current queue, in [role] = list of player IDs format
     """
     with session_scope() as session:
         # TODO Ideally, there should be an is_in_queue hybrid property or a subquery and a single query here
@@ -27,8 +35,6 @@ def get_queue(channel_id: int) -> List[Tuple[str, int]]:
         )
 
         tentative_players = [(r.role, r.player_id) for r in players_query]
-
-        print(tentative_players)
 
         queue_query = (
             session.query(
@@ -40,9 +46,16 @@ def get_queue(channel_id: int) -> List[Tuple[str, int]]:
 
         players_in_ready_check = [r.player_id for r in queue_query if r.is_in_ready_check is not None]
 
-        print(players_in_ready_check)
-
-        return [r for r in tentative_players if r[1] not in players_in_ready_check]
+        return GameQueue(
+            **{
+                role: [
+                    row[1]
+                    for row in tentative_players
+                    if row[1] not in players_in_ready_check and row[0] == role
+                ]
+                for role in roles_list
+            }
+        )
 
 
 def is_in_ready_check(player_id, session) -> bool:
@@ -74,7 +87,7 @@ def reset_queue(channel_id: Optional[int] = None):
         query.delete(synchronize_session=False)
 
 
-def add_player(player_id: int, role: str, channel_id: int) -> List[Tuple[str, int]]:
+def add_player(player_id: int, role: str, channel_id: int) -> GameQueue:
     # Just in case
     assert role in roles_list
 
@@ -116,9 +129,7 @@ def remove_player(player_id: int, channel_id: int):
     return get_queue(channel_id)
 
 
-def start_ready_check(
-    player_ids: List[int], channel_id: int, ready_check_message_id: int
-) -> List[Tuple[str, int]]:
+def start_ready_check(player_ids: List[int], channel_id: int, ready_check_message_id: int) -> GameQueue:
     # Checking to make sure everything is fine
     assert len(player_ids) == int(os.environ["INHOUSE_BOT_QUEUE_SIZE"])
 
@@ -134,7 +145,7 @@ def start_ready_check(
     return get_queue(channel_id)
 
 
-def validate_ready_check(ready_check_id: int, channel_id: int) -> List[Tuple[str, int]]:
+def validate_ready_check(ready_check_id: int, channel_id: int) -> GameQueue:
     """
     When a ready check is validated, we drop all players from all queues
     """
@@ -156,7 +167,7 @@ def validate_ready_check(ready_check_id: int, channel_id: int) -> List[Tuple[str
 
 def cancel_ready_check(
     ready_check_id: int, channel_id: int, ids_to_drop: Optional[List[int]], drop_from_all_channels=False,
-) -> List[Tuple[str, int]]:
+) -> GameQueue:
     """
     Cancels an ongoing ready check by reverting players to ready_check_id=None
 
