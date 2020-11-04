@@ -1,7 +1,5 @@
-from sqlalchemy.ext.hybrid import hybrid_property
-
-from bot_orm import bot_declarative_base
-from sqlalchemy import Column, ForeignKey, BigInteger, SmallInteger, select, func
+from bot_orm.session import bot_declarative_base
+from sqlalchemy import Column, ForeignKey, BigInteger, SmallInteger
 from sqlalchemy.orm import relationship
 
 from fields import role_enum
@@ -16,6 +14,7 @@ class QueuePlayer(bot_declarative_base):
 
     channel_id = Column(BigInteger, primary_key=True, index=True)
     player_id = Column(BigInteger, primary_key=True, index=True)
+
     # TODO Add this relationship
     # player_id = Column(
     #     BigInteger, ForeignKey("player.discord_id"), primary_key=True, index=True

@@ -3,10 +3,11 @@ from typing import List, Optional, Tuple
 
 from sqlalchemy import func
 
-from bot_orm import session_scope
 from fields import roles_list
+
+from bot_orm.session import session_scope
+from bot_orm.tables import QueuePlayer
 from game_object import is_in_game
-from bot_orm import QueuePlayer
 from game_object.common_utils import PlayerInGame
 
 
@@ -21,10 +22,9 @@ def get_queue(channel_id: int) -> List[Tuple[str, int]]:
     with session_scope() as session:
         # TODO Ideally, there should be an is_in_queue hybrid property or a subquery and a single query here
 
-        players_query = session.query(
-            QueuePlayer.player_id,
-            QueuePlayer.role,
-        ).filter(QueuePlayer.channel_id == channel_id)
+        players_query = session.query(QueuePlayer.player_id, QueuePlayer.role,).filter(
+            QueuePlayer.channel_id == channel_id
+        )
 
         tentative_players = [(r.role, r.player_id) for r in players_query]
 
@@ -32,16 +32,13 @@ def get_queue(channel_id: int) -> List[Tuple[str, int]]:
 
         queue_query = (
             session.query(
-                QueuePlayer.player_id,
-                func.max(QueuePlayer.ready_check_id).label("is_in_ready_check"),
+                QueuePlayer.player_id, func.max(QueuePlayer.ready_check_id).label("is_in_ready_check"),
             )
             .filter(QueuePlayer.player_id.in_([r[1] for r in tentative_players]))
             .group_by(QueuePlayer.player_id)
         )
 
-        players_in_ready_check = [
-            r.player_id for r in queue_query if r.is_in_ready_check is not None
-        ]
+        players_in_ready_check = [r.player_id for r in queue_query if r.is_in_ready_check is not None]
 
         print(players_in_ready_check)
 
@@ -92,9 +89,7 @@ def add_player(player_id: int, role: str, channel_id: int) -> List[Tuple[str, in
             raise PlayerInReadyCheck
 
         # Finally, we actually add the player to the queue
-        queue_player = QueuePlayer(
-            channel_id=channel_id, player_id=player_id, role=role
-        )
+        queue_player = QueuePlayer(channel_id=channel_id, player_id=player_id, role=role)
 
         # We merge for simplicity (allows players to re-queue for the same role)
         session.merge(queue_player)
@@ -122,11 +117,9 @@ def remove_player(player_id: int, channel_id: int):
     return get_queue(channel_id)
 
 
-def start_ready_check(
-    player_ids: List[int], channel_id: int
-) -> Tuple[List[Tuple[str, int]], int]:
+def start_ready_check(player_ids: List[int], channel_id: int) -> Tuple[List[Tuple[str, int]], int]:
     # Checking to make sure everything is fine
-    assert len(player_ids) == int(os.environ["INHOUSE_QUEUE_SIZE"])
+    assert len(player_ids) == int(os.environ["INHOUSE_BOT_QUEUE_SIZE"])
 
     with session_scope() as session:
         ready_check_id = 0  # TODO Determine and create it dynamically
@@ -149,9 +142,7 @@ def validate_ready_check(ready_check_id: int, channel_id: int) -> List[Tuple[str
     with session_scope() as session:
         player_ids = [
             r.player_id
-            for r in session.query(QueuePlayer.player_id).filter(
-                QueuePlayer.ready_check_id == ready_check_id
-            )
+            for r in session.query(QueuePlayer.player_id).filter(QueuePlayer.ready_check_id == ready_check_id)
         ]
 
         (
@@ -164,10 +155,7 @@ def validate_ready_check(ready_check_id: int, channel_id: int) -> List[Tuple[str
 
 
 def cancel_ready_check(
-    ready_check_id: int,
-    channel_id: int,
-    ids_to_drop: Optional[List[int]],
-    drop_from_all_channels=False,
+    ready_check_id: int, channel_id: int, ids_to_drop: Optional[List[int]], drop_from_all_channels=False,
 ) -> List[Tuple[str, int]]:
     """
     Cancels an ongoing ready check by reverting players to ready_check_id=None
@@ -186,9 +174,7 @@ def cancel_ready_check(
         )
 
         if ids_to_drop:
-            query = session.query(QueuePlayer).filter(
-                QueuePlayer.player_id.in_(ids_to_drop)
-            )
+            query = session.query(QueuePlayer).filter(QueuePlayer.player_id.in_(ids_to_drop))
 
             # Happens in the case of a cancellation
             if not drop_from_all_channels:
