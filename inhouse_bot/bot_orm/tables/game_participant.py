@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 
 from inhouse_bot.bot_orm import bot_declarative_base
 from inhouse_bot.bot_orm.tables.player_rating import PlayerRating
-from inhouse_bot.bot_orm import Player
+from inhouse_bot.bot_orm.tables.player import Player
 from inhouse_bot.common_utils import side_enum, role_enum, foreignkey_cascade_options
 
 

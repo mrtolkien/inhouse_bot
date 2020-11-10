@@ -10,7 +10,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm.collections import mapped_collection
 
 from inhouse_bot.bot_orm import bot_declarative_base
-from inhouse_bot.bot_orm import Player
+from inhouse_bot.bot_orm.tables.player import Player
 
 from inhouse_bot.common_utils import roles_list, side_enum
 
