@@ -3,11 +3,11 @@ from typing import List, Optional, TypedDict
 
 from sqlalchemy import func
 
-from common_utils import roles_list
+from inhouse_bot.common_utils import roles_list
 
-from bot_orm.session import session_scope
-from bot_orm.tables import QueuePlayer, Player
-from common_utils.is_in_game import PlayerInGame, is_in_game
+from inhouse_bot.bot_orm import session_scope
+from inhouse_bot.bot_orm import QueuePlayer, Player
+from inhouse_bot.common_utils import PlayerInGame, is_in_game
 
 
 class PlayerInReadyCheck(Exception):

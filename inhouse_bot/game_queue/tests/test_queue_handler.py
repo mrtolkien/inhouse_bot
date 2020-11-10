@@ -1,10 +1,10 @@
 import pytest
 
-from common_utils import roles_list
-import game_queue
+from inhouse_bot.common_utils import roles_list
+from inhouse_bot import game_queue
 
 # All tests are made assuming users numbered from 0 to 15 and queuing in channels 0 and 1
-from game_queue.queue_handler import get_player_id_list_from_queue
+from inhouse_bot.game_queue.queue_handler import get_player_id_list_from_queue
 
 
 def test_queue_full():

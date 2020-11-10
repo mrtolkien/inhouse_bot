@@ -2,10 +2,10 @@ from sqlalchemy import Column, Integer, ForeignKey, Float, ForeignKeyConstraint,
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
-from bot_orm.session import bot_declarative_base
-from bot_orm.tables.player_rating import PlayerRating
-from bot_orm.tables.player import Player
-from common_utils import side_enum, role_enum, foreignkey_cascade_options
+from inhouse_bot.bot_orm import bot_declarative_base
+from inhouse_bot.bot_orm.tables.player_rating import PlayerRating
+from inhouse_bot.bot_orm import Player
+from inhouse_bot.common_utils import side_enum, role_enum, foreignkey_cascade_options
 
 
 class GameParticipant(bot_declarative_base):

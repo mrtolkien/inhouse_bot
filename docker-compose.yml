@@ -5,7 +5,6 @@ services:
     image: mrtolkien/inhouse_bot
     build:
       context: .
-      target: inhouse_bot_dev
     env_file:
     - .env
 
