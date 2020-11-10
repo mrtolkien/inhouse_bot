@@ -11,18 +11,18 @@ services:
 
   db:
     image: postgres:alpine
-    restart: always
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+    # Optional volume to save data long-term, not used in development
+    # volumes:
+    # - pgdata:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: pwd
       POSTGRES_DB: inhouse_bot
 
   adminer:
     image: adminer
-    restart: always
     ports:
       - 8080:8080
 
-volumes:
-    pgdata:
+# If you want to define a volume to save your postgres data, it’s done here
+# volumes:
+#     pgdata:

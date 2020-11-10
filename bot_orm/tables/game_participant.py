@@ -14,7 +14,7 @@ class GameParticipant(bot_declarative_base):
     __tablename__ = "game_participant"
 
     # Reference to the game table
-    game_id = Column(Integer, ForeignKey("game.id"), primary_key=True)
+    game_id = Column(Integer, ForeignKey("game.id", **foreignkey_cascade_options), primary_key=True)
 
     # Identifier among game participants
     side = Column(side_enum, primary_key=True)
@@ -36,9 +36,7 @@ class GameParticipant(bot_declarative_base):
 
     # Foreign key to Player
     __table_args__ = (
-        ForeignKeyConstraint(
-            (player_id, player_server_id), (Player.id, Player.server_id), **foreignkey_cascade_options
-        ),
+        ForeignKeyConstraint((player_id, player_server_id), (Player.id, Player.server_id)),
         ForeignKeyConstraint(
             (player_id, player_server_id, role),
             (PlayerRating.player_id, PlayerRating.player_server_id, PlayerRating.role),
@@ -63,7 +61,7 @@ class GameParticipant(bot_declarative_base):
         self.side = side
         self.role = role
         self.player_id = player.id
+        self.player_server_id = player.server_id
 
-        # TODO Rework that?
         self.trueskill_mu = player.ratings[role].trueskill_mu
         self.trueskill_sigma = player.ratings[role].trueskill_sigma
