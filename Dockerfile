@@ -15,5 +15,3 @@ COPY run_bot.py .
 
 # Running the bot itself
 CMD python -u run_bot.py
-
-

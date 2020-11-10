@@ -5,8 +5,7 @@ from sqlalchemy import func
 
 from inhouse_bot.common_utils import roles_list
 
-from inhouse_bot.bot_orm import session_scope
-from inhouse_bot.bot_orm import QueuePlayer, Player
+from inhouse_bot.bot_orm import session_scope, QueuePlayer, Player
 from inhouse_bot.common_utils import PlayerInGame, is_in_game
 
 

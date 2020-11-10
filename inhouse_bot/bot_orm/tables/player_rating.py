@@ -2,7 +2,7 @@ from sqlalchemy import Column, Float, BigInteger, ForeignKeyConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from inhouse_bot.bot_orm import bot_declarative_base
-from inhouse_bot.bot_orm import Player
+from inhouse_bot.bot_orm.tables.player import Player
 from inhouse_bot.common_utils import role_enum, foreignkey_cascade_options
 
 

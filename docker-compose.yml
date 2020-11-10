@@ -7,6 +7,10 @@ services:
       context: .
     env_file:
     - .env
+    volumes:
+    - type: bind
+      source: ./
+      target: /inhouse_bot
 
   db:
     image: postgres:alpine

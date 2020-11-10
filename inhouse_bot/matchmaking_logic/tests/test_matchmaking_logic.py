@@ -2,8 +2,7 @@ from inhouse_bot import game_queue
 from inhouse_bot.bot_orm import session_scope
 from inhouse_bot.bot_orm import Game
 from inhouse_bot.common_utils import roles_list
-from inhouse_bot.matchmaking_logic import find_best_game
-from inhouse_bot.matchmaking_logic import score_game_from_winning_player
+from inhouse_bot.matchmaking_logic import find_best_game, score_game_from_winning_player
 
 
 def test_matchmaking_logic():
