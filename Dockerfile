@@ -5,17 +5,15 @@ FROM python:3.8 AS inhouse_bot
 COPY requirements.txt /
 RUN pip install -r /requirements.txt
 
+# I’m using a single image at the moment, so I put pytest in it too
+RUN pip install pytest
+
 # Copying the bot source code
-# TODO CHANGE THAT FOR NEW STUFF
-WORKDIR /
-COPY /inhouse_bot_old/ /inhouse_bot/
+WORKDIR /inhouse_bot
+COPY /inhouse_bot/ ./inhouse_bot
 COPY run_bot.py .
 
 # Running the bot itself
 CMD python -u run_bot.py
 
 
-# Small development environment
-FROM inhouse_bot as inhouse_bot_dev
-
-RUN pip install pytest

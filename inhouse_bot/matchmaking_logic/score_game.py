@@ -1,7 +1,7 @@
 import trueskill
 
-from bot_orm.session import session_scope
-from bot_orm.tables import Player, Game, GameParticipant
+from inhouse_bot.bot_orm import session_scope
+from inhouse_bot.bot_orm import Game, GameParticipant
 
 
 def update_trueskill(game: Game, session):

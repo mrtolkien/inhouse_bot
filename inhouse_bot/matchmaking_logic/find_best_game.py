@@ -2,10 +2,10 @@ import itertools
 import random
 from typing import Optional, List, Dict
 
-from bot_orm.session import get_session
-from bot_orm.tables import Game, Player, PlayerRating
-from common_utils import roles_list
-from game_queue.queue_handler import GameQueue, get_player_id_list_from_queue
+from inhouse_bot.bot_orm import get_session
+from inhouse_bot.bot_orm import Game, Player, PlayerRating
+from inhouse_bot.common_utils import roles_list
+from inhouse_bot.game_queue.queue_handler import GameQueue, get_player_id_list_from_queue
 
 
 def get_queue_players(queue: GameQueue, session) -> Dict[str, List[Player]]:

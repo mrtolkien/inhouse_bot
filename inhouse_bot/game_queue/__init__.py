@@ -1,4 +1,4 @@
-from game_queue.queue_handler import (
+from inhouse_bot.game_queue.queue_handler import (
     PlayerInReadyCheck,
     get_queue,
     add_player,

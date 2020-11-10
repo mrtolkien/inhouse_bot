@@ -3,7 +3,7 @@ import math
 
 import trueskill
 
-from bot_orm.tables import Game
+from inhouse_bot.bot_orm import Game
 
 
 def evaluate_game(game: Game) -> float:

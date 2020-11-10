@@ -6,13 +6,13 @@ import datetime
 from tabulate import tabulate
 
 from sqlalchemy import Column, Integer, DateTime, Float, BigInteger
-from sqlalchemy.orm import relationship, object_session
+from sqlalchemy.orm import relationship
 from sqlalchemy.orm.collections import mapped_collection
 
-from bot_orm.session import bot_declarative_base
-from bot_orm.tables.player import Player
+from inhouse_bot.bot_orm import bot_declarative_base
+from inhouse_bot.bot_orm import Player
 
-from common_utils import roles_list, side_enum
+from inhouse_bot.common_utils import roles_list, side_enum
 
 
 class Game(bot_declarative_base):
@@ -79,8 +79,8 @@ class Game(bot_declarative_base):
             players: [team, role] -> Player dictionary
         """
         # We use local imports to not have circular imports
-        from bot_orm.tables.game_participant import GameParticipant
-        from matchmaking_logic.evaluate_game import evaluate_game
+        from inhouse_bot.bot_orm import GameParticipant
+        from inhouse_bot.matchmaking_logic import evaluate_game
 
         self.start = datetime.datetime.now()
 
