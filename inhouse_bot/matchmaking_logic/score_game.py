@@ -2,7 +2,7 @@ import trueskill
 
 from inhouse_bot.bot_orm import session_scope
 from inhouse_bot.bot_orm import Game, GameParticipant
-from inhouse_bot.common_utils.is_in_game import get_last_game
+from inhouse_bot.common_utils.get_last_game import get_last_game
 
 
 def update_trueskill(game: Game, session):

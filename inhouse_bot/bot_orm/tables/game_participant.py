@@ -52,21 +52,14 @@ class GameParticipant(bot_declarative_base):
     def mmr(self):
         return self.trueskill_mu - 3 * self.trueskill_sigma + 25
 
+    # Called only from the Game constructor itself
     def __init__(self, side: str, role: str, player: Player):
-        """
-        # TODO Google style docstring
-        Should be called only from the game.__init__() function.
-
-        :param side: BLUE/RED
-        :param role: a role in [top, jungle, mid, bot, support]
-        :param player: participant’s player object
-        """
         self.side = side
         self.role = role
+
         self.player_id = player.id
+        self.name = player.name
         self.player_server_id = player.server_id
 
         self.trueskill_mu = player.ratings[role].trueskill_mu
         self.trueskill_sigma = player.ratings[role].trueskill_sigma
-
-        self.name = player.name

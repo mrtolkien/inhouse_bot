@@ -8,7 +8,7 @@ from discord.ext import commands
 # Defining intents to get full members list
 from discord.ext.commands import NoPrivateMessage
 
-from inhouse_bot.common_utils import PlayerInGame
+from inhouse_bot.game_queue.queue_handler import PlayerInGame
 from inhouse_bot.game_queue import PlayerInReadyCheck
 
 intents = discord.Intents.default()

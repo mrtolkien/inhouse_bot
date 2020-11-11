@@ -5,7 +5,7 @@ from typing import List, Optional, Set
 from inhouse_bot.common_utils import roles_list
 
 from inhouse_bot.bot_orm import session_scope, QueuePlayer, Player
-from inhouse_bot.common_utils import PlayerInGame, is_in_game
+from inhouse_bot.common_utils.get_last_game import get_last_game
 
 
 class PlayerInReadyCheck(Exception):
@@ -46,8 +46,10 @@ def add_player(player_id: int, role: str, channel_id: int, server_id: int = None
     assert role in roles_list
 
     with session_scope() as session:
-        # Start by checking if the player is in game
-        if is_in_game(player_id, server_id, session):
+
+        game, participant = get_last_game(player_id, server_id, session)
+
+        if game and not game.winner:
             raise PlayerInGame
 
         # Then check if the player is in a ready-check
@@ -167,3 +169,7 @@ def cancel_ready_check(
                 query = query.filter(QueuePlayer.channel_id == channel_id)
 
             query.delete(synchronize_session=False)
+
+
+class PlayerInGame(Exception):
+    ...
