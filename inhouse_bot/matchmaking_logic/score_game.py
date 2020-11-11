@@ -2,6 +2,7 @@ import trueskill
 
 from inhouse_bot.bot_orm import session_scope
 from inhouse_bot.bot_orm import Game, GameParticipant
+from inhouse_bot.common_utils.is_in_game import get_last_game
 
 
 def update_trueskill(game: Game, session):
@@ -41,15 +42,7 @@ def score_game_from_winning_player(player_id: int, server_id: int):
     Scores the last game of the player on the server as a *win*
     """
     with session_scope() as session:
-        # Get the latest game
-        game, participant = (
-            session.query(Game, GameParticipant)
-            .select_from(Game)
-            .join(GameParticipant)
-            .filter(Game.server_id == server_id)
-            .filter(GameParticipant.player_id == player_id)
-            .order_by(Game.start.desc())
-        ).first()
+        game, participant = get_last_game(player_id, server_id, session)
 
         game.winner = participant.side
 

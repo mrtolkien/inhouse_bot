@@ -1,11 +1,11 @@
 import os
-from typing import List, Optional, TypedDict
+from typing import List, Optional, TypedDict, Dict
 
 from sqlalchemy import func
 
 from inhouse_bot.common_utils import roles_list
 
-from inhouse_bot.bot_orm import session_scope, QueuePlayer, Player
+from inhouse_bot.bot_orm import session_scope, QueuePlayer, Player, PlayerRating
 from inhouse_bot.common_utils import PlayerInGame, is_in_game
 
 
@@ -105,7 +105,7 @@ def add_player(
 
     with session_scope() as session:
         # Start by checking if the player is in game
-        if is_in_game(player_id, session):
+        if is_in_game(player_id, server_id, session):
             raise PlayerInGame
 
         # Then check if the player is in a ready-check
@@ -216,3 +216,31 @@ def cancel_ready_check(
 
 def get_player_id_list_from_queue(queue: GameQueue) -> List[int]:
     return sum((queue[role] for role in roles_list), start=[])
+
+
+def get_queue_players(queue: GameQueue, session) -> Dict[str, List[Player]]:
+    players_id_list = get_player_id_list_from_queue(queue)
+
+    # We grab all players objects for the current server
+    players_list = (
+        session.query(Player)
+        .filter(Player.id.in_(players_id_list))
+        .filter(Player.server_id == queue["server_id"])
+        .all()
+    )
+
+    # We put them in similar dictionary as GameQueue: [role] -> list of Player
+    queue_players = {
+        role: [player for player in players_list if player.id in queue[role]] for role in roles_list
+    }
+
+    # Before returning, we make sure they all have ratings (which also pre-loads them in the session)
+    for role in queue_players:
+        for player in queue_players[role]:
+            try:
+                assert player.ratings[role]
+            except KeyError:
+                session.add(PlayerRating(player, role))
+                session.commit()
+
+    return queue_players
