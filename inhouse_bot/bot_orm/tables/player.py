@@ -20,11 +20,13 @@ class Player(bot_declarative_base):
     name = Column(String)
     team = Column(String)
 
+    # We automatically load the ratings when loading a Player object
     ratings = relationship(
         "PlayerRating",
         collection_class=attribute_mapped_collection("role"),
         backref="player",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
     # ORM relationship to the GameParticipant table

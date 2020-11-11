@@ -58,6 +58,11 @@ class Game(bot_declarative_base):
             RED=[self.participants["RED", role] for role in roles_list],
         )
 
+    @property
+    def matchmaking_score(self):
+        return abs(0.5 - self.blue_expected_winrate)
+
+
     def __str__(self):
         return tabulate(
             {
