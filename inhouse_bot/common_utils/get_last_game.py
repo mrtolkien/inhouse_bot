@@ -13,13 +13,7 @@ def get_last_game(
         .filter(Game.server_id == server_id)
         .filter(GameParticipant.player_id == player_id)
         .order_by(Game.start.desc())
-    ).first() or (None, None)   # To not have unpacking errors
-
-
-def is_in_game(player_id: int, server_id: int, session) -> bool:
-    # TODO write the function
-    return False
-
-
-class PlayerInGame(Exception):
-    ...
+    ).first() or (
+        None,
+        None,
+    )  # To not have unpacking errors

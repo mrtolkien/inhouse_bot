@@ -23,7 +23,6 @@ class GhostSessionMaker:
 
     def _initialize_sqlalchemy(self):
         # We create the engine to connect to the database
-        # TODO Check the exact options, but defaults should be ok
         engine = sqlalchemy.create_engine(os.environ["INHOUSE_BOT_CONNECTION_STRING"])
 
         # We create all the tables and columns as required by the classes in the other parts of the program

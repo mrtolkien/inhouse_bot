@@ -6,7 +6,7 @@ from inhouse_bot.bot_orm import session_scope
 from inhouse_bot.cogs.cogs_utils.validation_dialog import checkmark_validation
 
 from inhouse_bot.common_utils import RoleConverter, roles_list
-from inhouse_bot.common_utils.is_in_game import get_last_game
+from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.config.embeds import embeds_color
 from inhouse_bot.config.emoji import get_role_emoji
 
@@ -82,7 +82,7 @@ class QueueCog(commands.Cog, name="Queue"):
             )
 
             # We update the queue directly for readability
-            # TODO Have an "update_all_queues" function as this ready check removes people from other queues
+            # TODO LOW PRIO Have an "update_all_queues" function as this removes people from other queues
             await self.send_queue(ctx)
 
             # Good situation where we have a relatively fair game
@@ -204,11 +204,34 @@ class QueueCog(commands.Cog, name="Queue"):
             )
 
             if game and game.winner:
-                await ctx.send("Your last game seem to have already been scored")
+                await ctx.send(
+                    "Your last game seem to have already been scored\n"
+                    "If there was an issue, please contact an admin"
+                )
                 return
 
-            # TODO Display the game with the winner and tag the players to vote
+            message = await ctx.send(
+                f"{ctx.author.name} wants to score game {game.id} as a win for {participant.side}\n"
+                f"{', '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])} can validate the result\n"
+                f"Result will be validated once 6 players from the game press ✅"
+            )
 
+            validated, players_who_refused = await checkmark_validation(
+                bot=self.bot,
+                message=message,
+                validating_players_ids=game.player_ids_list,
+                validation_threshold=6,
+                timeout=60,
+            )
+
+            if not validated:
+                await ctx.send("Score input was either cancelled or timed out")
+                return
+
+        # If we get there, the score was validated and we can simply update the game and the ratings
+        await ctx.send(
+            f"Game {game.id} has been scored as a win for {participant.side} and ratings have been updated"
+        )
         matchmaking_logic.score_game_from_winning_player(player_id=ctx.author.id, server_id=ctx.guild.id)
 
     @commands.command(aliases=["cancel"])
@@ -229,7 +252,25 @@ class QueueCog(commands.Cog, name="Queue"):
                 await ctx.send("It does not look like you are part of an ongoing game")
                 return
 
-            # TODO Display the game and tag the players to vote and cancel the game (*ie* delete it from DB)
+            message = await ctx.send(
+                f"{ctx.author.name} wants to cancel game {game.id}\n"
+                f"{', '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])} can cancel the game\n"
+                f"Game will be canceled once 6 players from the game press ✅"
+            )
+
+            validated, players_who_refused = await checkmark_validation(
+                bot=self.bot,
+                message=message,
+                validating_players_ids=game.player_ids_list,
+                validation_threshold=6,
+                timeout=60,
+            )
+
+            if not validated:
+                await ctx.send(f"Game {game.id} was not cancelled")
+            else:
+                session.delete(game)
+                await ctx.send(f"Game {game.id} was cancelled")
 
     # TODO Add admins functions, all starting with !admin
     #   !admin reset, accepting a channel or a user (if user, resets their queue status)
