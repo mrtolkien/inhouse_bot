@@ -65,6 +65,7 @@ class InhouseBot(commands.Bot):
         elif isinstance(error, NoPrivateMessage):
             await ctx.send(f"This command cannot be used in private messages")
 
+        # TODO THIS DOES NOT WORK, IT’S A CommandInvokeError
         elif isinstance(error, PlayerInGame):
             await ctx.send(
                 f"You are marked as in-game and are not allowed to queue at the moment\n"
@@ -76,6 +77,8 @@ class InhouseBot(commands.Bot):
         elif isinstance(error, PlayerInReadyCheck):
             await ctx.send(
                 f"You are already be in a ready-check and will be able to queue again once it is completed or cancelled"
+                f"\n"
+                f"If it is a bug, contact an admin and ask them to use `!admin reset` with your name"
             )
             return
 

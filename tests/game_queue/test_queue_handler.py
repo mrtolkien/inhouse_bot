@@ -28,8 +28,8 @@ def test_queue_full():
     with pytest.raises(game_queue.PlayerInReadyCheck):
         game_queue.add_player(0, roles_list[0], 2, 0)
 
-    # We cancel the ready check and drop player 0
-    game_queue.cancel_ready_check(0, 0, [0], drop_from_all_channels=True)
+    # We cancel the ready check and drop player 0 from all queues on the server
+    game_queue.cancel_ready_check(ready_check_id=0, ids_to_drop=[0], server_id=0)
 
     assert len(GameQueue(0)) == 9
 

@@ -135,20 +135,19 @@ def validate_ready_check(ready_check_id: int):
 
 
 def cancel_ready_check(
-    ready_check_id: int, channel_id: int, ids_to_drop: Optional[List[int]], drop_from_all_channels=False,
+    ready_check_id: int, ids_to_drop: Optional[List[int]], channel_id=None, server_id=None,
 ):
     """
     Cancels an ongoing ready check by reverting players to ready_check_id=None
 
     Drops players in ids_to_drop[]
-    """
-    # Use drop_from_all_channels with timeouts, single id + False in other cases
-    # TODO Have a way to cancel ready-check (with the bot) if the message disappeared or there was a bug
 
+    If server_id is not None, drops the player from all queues in the server
+    """
     with session_scope() as session:
+        # First, we cancel the ready check for *all* players, even the ones we don’t drop
         (
             session.query(QueuePlayer)
-            .filter(QueuePlayer.channel_id == channel_id)
             .filter(QueuePlayer.ready_check_id == ready_check_id)
             .update({"ready_check_id": None}, synchronize_session=False)
         )
@@ -156,8 +155,15 @@ def cancel_ready_check(
         if ids_to_drop:
             query = session.query(QueuePlayer).filter(QueuePlayer.player_id.in_(ids_to_drop))
 
-            # Happens in the case of a cancellation
-            if not drop_from_all_channels:
+            if server_id and channel_id:
+                raise Exception("channel_id and server_id should not be used together here")
+
+            # This removes the player from *all* queues in the server (timeout)
+            if server_id:
+                query = query.filter(QueuePlayer.player_server_id == server_id)
+
+            # This removes the player only from the given channel (cancellation)
+            if channel_id:
                 query = query.filter(QueuePlayer.channel_id == channel_id)
 
             query.delete(synchronize_session=False)
