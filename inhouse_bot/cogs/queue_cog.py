@@ -3,8 +3,9 @@ from discord.ext import commands
 from discord.ext.commands import guild_only
 
 from inhouse_bot.bot_orm import session_scope
+from inhouse_bot.cogs.cogs_utils.validation_dialog import checkmark_validation
 
-from inhouse_bot.common_utils import roles_list, RoleConverter
+from inhouse_bot.common_utils import RoleConverter
 from inhouse_bot.common_utils.is_in_game import get_last_game
 from inhouse_bot.config.embeds import embeds_color
 from inhouse_bot.config.emoji import get_role_emoji
@@ -53,6 +54,51 @@ class QueueCog(commands.Cog, name="Queue"):
         if old_queue_message:
             await old_queue_message.delete()
 
+    async def run_matchmaking_logic(
+        self, ctx: commands.Context,
+    ):
+        game = matchmaking_logic.find_best_game(GameQueue(ctx.channel.id))
+
+        if not game:
+            return
+
+        elif game and game.matchmaking_score < 0.2:
+            # TODO Beautiful match visualisation
+            # We notify the players
+            message = await ctx.send("GAME FOUND")
+
+            # We mark the ready check as ongoing
+            game_queue.start_ready_check(
+                player_ids=game.player_ids_list, channel_id=ctx.channel.id, ready_check_message_id=message.id
+            )
+
+            # We update the queue directly for readability
+            await self.send_queue(ctx)
+
+            # Good situation where we have a relatively fair game
+            ready, players_to_drop = await checkmark_validation(
+                bot=self.bot, message=message, validating_players=[], validation_threshold=10, timeout=3 * 60,
+            )
+
+            if ready:
+                # We commit the game
+                with session_scope() as session:
+                    session.add(game)
+
+                # We drop all 10 players from the queue
+                game_queue.remove_players(game.player_ids_list, ctx.channel.id)
+
+            else:
+                # We remove the players to drop
+                game_queue.remove_players(players_to_drop, ctx.channel.id)
+
+        elif game and game.matchmaking_score >= 0.2:
+            # One side has over 70% predicted winrate, we do not start
+            await ctx.send(
+                f"The best match found had a side with a {round((.5 + game.matchmaking_score)*100, 2)}%"
+                f" predicted winrate and was not started"
+            )
+
     @commands.command()
     @guild_only()
     async def queue(
@@ -69,7 +115,7 @@ class QueueCog(commands.Cog, name="Queue"):
             !queue adc
         """
 
-        # Actually queuing the player
+        # Queuing the player
         game_queue.add_player(
             player_id=ctx.author.id,
             name=ctx.author.name,
@@ -78,19 +124,7 @@ class QueueCog(commands.Cog, name="Queue"):
             server_id=ctx.guild.id,
         )
 
-        if game := matchmaking_logic.find_best_game(GameQueue(ctx.channel.id)):
-            score = abs(0.5 - game.blue_expected_winrate)
-
-            if score < 0.2:
-                # Good situation where we have a relatively fair game
-                # TODO Create game, start ready check, drop players, ...
-                ...
-            else:
-                # One side has over 70% predicted winrate, we do not start
-                await ctx.send(
-                    f"The best match found had a side with a {.5 + score}%"
-                    f" predicted winrate and therefore did not start"
-                )
+        await self.run_matchmaking_logic(ctx=ctx)
 
         # Currently, we only update the current queue even if other queues got changed
         await self.send_queue(ctx=ctx)

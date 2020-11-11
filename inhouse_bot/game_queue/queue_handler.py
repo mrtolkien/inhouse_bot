@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from inhouse_bot.common_utils import roles_list
 
@@ -85,6 +85,19 @@ def remove_player(player_id: int, channel_id: int):
             session.query(QueuePlayer)
             .filter(QueuePlayer.channel_id == channel_id)
             .filter(QueuePlayer.player_id == player_id)
+            .delete(synchronize_session=False)
+        )
+
+
+def remove_players(player_ids: Set[int], channel_id: int):
+    """
+    Removes all players from the queue in all roles in the channel, without any checks
+    """
+    with session_scope() as session:
+        (
+            session.query(QueuePlayer)
+            .filter(QueuePlayer.channel_id == channel_id)
+            .filter(QueuePlayer.player_id.in_(player_ids))
             .delete(synchronize_session=False)
         )
 
