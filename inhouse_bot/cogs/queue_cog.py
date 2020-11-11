@@ -77,7 +77,11 @@ class QueueCog(commands.Cog, name="Queue"):
 
             # Good situation where we have a relatively fair game
             ready, players_to_drop = await checkmark_validation(
-                bot=self.bot, message=message, validating_players=[], validation_threshold=10, timeout=3 * 60,
+                bot=self.bot,
+                message=message,
+                validating_players_ids=game.player_ids_list,
+                validation_threshold=10,
+                timeout=3 * 60,
             )
 
             if ready:

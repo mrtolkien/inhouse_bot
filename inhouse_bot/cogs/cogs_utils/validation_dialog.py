@@ -4,13 +4,11 @@ from typing import Tuple, Optional, List, Set
 import discord
 from discord.ext.commands import Bot
 
-from inhouse_bot.bot_orm import Player
-
 
 async def checkmark_validation(
     bot: Bot,
     message: discord.Message,
-    validating_players: List[Player],
+    validating_players_ids: List[int],
     validation_threshold: int = 10,
     timeout=120.0,
 ) -> Tuple[bool, Optional[Set[int]]]:
@@ -25,8 +23,6 @@ async def checkmark_validation(
         False with the the player who cancelled (in a list)
             It was cancelled and the player should be dropped
     """
-
-    validating_players_ids = [p.id for p in validating_players]
 
     await message.add_reaction("✅")
     await message.add_reaction("❎")
@@ -50,7 +46,7 @@ async def checkmark_validation(
 
             # A player cancels, we return it and will drop him
             elif str(reaction.emoji) == "❎":
-                return False, set(user.id)
+                return False, {user.id,}
 
     # We get there if no player accepted in the last x minutes
     except asyncio.TimeoutError:
