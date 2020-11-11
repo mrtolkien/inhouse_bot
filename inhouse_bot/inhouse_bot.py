@@ -29,6 +29,12 @@ class InhouseBot(commands.Bot):
 
         # self.add_cog(StatsCog(self))
 
+        # While I hate mixing production and testing code, it is the most convenient solution to actually test the bot
+        if os.environ.get("INHOUSE_BOT_TEST"):
+            from tests.test_cog import TestCog
+
+            self.add_cog(TestCog(self))
+
         self.short_notice_duration = 10
         self.validation_duration = 60
 
