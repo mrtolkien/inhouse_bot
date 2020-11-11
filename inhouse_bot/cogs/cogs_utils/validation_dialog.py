@@ -11,17 +11,17 @@ async def checkmark_validation(
     validating_players_ids: List[int],
     validation_threshold: int = 10,
     timeout=120.0,
-) -> Tuple[bool, Optional[Set[int]]]:
+) -> Tuple[Optional[bool], Optional[Set[int]]]:
     """
     Implements a checkmark validation on the chosen message.
 
     3 possible outcomes:
         True and None
             It was validated by the necessary number of players
-        False with a list of players who did not validate
-            It timed out and the players who didn't validate should be dropped
         False with the the player who cancelled (in a list)
             It was cancelled and the player should be dropped
+        None with a list of players who did not validate
+            It timed out and the players who didn't validate should be dropped
     """
 
     await message.add_reaction("✅")
@@ -50,7 +50,7 @@ async def checkmark_validation(
 
     # We get there if no player accepted in the last x minutes
     except asyncio.TimeoutError:
-        return False, set(i for i in validating_players_ids if i not in ids_of_players_who_validated)
+        return None, set(i for i in validating_players_ids if i not in ids_of_players_who_validated)
 
     # Finally, we arrive here only if the while loop brok
     return True, None

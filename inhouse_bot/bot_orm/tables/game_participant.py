@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, Float, ForeignKeyConstraint, BigInteger
+from sqlalchemy import Column, Integer, ForeignKey, Float, ForeignKeyConstraint, BigInteger, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
@@ -29,6 +29,9 @@ class GameParticipant(bot_declarative_base):
 
     # Champion id, only filled if the player updates it by themselves after the game
     champion_id = Column(Integer)
+
+    # Name as it was recorded when the game was played
+    name = Column(String)
 
     # Pre-game TrueSkill values
     trueskill_mu = Column(Float)
@@ -65,3 +68,5 @@ class GameParticipant(bot_declarative_base):
 
         self.trueskill_mu = player.ratings[role].trueskill_mu
         self.trueskill_sigma = player.ratings[role].trueskill_sigma
+
+        self.name = player.name

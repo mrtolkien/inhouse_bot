@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Tuple, Dict, List
 import datetime
 
-
+from discord import Embed
 from tabulate import tabulate
 
 from sqlalchemy import Column, Integer, DateTime, Float, BigInteger
@@ -13,6 +13,7 @@ from inhouse_bot.bot_orm import bot_declarative_base
 from inhouse_bot.bot_orm.tables.player import Player
 
 from inhouse_bot.common_utils import roles_list, side_enum
+from inhouse_bot.config.emoji import get_role_emoji
 
 
 class Game(bot_declarative_base):
@@ -48,10 +49,12 @@ class Game(bot_declarative_base):
     # We define teams only as properties as it should be easier to work with
     @property
     def teams(self):
+        from inhouse_bot.bot_orm import GameParticipant
+
         @dataclass
         class Teams:
-            BLUE: List[Player]
-            RED: List[Player]
+            BLUE: List[GameParticipant]
+            RED: List[GameParticipant]
 
         return Teams(
             BLUE=[self.participants["BLUE", role] for role in roles_list],
@@ -68,16 +71,25 @@ class Game(bot_declarative_base):
 
     def __str__(self):
         return tabulate(
-            {
-                team_column.capitalize(): [
-                    self.participants[team, role].player.name
-                    for (team, role) in sorted(self.participants, key=lambda x: roles_list.index(x[1]))
-                    if team == team_column
-                ]
-                for team_column in side_enum
-            },
+            {"BLUE": [p.name for p in self.teams.BLUE], "RED": [p.name for p in self.teams.BLUE]},
             headers="keys",
         )
+
+    def beautiful_embed(self) -> Embed:
+        embed = Embed(title="Matchmade Game")
+
+        for side in ("BLUE", "RED"):
+            embed.add_field(
+                name=side,
+                value="\n".join(
+                    [
+                        f"{get_role_emoji(roles_list[idx])} {p.name[:15]}"
+                        for idx, p in enumerate(getattr(self.teams, side))
+                    ]
+                ),
+            )
+
+        return embed
 
     def __init__(self, players: Dict[Tuple[str, str], Player]):
         """

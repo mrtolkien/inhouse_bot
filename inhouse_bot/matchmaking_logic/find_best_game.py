@@ -20,9 +20,10 @@ def find_best_game(queue: GameQueue, game_quality_threshold=0.1) -> Optional[Gam
     # We start with the 10 players who have been in queue for the longest time
     best_game = None
     for players_threshold in range(10, len(queue) + 1):
+
         best_game = find_best_game_for_queue_players(queue.queue_players[:players_threshold])
 
-        if best_game.matchmaking_score < game_quality_threshold:
+        if best_game and best_game.matchmaking_score < game_quality_threshold:
             return best_game
 
     return best_game
@@ -49,7 +50,7 @@ def find_best_game_for_queue_players(queue_players: List[QueuePlayer]) -> Game:
         )
 
     # We do a very simple maximum search
-    best_score = -1
+    best_score = 1
     best_game = None
 
     # This generates all possible team compositions
@@ -83,7 +84,7 @@ def find_best_game_for_queue_players(queue_players: List[QueuePlayer]) -> Game:
 
         # Importantly, we do *not* add the game to the session, as that will be handled by the bot logic itself
 
-        if game.matchmaking_score > best_score:
+        if game.matchmaking_score < best_score:
             best_game = game
             best_score = game.matchmaking_score
             # If the game is seen as being below 51% winrate for one side, we simply stop there (helps with big lists)
