@@ -1,39 +1,11 @@
 import itertools
 import random
-from typing import Optional, List, Dict
+from typing import Optional
 
 from inhouse_bot.bot_orm import get_session
-from inhouse_bot.bot_orm import Game, Player, PlayerRating
+from inhouse_bot.bot_orm import Game
 from inhouse_bot.common_utils import roles_list
-from inhouse_bot.game_queue.queue_handler import GameQueue, get_player_id_list_from_queue
-
-
-def get_queue_players(queue: GameQueue, session) -> Dict[str, List[Player]]:
-    players_id_list = get_player_id_list_from_queue(queue)
-
-    # We grab all players objects for the current server
-    players_list = (
-        session.query(Player)
-        .filter(Player.id.in_(players_id_list))
-        .filter(Player.server_id == queue["server_id"])
-        .all()
-    )
-
-    # We put them in similar dictionary as GameQueue: [role] -> list of Player
-    queue_players = {
-        role: [player for player in players_list if player.id in queue[role]] for role in roles_list
-    }
-
-    # Before returning, we make sure they all have ratings (which also pre-loads them in the session)
-    for role in queue_players:
-        for player in queue_players[role]:
-            try:
-                assert player.ratings[role]
-            except KeyError:
-                session.add(PlayerRating(player, role))
-                session.commit()
-
-    return queue_players
+from inhouse_bot.game_queue.queue_handler import GameQueue, get_queue_players
 
 
 def find_best_game(queue: GameQueue) -> Optional[Game]:
@@ -106,5 +78,4 @@ def find_best_game(queue: GameQueue) -> Optional[Game]:
     # We close after computing it because we access player.ratings before all that
     session.close()
 
-    # TODO Other info will need to be added to the Game object afterwards (server info in particular)
     return best_game
