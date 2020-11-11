@@ -62,6 +62,9 @@ class Game(bot_declarative_base):
     def matchmaking_score(self):
         return abs(0.5 - self.blue_expected_winrate)
 
+    @property
+    def player_ids_list(self):
+        return [p.player_id for p in self.participants.values()]
 
     def __str__(self):
         return tabulate(

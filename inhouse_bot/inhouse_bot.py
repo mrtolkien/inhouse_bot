@@ -32,6 +32,8 @@ class InhouseBot(commands.Bot):
         self.short_notice_duration = 10
         self.validation_duration = 60
 
+        # TODO On restart, remove ready checks and resend queue messages
+
     def run(self, *args, **kwargs):
         super().run(os.environ["INHOUSE_BOT_TOKEN"], *args, **kwargs)
 
