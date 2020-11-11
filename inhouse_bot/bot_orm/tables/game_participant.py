@@ -49,9 +49,9 @@ class GameParticipant(bot_declarative_base):
     def mmr(self):
         return self.trueskill_mu - 3 * self.trueskill_sigma + 25
 
-    def __init__(self, side, role, player):
+    def __init__(self, side: str, role: str, player: Player):
         """
-        # TODO Google docstring
+        # TODO Google style docstring
         Should be called only from the game.__init__() function.
 
         :param side: BLUE/RED
