@@ -1,14 +1,13 @@
 import itertools
 import random
-from typing import Optional
+from typing import Optional, List
 
-from inhouse_bot.bot_orm import get_session
-from inhouse_bot.bot_orm import Game
+from inhouse_bot.bot_orm import Game, QueuePlayer
 from inhouse_bot.common_utils import roles_list
 from inhouse_bot.game_queue import GameQueue
 
 
-def find_best_game(queue: GameQueue) -> Optional[Game]:
+def find_best_game(queue: GameQueue, game_quality_threshold=0.1) -> Optional[Game]:
     # Do not do anything if there’s not at least 2 players in queue per role
 
     for role_queue in queue.queue_players_dict.values():
@@ -17,6 +16,22 @@ def find_best_game(queue: GameQueue) -> Optional[Game]:
 
     # TODO Add some logging to the process
 
+    # If we get there, we know there are at least 10 players in the queue
+    # We start with the 10 players who have been in queue for the longest time
+    best_game = None
+    for players_threshold in range(10, len(queue) + 1):
+        best_game = find_best_game_for_queue_players(queue.queue_players[:players_threshold])
+
+        if best_game.matchmaking_score < game_quality_threshold:
+            return best_game
+
+    return best_game
+
+
+def find_best_game_for_queue_players(queue_players: List[QueuePlayer]) -> Game:
+    """
+    A sub function to allow us to iterate on QueuePlayers from oldest to newest
+    """
     # Currently simply testing all permutations because it should be pretty lightweight
     # TODO Spot mirrored team compositions (full blue/red -> red/blue) to not calculate them twice
 
@@ -25,8 +40,13 @@ def find_best_game(queue: GameQueue) -> Optional[Game]:
     role_permutations = []  # list of tuples of 2-players permutations in the role
 
     # We iterate on each role (which will have 2 players or more) and create one list of permutations per role
-    for role_queue in queue.queue_players_dict.values():
-        role_permutations.append([queue_player for queue_player in itertools.permutations(role_queue, 2)])
+    for role in roles_list:
+        role_permutations.append(
+            [
+                queue_player
+                for queue_player in itertools.permutations([qp for qp in queue_players if qp.role == role], 2)
+            ]
+        )
 
     # We do a very simple maximum search
     best_score = -1
@@ -46,7 +66,7 @@ def find_best_game(queue: GameQueue) -> Optional[Game]:
 
         # We transform it to a more manageable dictionary of players
         # {(team, role)} = Player
-        players = {
+        queue_players = {
             ("BLUE" if bool(tuple_idx) == shuffle else "RED", roles_list[role_idx]): players_tuple[
                 tuple_idx
             ].player  # We take the Player object of our QueuePlayer here
@@ -55,11 +75,11 @@ def find_best_game(queue: GameQueue) -> Optional[Game]:
         }
 
         # We check to make sure all 10 players are different
-        if set(players.values()).__len__() != 10:
+        if set(queue_players.values()).__len__() != 10:
             continue
 
         # We create a Game object for easier handling, and it will compute the matchmaking score
-        game = Game(players)
+        game = Game(queue_players)
 
         # Importantly, we do *not* add the game to the session, as that will be handled by the bot logic itself
 
