@@ -1,7 +1,7 @@
 import os
 import sqlalchemy
 
-# TODO Don’t hardcode that
+# Ideally, that should not be hardcoded
 db_name = "inhouse_bot"
 
 # We need to create an engine that’s not linked to the database
