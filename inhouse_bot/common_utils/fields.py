@@ -2,6 +2,7 @@ from discord.ext import commands
 from discord.ext.commands import ConversionError
 from sqlalchemy import Enum
 import rapidfuzz
+import lol_id_tools
 
 roles_list = ["TOP", "JGL", "MID", "BOT", "SUP"]
 role_enum = Enum(*roles_list, name="role_enum")
@@ -33,8 +34,21 @@ class RoleConverter(commands.Converter):
         matched_string, ratio = rapidfuzz.process.extractOne(argument, full_roles_dict.keys())
 
         if ratio < 85:
-            await ctx.send(f"The role you typed was not understood")
+            await ctx.send(f"The role was not understood")
             raise ConversionError
 
         else:
             return full_roles_dict[matched_string]
+
+
+class ChampionNameConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        """
+        Converts an input string to a clean champion ID
+        """
+        try:
+            return lol_id_tools.get_id(argument, input_locale="en_US", object_type="champion")
+
+        except lol_id_tools.NoMatchingNameFound:
+            await ctx.send(f"The champion name was not understood")
+            raise ConversionError

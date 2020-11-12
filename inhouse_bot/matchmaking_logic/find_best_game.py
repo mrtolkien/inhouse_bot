@@ -3,7 +3,7 @@ import random
 from typing import Optional, List
 
 from inhouse_bot.bot_orm import Game, QueuePlayer
-from inhouse_bot.common_utils import roles_list
+from inhouse_bot.common_utils.fields import roles_list
 from inhouse_bot.game_queue import GameQueue
 
 

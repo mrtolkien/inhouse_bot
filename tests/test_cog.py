@@ -3,7 +3,7 @@ from discord.ext.commands import group
 
 from inhouse_bot.bot_orm import session_scope
 from inhouse_bot.cogs.cogs_utils.validation_dialog import checkmark_validation
-from inhouse_bot.common_utils import roles_list
+from inhouse_bot.common_utils.fields import roles_list
 from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.game_queue import GameQueue
 from inhouse_bot.inhouse_bot import InhouseBot
