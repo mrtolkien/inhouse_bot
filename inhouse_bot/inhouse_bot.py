@@ -20,7 +20,7 @@ WARNING_DURATION = 30
 
 class InhouseBot(commands.Bot):
     def __init__(self, **options):
-        super().__init__("!", intents=intents, **options)
+        super().__init__("!", intents=intents, case_insensitive=True, **options)
 
         # Importing locally to allow InhouseBot to be imported in the cogs
         from inhouse_bot.cogs.queue_cog import QueueCog
