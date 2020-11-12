@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   inhouse_bot:
-    image: mrtolkien/inhouse_bot
+    image: mrtolkien/inhouse_bot:beta
     build:
       context: .
     env_file:
