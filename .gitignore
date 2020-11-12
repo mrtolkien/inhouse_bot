@@ -149,4 +149,5 @@ inhouse_bot_old/tests/local_db_sandbox.py
 !example.env
 
 # Ignoring sqlite db
+data/
 *.db
