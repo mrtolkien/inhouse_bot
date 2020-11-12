@@ -72,28 +72,38 @@ class InhouseBot(commands.Bot):
             )
 
         elif isinstance(error, commands.ConversionError):
-            # Conversion errors feedback are handled in the converters
+            # Conversion errors feedback are handled in my converters
             pass
 
         elif isinstance(error, NoPrivateMessage):
             await ctx.send(f"This command cannot be used in private messages")
 
-        # TODO THIS DOES NOT WORK, IT’S A CommandInvokeError
-        elif isinstance(error, game_queue.PlayerInGame):
-            await ctx.send(
-                f"You are marked as in-game and are not allowed to queue at the moment\n"
-                f"One of the winners can score the game with `!won`, "
-                f"or players can agree to cancel it with `!cancel`"
-            )
-            return
+        # This handles errors that happen during a command
+        elif isinstance(error, commands.CommandInvokeError):
+            og_error = error.original
 
-        elif isinstance(error, game_queue.PlayerInReadyCheck):
-            await ctx.send(
-                f"You are already be in a ready-check and will be able to queue again once it is completed or cancelled"
-                f"\n"
-                f"If it is a bug, contact an admin and ask them to use `!admin reset` with your name"
-            )
-            return
+            if isinstance(og_error, game_queue.PlayerInGame):
+                await ctx.send(
+                    f"Your last game was not scored and you are not allowed to queue at the moment\n"
+                    f"One of the winners can score the game with `!won`, "
+                    f"or players can agree to cancel it with `!cancel`"
+                )
+
+            elif isinstance(og_error, game_queue.PlayerInReadyCheck):
+                await ctx.send(
+                    f"A game has already been found for you and you cannot queue before it is accepted or cancelled\n"
+                    f"If it is a bug, contact an admin and ask them to use `!admin reset` with your name"
+                )
+
+            else:
+                print(type(og_error))
+
+                # User-facing error
+                await ctx.send(
+                    f"{og_error.__class__.__name__}: {og_error}\n" f"Contact server admins for bugs.",
+                )
+
+                raise og_error
 
         else:
             print(type(error))
