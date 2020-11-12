@@ -17,9 +17,15 @@ def test_queue_full():
     game_queue.add_player(0, roles_list[0], 1, 0)
     assert len(GameQueue(1)) == 1
 
+    # We queue our player 0 for every other role in channel 0
+    for role in roles_list:
+        game_queue.add_player(0, role, 0, 0)
+
+    assert len(GameQueue(0)) == 14  # Every role should count as a different QueuePlayer
+
     # Assuming our matchmaking logic found a good game (id 0)
     game_queue.start_ready_check(list(range(0, 10)), 0, 0)
-    assert len(GameQueue(0)) == 0
+    assert len(GameQueue(0)) == 0  # Player 0 should not be counted in queue for any role anymore
 
     # Our player 0 in channel 1 should not be counted in queue either
     assert len(GameQueue(1)) == 0
@@ -59,6 +65,3 @@ def test_queue_remove():
     game_queue.remove_player(0, 0)
 
     assert len(GameQueue(0)) == 0
-
-
-# TODO Test queuing for multiple roles and assert the behaviour is OK
