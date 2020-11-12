@@ -8,7 +8,6 @@ from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.game_queue import GameQueue
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot import game_queue, matchmaking_logic
-from inhouse_bot.matchmaking_logic import find_best_game
 
 
 class TestCog(commands.Cog, name="TEST"):
@@ -73,7 +72,7 @@ class TestCog(commands.Cog, name="TEST"):
             ctx.author.id, roles_list[4], ctx.channel.id, ctx.guild.id, name=ctx.author.name
         )
 
-        game = find_best_game(GameQueue(ctx.channel.id))
+        game = matchmaking_logic.find_best_game(GameQueue(ctx.channel.id))
 
         with session_scope() as session:
             session.add(game)
