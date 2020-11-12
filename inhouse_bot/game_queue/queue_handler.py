@@ -36,7 +36,7 @@ def reset_queue(channel_id: Optional[int] = None):
         query = session.query(QueuePlayer)
 
         if channel_id is not None:
-            query = query.filter(QueuePlayer.channel_id == channel_id).delete()
+            query = query.filter(QueuePlayer.channel_id == channel_id)
 
         query.delete(synchronize_session=False)
 
@@ -73,22 +73,25 @@ def add_player(player_id: int, role: str, channel_id: int, server_id: int = None
         session.merge(queue_player)
 
 
-def remove_player(player_id: int, channel_id: int):
+def remove_player(player_id: int, channel_id: int = None):
     """
     Removes the player from the queue in all roles in the channel
+
+    If no channel id is given, drop him from *all* queues, cross-server
     """
     with session_scope() as session:
         # First, check if he’s in a ready-check.
         if is_in_ready_check(player_id, session):
             raise PlayerInReadyCheck
 
-        # Else, we simply delete his rows
-        (
-            session.query(QueuePlayer)
-            .filter(QueuePlayer.channel_id == channel_id)
-            .filter(QueuePlayer.player_id == player_id)
-            .delete(synchronize_session=False)
-        )
+        # We select the player’s rows
+        query = session.query(QueuePlayer).filter(QueuePlayer.player_id == player_id)
+
+        # If given a channel ID (when the user calls !leave), we filter
+        if channel_id:
+            query = query.filter(QueuePlayer.channel_id == channel_id)
+
+        query.delete(synchronize_session=False)
 
 
 def remove_players(player_ids: Set[int], channel_id: int):
