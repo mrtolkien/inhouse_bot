@@ -1,4 +1,6 @@
-from discord import Embed
+from typing import Optional
+
+from discord import Embed, TextChannel
 from discord.ext import commands
 from discord.ext.commands import guild_only
 
@@ -24,11 +26,20 @@ class QueueCog(commands.Cog, name="Queue"):
         # This should be a table
         self.latest_queue_messages = {}
 
-    async def send_queue(self, ctx: commands.Context):
+    async def send_queue(self, ctx: Optional[commands.Context] = None, channel: Optional[TextChannel] = None):
         """
         Deletes the previous queue message and sends a new one in the channel
+
+        If channel is supplied instead of a context (in the case of a bot reboot), perform a reboot instead
         """
-        channel_id = ctx.channel.id
+        if ctx:
+            channel_id = ctx.channel.id
+            send_destination = ctx
+        elif channel:
+            channel_id = channel.id
+            send_destination = channel
+        else:
+            raise ValueError
 
         try:
             old_queue_message = self.latest_queue_messages[channel_id]
@@ -48,7 +59,13 @@ class QueueCog(commands.Cog, name="Queue"):
         embed.add_field(name="Queue", value="\n".join(rows))
 
         # We save the message object in our local cache
-        self.latest_queue_messages[channel_id] = await ctx.send(embed=embed)
+        self.latest_queue_messages[channel_id] = await send_destination.send(
+            "The bot was restarted and all players in ready-check have been put back in queue\n"
+            "The matchmaking process will restart once anybody queues or re-queues"
+            if channel
+            else None,
+            embed=embed,
+        )
 
         # Sequenced that way for smoother scrolling in discord
         if old_queue_message:
@@ -271,8 +288,3 @@ class QueueCog(commands.Cog, name="Queue"):
             else:
                 session.delete(game)
                 await ctx.send(f"Game {game.id} was cancelled")
-
-    # TODO Add admins functions, all starting with !admin
-    #   !admin reset, accepting a channel or a user (if user, resets their queue status)
-    #   !admin score, score a game for BLUE/RED
-    #   !admin make_queue, makes the current channel a queue channel

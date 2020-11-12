@@ -19,7 +19,7 @@ def is_in_ready_check(player_id, session) -> bool:
             session.query(QueuePlayer)
             .filter(QueuePlayer.player_id == player_id)
             .filter(QueuePlayer.ready_check_id != None)
-        ).one_or_none()
+        ).first()  # Can’t use one or none here as a player could have been queuing for multiple roles
         else False
     )
 
@@ -169,6 +169,27 @@ def cancel_ready_check(
                 query = query.filter(QueuePlayer.channel_id == channel_id)
 
             query.delete(synchronize_session=False)
+
+
+def cancel_all_ready_checks():
+    """
+    Cancels all ready checks, used when restarting the bot
+    """
+    with session_scope() as session:
+        # We put all ready_check_id to None
+        session.query(QueuePlayer).update({"ready_check_id": None}, synchronize_session=False)
+
+
+def get_active_queues() -> List[int]:
+    """
+    Returns a list of channel IDs where there is a queue ongoing
+    """
+    with session_scope() as session:
+        output = [
+            r.channel_id for r in session.query(QueuePlayer.channel_id).group_by(QueuePlayer.channel_id)
+        ]
+
+    return output
 
 
 class PlayerInGame(Exception):

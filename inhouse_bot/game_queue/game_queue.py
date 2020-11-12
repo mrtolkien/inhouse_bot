@@ -15,10 +15,10 @@ class GameQueue:
 
     def __init__(self, channel_id: int):
         # We create one object-wide session to not end up with detached session errors later, but it seems dirty
-        # TODO I think this should be a *single* context manager session
+        # TODO LOW PRIO I think this should be a *single* context manager session
         self.session = get_session()
 
-        # TODO Ideally, there should be an is_in_queue hybrid property or a subquery and a single query here
+        # TODO LOW PRIO Optimize the query (ideally, is_in_queue subquery hybrid property)
 
         # First, we get all players in queue, which loads Player and PlayerRating objects as well
         potential_queue_players = (
