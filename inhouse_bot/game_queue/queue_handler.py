@@ -4,7 +4,7 @@ from typing import List, Optional, Set
 
 from inhouse_bot.common_utils.fields import roles_list
 
-from inhouse_bot.bot_orm import session_scope, QueuePlayer, Player
+from inhouse_bot.orm import session_scope, QueuePlayer, Player
 from inhouse_bot.common_utils.get_last_game import get_last_game
 
 

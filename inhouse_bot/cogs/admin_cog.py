@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 from inhouse_bot import game_queue, matchmaking_logic
-from inhouse_bot.bot_orm import session_scope
+from inhouse_bot.orm import session_scope
 from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.inhouse_bot import InhouseBot
 

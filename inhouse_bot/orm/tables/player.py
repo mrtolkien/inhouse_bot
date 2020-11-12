@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, BigInteger
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.collections import attribute_mapped_collection
 
-from inhouse_bot.bot_orm import bot_declarative_base
+from inhouse_bot.orm import bot_declarative_base
 
 
 class Player(bot_declarative_base):

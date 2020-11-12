@@ -8,7 +8,7 @@ from discord.ext import commands
 # Defining intents to get full members list
 from discord.ext.commands import NoPrivateMessage
 
-from inhouse_bot.bot_orm import session_scope
+from inhouse_bot.orm import session_scope
 from inhouse_bot import game_queue
 
 intents = discord.Intents.default()

@@ -9,8 +9,8 @@ from sqlalchemy import Column, Integer, DateTime, Float, BigInteger
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.collections import mapped_collection
 
-from inhouse_bot.bot_orm import bot_declarative_base
-from inhouse_bot.bot_orm.tables.player import Player
+from inhouse_bot.orm import bot_declarative_base
+from inhouse_bot.orm.tables.player import Player
 
 from inhouse_bot.common_utils.fields import roles_list, side_enum
 from inhouse_bot.config.emoji import get_role_emoji
@@ -49,7 +49,7 @@ class Game(bot_declarative_base):
     # We define teams only as properties as it should be easier to work with
     @property
     def teams(self):
-        from inhouse_bot.bot_orm import GameParticipant
+        from inhouse_bot.orm import GameParticipant
 
         @dataclass
         class Teams:
@@ -99,7 +99,7 @@ class Game(bot_declarative_base):
             players: [team, role] -> Player dictionary
         """
         # We use local imports to not have circular imports
-        from inhouse_bot.bot_orm import GameParticipant
+        from inhouse_bot.orm import GameParticipant
         from inhouse_bot.matchmaking_logic import evaluate_game
 
         self.start = datetime.datetime.now()

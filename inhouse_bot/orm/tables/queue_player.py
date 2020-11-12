@@ -1,9 +1,9 @@
 from sqlalchemy.orm import relationship
 
-from inhouse_bot.bot_orm import bot_declarative_base
+from inhouse_bot.orm import bot_declarative_base
 from sqlalchemy import Column, BigInteger, ForeignKeyConstraint, DateTime
 
-from inhouse_bot.bot_orm import Player
+from inhouse_bot.orm import Player
 from inhouse_bot.common_utils.fields import role_enum, foreignkey_cascade_options
 
 

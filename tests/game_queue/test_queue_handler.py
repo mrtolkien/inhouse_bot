@@ -1,6 +1,6 @@
 import pytest
 
-from inhouse_bot.common_utils import roles_list
+from inhouse_bot.common_utils.fields import roles_list
 from inhouse_bot import game_queue
 from inhouse_bot.game_queue import GameQueue
 

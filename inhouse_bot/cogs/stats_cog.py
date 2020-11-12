@@ -6,7 +6,7 @@ from tabulate import tabulate
 import inflect
 
 
-from inhouse_bot.bot_orm import session_scope, GameParticipant, Game, Player, PlayerRating
+from inhouse_bot.orm import session_scope, GameParticipant, Game, Player, PlayerRating
 from inhouse_bot.common_utils.fields import ChampionNameConverter, RoleConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
 

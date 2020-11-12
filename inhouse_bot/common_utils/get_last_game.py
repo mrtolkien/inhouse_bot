@@ -1,6 +1,6 @@
 from typing import Tuple, Optional
 
-from inhouse_bot.bot_orm import Game, GameParticipant
+from inhouse_bot.orm import Game, GameParticipant
 
 
 def get_last_game(

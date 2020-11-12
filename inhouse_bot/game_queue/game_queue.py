@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from sqlalchemy import func
 
-from inhouse_bot.bot_orm import QueuePlayer, get_session, PlayerRating
+from inhouse_bot.orm import QueuePlayer, get_session, PlayerRating
 from inhouse_bot.common_utils.fields import roles_list
 
 

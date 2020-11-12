@@ -4,7 +4,7 @@ from discord import Embed, TextChannel
 from discord.ext import commands
 from discord.ext.commands import guild_only
 
-from inhouse_bot.bot_orm import session_scope
+from inhouse_bot.orm import session_scope
 from inhouse_bot.cogs.cogs_utils.validation_dialog import checkmark_validation
 
 from inhouse_bot.common_utils.fields import RoleConverter

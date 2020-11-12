@@ -1,7 +1,7 @@
 import trueskill
 
-from inhouse_bot.bot_orm import session_scope
-from inhouse_bot.bot_orm import Game
+from inhouse_bot.orm import session_scope
+from inhouse_bot.orm import Game
 from inhouse_bot.common_utils.get_last_game import get_last_game
 
 
