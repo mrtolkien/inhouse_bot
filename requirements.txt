@@ -31,3 +31,6 @@ lol-id-tools
 
 # PostgreSQL driver
 psycopg2
+
+# Beautiful Discord menus
+git+https://github.com/Rapptz/discord-ext-menus
