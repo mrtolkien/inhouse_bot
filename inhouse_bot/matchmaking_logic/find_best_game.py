@@ -14,7 +14,7 @@ def find_best_game(queue: GameQueue, game_quality_threshold=0.1) -> Optional[Gam
         if len(role_queue) < 2:
             return None
 
-    # TODO Add some logging to the process
+    # TODO LOW PRIO Add some logging to the process
 
     # If we get there, we know there are at least 10 players in the queue
     # We start with the 10 players who have been in queue for the longest time
@@ -34,7 +34,7 @@ def find_best_game_for_queue_players(queue_players: List[QueuePlayer]) -> Game:
     A sub function to allow us to iterate on QueuePlayers from oldest to newest
     """
     # Currently simply testing all permutations because it should be pretty lightweight
-    # TODO Spot mirrored team compositions (full blue/red -> red/blue) to not calculate them twice
+    # TODO LOW PRIO Spot mirrored team compositions (full blue/red -> red/blue) to not calculate them twice
 
     # This creates a list of possible 2-players permutations per role
     # We keep it as a list to make it easier to make a product on the values afterwards

@@ -8,8 +8,8 @@ from discord.ext import commands
 # Defining intents to get full members list
 from discord.ext.commands import NoPrivateMessage
 
-from inhouse_bot.game_queue.queue_handler import PlayerInGame
-from inhouse_bot.game_queue import PlayerInReadyCheck
+from inhouse_bot.bot_orm import session_scope
+from inhouse_bot import game_queue
 
 intents = discord.Intents.default()
 intents.members = True
@@ -26,7 +26,6 @@ class InhouseBot(commands.Bot):
         from inhouse_bot.cogs.queue_cog import QueueCog
 
         self.add_cog(QueueCog(self))
-
         # self.add_cog(StatsCog(self))
 
         # While I hate mixing production and testing code, it is the most convenient solution to actually test the bot
@@ -38,13 +37,27 @@ class InhouseBot(commands.Bot):
         self.short_notice_duration = 10
         self.validation_duration = 60
 
-        # TODO On restart, remove ready checks and resend queue messages
-
     def run(self, *args, **kwargs):
         super().run(os.environ["INHOUSE_BOT_TOKEN"], *args, **kwargs)
 
     async def on_ready(self):
         logging.info(f"{self.user.name} has connected to Discord!")
+
+        # We start by reposting all the ongoing queues
+        game_queue.cancel_all_ready_checks()
+        active_queues = game_queue.get_active_queues()
+
+        for channel_id in active_queues:
+            channel = self.get_channel(channel_id)
+
+            if not channel:
+                continue
+
+            try:
+                await self.cogs["Queue"].send_queue(channel=channel)
+            except AttributeError:
+                # TODO LOW PRIO Should be logging
+                print(f"Could not access channel {channel_id}")
 
     async def on_command_error(self, ctx, error):
         """
@@ -66,7 +79,7 @@ class InhouseBot(commands.Bot):
             await ctx.send(f"This command cannot be used in private messages")
 
         # TODO THIS DOES NOT WORK, IT’S A CommandInvokeError
-        elif isinstance(error, PlayerInGame):
+        elif isinstance(error, game_queue.PlayerInGame):
             await ctx.send(
                 f"You are marked as in-game and are not allowed to queue at the moment\n"
                 f"One of the winners can score the game with `!won`, "
@@ -74,7 +87,7 @@ class InhouseBot(commands.Bot):
             )
             return
 
-        elif isinstance(error, PlayerInReadyCheck):
+        elif isinstance(error, game_queue.PlayerInReadyCheck):
             await ctx.send(
                 f"You are already be in a ready-check and will be able to queue again once it is completed or cancelled"
                 f"\n"

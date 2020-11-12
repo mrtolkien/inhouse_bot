@@ -1,12 +1,14 @@
-import copy
-
-from discord import Message, Reaction, User
 from discord.ext import commands
+from discord.ext.commands import group
 
+from inhouse_bot.bot_orm import session_scope
 from inhouse_bot.cogs.cogs_utils.validation_dialog import checkmark_validation
 from inhouse_bot.common_utils import roles_list
+from inhouse_bot.common_utils.get_last_game import get_last_game
+from inhouse_bot.game_queue import GameQueue
 from inhouse_bot.inhouse_bot import InhouseBot
-from inhouse_bot import game_queue
+from inhouse_bot import game_queue, matchmaking_logic
+from inhouse_bot.matchmaking_logic import find_best_game
 
 
 class TestCog(commands.Cog, name="TEST"):
@@ -19,8 +21,13 @@ class TestCog(commands.Cog, name="TEST"):
     def __init__(self, bot: InhouseBot):
         self.bot = bot
 
-    @commands.command()
-    async def test_validation(self, ctx: commands.Context):
+    @group()
+    async def test(self, ctx: commands.Context):
+        if ctx.invoked_subcommand is None:
+            await ctx.send("This needs a subcommand")
+
+    @test.command()
+    async def validation(self, ctx: commands.Context):
         """
         Testing the validation system
 
@@ -41,8 +48,8 @@ class TestCog(commands.Cog, name="TEST"):
 
         await ctx.send(f"{ready=}\n{players_to_drop=}")
 
-    @commands.command()
-    async def test_queue(self, ctx: commands.Context):
+    @test.command()
+    async def queue(self, ctx: commands.Context):
         """
         Testing the queue pop message
         """
@@ -52,7 +59,54 @@ class TestCog(commands.Cog, name="TEST"):
 
         await ctx.send("The queue has been filled")
 
-    # TODO A test function to test accepting the queue/cancelling a game
+    @test.command()
+    async def game(self, ctx: commands.Context):
+        """
+        Creating a fake game in the database with players 0 to 8 and the ctx author
+        """
+        # We reset the queue
+        # We put 9 people in the queue
+        for i in range(0, 9):
+            game_queue.add_player(i, roles_list[i % 5], ctx.channel.id, ctx.guild.id, name=str(i))
+
+        game_queue.add_player(
+            ctx.author.id, roles_list[4], ctx.channel.id, ctx.guild.id, name=ctx.author.name
+        )
+
+        game = find_best_game(GameQueue(ctx.channel.id))
+
+        with session_scope() as session:
+            session.add(game)
+
+        msg = await ctx.send("The queue has been reset, filled again, and a game created (with no winner)")
+
+        game_queue.start_ready_check([i for i in range(0, 9)] + [ctx.author.id], ctx.channel.id, msg.id)
+        game_queue.validate_ready_check(msg.id)
+
+    @test.command()
+    async def score(self, ctx: commands.Context):
+        """
+        Scores your last game as a win for (mostly made to be used after !test game)
+        """
+        matchmaking_logic.score_game_from_winning_player(player_id=ctx.author.id, server_id=ctx.guild.id)
+
+        await ctx.send(f"{ctx.author.name}’s last game has been scored as a win")
+
+    @test.command()
+    async def cancel(self, ctx: commands.Context):
+        """
+        Scores your last game as a win for (mostly made to be used after !test game)
+        """
+        with session_scope() as session:
+            game, participant = get_last_game(
+                player_id=ctx.author.id, server_id=ctx.guild.id, session=session
+            )
+
+            session.delete(game)
+
+        await ctx.send(f"{ctx.author.name}’s last game was cancelled and deleted from the database")
+
+    # TODO LOW PRIO A test function to test accepting the queue/cancelling a game by spoofing reactions
     # @commands.command()
     # async def test_accept_queue(self, ctx: commands.Context, queue_message_id):
     #     """
