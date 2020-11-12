@@ -2,7 +2,7 @@ import lol_id_tools
 from discord.ext import commands
 from discord.ext.commands import guild_only
 
-from inhouse_bot.bot_orm import session_scope
+from inhouse_bot.bot_orm import session_scope, GameParticipant, Game
 from inhouse_bot.common_utils.fields import ChampionNameConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
 
@@ -29,9 +29,18 @@ class StatsCog(commands.Cog, name="Stats"):
         """
 
         with session_scope() as session:
-            game, participant = get_last_game(
-                player_id=ctx.author.id, server_id=ctx.guild.id, session=session
-            )
+            if not game_id:
+                game, participant = get_last_game(
+                    player_id=ctx.author.id, server_id=ctx.guild.id, session=session
+                )
+            else:
+                game, participant = (
+                    session.query(Game, GameParticipant)
+                    .select_from(Game)
+                    .join(GameParticipant)
+                    .filter(Game.id == game_id)
+                    .filter(GameParticipant.player_id == ctx.author.id)
+                ).one_or_none()
 
             # We write down the champion
             participant.champion_id = champion_id
