@@ -4,7 +4,7 @@ from inhouse_bot.bot_orm import bot_declarative_base
 from sqlalchemy import Column, BigInteger, ForeignKeyConstraint, DateTime
 
 from inhouse_bot.bot_orm import Player
-from inhouse_bot.common_utils import role_enum, foreignkey_cascade_options
+from inhouse_bot.common_utils.fields import role_enum, foreignkey_cascade_options
 
 
 class QueuePlayer(bot_declarative_base):

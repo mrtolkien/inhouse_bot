@@ -25,11 +25,13 @@ class InhouseBot(commands.Bot):
         # Importing locally to allow InhouseBot to be imported in the cogs
         from inhouse_bot.cogs.queue_cog import QueueCog
         from inhouse_bot.cogs.admin_cog import AdminCog
+        from inhouse_bot.cogs.stats_cog import StatsCog
 
         self.add_cog(QueueCog(self))
         self.add_cog(AdminCog(self))
+        self.add_cog(StatsCog(self))
 
-        # While I hate mixing production and testing code, it is the most convenient solution to actually test the bot
+        # While I hate mixing production and testing code, it is the most convenient solution to test the bot
         if os.environ.get("INHOUSE_BOT_TEST"):
             from tests.test_cog import TestCog
 
