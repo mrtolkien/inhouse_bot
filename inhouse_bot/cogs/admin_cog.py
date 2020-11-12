@@ -16,7 +16,7 @@ class AdminCog(commands.Cog, name="Admin"):
     def __init__(self, bot: InhouseBot):
         self.bot = bot
 
-    @commands.group()
+    @commands.group(case_insensitive=True)
     @commands.has_permissions(administrator=True)
     async def admin(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
@@ -59,7 +59,7 @@ class AdminCog(commands.Cog, name="Admin"):
     @admin.command()
     async def cancel(self, ctx: commands.Context, member: discord.Member):
         """
-        Cancels the user’s ongoing game if it was not scored yes
+        Cancels the user’s ongoing game if it was not scored yet
         """
         with session_scope() as session:
             game, participant = get_last_game(player_id=member.id, server_id=ctx.guild.id, session=session)
