@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, BigInteger
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.collections import attribute_mapped_collection
 
@@ -31,6 +32,10 @@ class Player(bot_declarative_base):
 
     # ORM relationship to the GameParticipant table
     participant_objects = relationship("GameParticipant", viewonly=True)
+
+    @hybrid_property
+    def short_name(self):
+        return self.name[:15]
 
     def __repr__(self):
         return f"<Player: {self.id=} | {self.name=}>"

@@ -71,7 +71,7 @@ class Game(bot_declarative_base):
 
     def __str__(self):
         return tabulate(
-            {"BLUE": [p.name for p in self.teams.BLUE], "RED": [p.name for p in self.teams.BLUE]},
+            {"BLUE": [p.short_name for p in self.teams.BLUE], "RED": [p.short_name for p in self.teams.BLUE]},
             headers="keys",
         )
 
@@ -83,7 +83,7 @@ class Game(bot_declarative_base):
                 name=side,
                 value="\n".join(
                     [
-                        f"{get_role_emoji(roles_list[idx])} {p.name[:15]}"
+                        f"{get_role_emoji(roles_list[idx])} {p.short_name}"
                         for idx, p in enumerate(getattr(self.teams, side))
                     ]
                 ),

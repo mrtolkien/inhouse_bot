@@ -69,7 +69,7 @@ class TestCog(commands.Cog, name="TEST"):
             game_queue.add_player(i, roles_list[i % 5], ctx.channel.id, ctx.guild.id, name=str(i))
 
         game_queue.add_player(
-            ctx.author.id, roles_list[4], ctx.channel.id, ctx.guild.id, name=ctx.author.name
+            ctx.author.id, roles_list[4], ctx.channel.id, ctx.guild.id, name=ctx.author.display_name
         )
 
         game = matchmaking_logic.find_best_game(GameQueue(ctx.channel.id))
@@ -103,7 +103,7 @@ class TestCog(commands.Cog, name="TEST"):
 
             session.delete(game)
 
-        await ctx.send(f"{ctx.author.name}’s last game was cancelled and deleted from the database")
+        await ctx.send(f"{ctx.author.display_name}’s last game was cancelled and deleted from the database")
 
     # TODO LOW PRIO A test function to test accepting the queue/cancelling a game by spoofing reactions
     # @commands.command()

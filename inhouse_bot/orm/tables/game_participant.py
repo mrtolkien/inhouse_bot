@@ -55,6 +55,10 @@ class GameParticipant(bot_declarative_base):
     def mmr(self):
         return self.trueskill_mu - 3 * self.trueskill_sigma + 25
 
+    @hybrid_property
+    def short_name(self):
+        return self.name[:15]
+
     # Called only from the Game constructor itself
     def __init__(self, side: str, role: str, player: Player):
         self.side = side

@@ -165,7 +165,7 @@ class StatsCog(commands.Cog, name="Stats"):
         with session_scope() as session:
             ratings = (
                 session.query(
-                    Player.name,
+                    Player.short_name,
                     PlayerRating.player_server_id,
                     PlayerRating.mmr,
                     PlayerRating.role,
@@ -196,7 +196,7 @@ class StatsCog(commands.Cog, name="Stats"):
                 table.append(
                     [
                         inflect_engine.ordinal(idx + 1),
-                        row.name,
+                        row.short_name,
                         row.role,
                         round(row.mmr, 2),
                         row.count,

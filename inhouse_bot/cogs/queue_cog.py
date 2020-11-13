@@ -53,7 +53,7 @@ class QueueCog(commands.Cog, name="Queue"):
         queue = GameQueue(channel_id)
 
         for role, role_queue in queue.queue_players_dict.items():
-            rows.append(f"{get_role_emoji(role)} " + ", ".join(qp.player.name for qp in role_queue))
+            rows.append(f"{get_role_emoji(role)} " + ", ".join(qp.player.short_name for qp in role_queue))
 
         # Create the queue embed
         embed = Embed(colour=embeds_color)
@@ -70,7 +70,7 @@ class QueueCog(commands.Cog, name="Queue"):
 
         # Sequenced that way for smoother scrolling in discord
         if old_queue_message:
-            await old_queue_message.delete(delay=.1)    # By adding a mini delay fails are silently ignored
+            await old_queue_message.delete(delay=0.1)  # By adding a mini delay fails are silently ignored
 
     async def run_matchmaking_logic(
         self, ctx: commands.Context,
