@@ -1,4 +1,5 @@
 import lol_id_tools
+import sqlalchemy
 from discord.ext import commands
 from discord.ext.commands import guild_only
 from sqlalchemy import func
@@ -114,8 +115,13 @@ class StatsCog(commands.Cog, name="Stats"):
                     PlayerRating.mmr,
                     PlayerRating.role,
                     func.count().label("count"),
+                    (
+                        sqlalchemy.func.sum((Game.winner == GameParticipant.side).cast(sqlalchemy.Integer))
+                    ).label("wins"),
                 )
+                .select_from(PlayerRating)
                 .join(GameParticipant)
+                .join(Game)
                 .filter(PlayerRating.player_id == ctx.author.id)
                 .group_by(PlayerRating)
             )
@@ -135,17 +141,18 @@ class StatsCog(commands.Cog, name="Stats"):
                     [
                         self.bot.get_guild(row.player_server_id).name,
                         row.role,
-                        row.count,
                         inflect_engine.ordinal(rank + 1),
                         round(row.mmr, 2),
+                        row.count,
+                        f"{int(row.wins / row.count * 100)}%",
                     ]
                 )
 
             # Sorting the table by games played
-            table = sorted(table, key=lambda x: -x[2])
+            table = sorted(table, key=lambda x: -x[4])
 
             # Added afterwards to allow sorting first
-            table.insert(0, ["Server", "Role", "Games", "Rank", "MMR"])
+            table.insert(0, ["Server", "Role", "Rank", "MMR", "Games", "Win%"])
 
         await ctx.send(f"Ranks for {ctx.author.name}" f'```{tabulate(table, headers="firstrow")}```')
 
@@ -163,10 +170,16 @@ class StatsCog(commands.Cog, name="Stats"):
                     PlayerRating.mmr,
                     PlayerRating.role,
                     func.count().label("count"),
+                    (
+                        sqlalchemy.func.sum((Game.winner == GameParticipant.side).cast(sqlalchemy.Integer))
+                    ).label(
+                        "wins"
+                    ),  # A bit verbose, ngl
                 )
                 .select_from(Player)
                 .join(PlayerRating)
                 .join(GameParticipant)
+                .join(Game)
                 .filter(Player.server_id == ctx.guild.id)
                 .group_by(Player, PlayerRating)
                 .order_by(PlayerRating.mmr.desc())
@@ -177,11 +190,18 @@ class StatsCog(commands.Cog, name="Stats"):
 
             ratings = ratings.limit(10)
 
-            table = [["Rank", "Name", "Role", "MMR", "Games"]]
+            table = [["Rank", "Name", "Role", "MMR", "Games", "Win%"]]
 
             for idx, row in enumerate(ratings):
                 table.append(
-                    [inflect_engine.ordinal(idx + 1), row.name, row.role, round(row.mmr, 2), row.count,]
+                    [
+                        inflect_engine.ordinal(idx + 1),
+                        row.name,
+                        row.role,
+                        round(row.mmr, 2),
+                        row.count,
+                        f"{int(row.wins / row.count * 100)}%",
+                    ]
                 )
 
         await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
