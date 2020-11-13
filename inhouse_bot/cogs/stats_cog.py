@@ -18,6 +18,7 @@ inflect_engine = inflect.engine()
 # TODO MEDIUM PRIO Make all outputs into beautiful menus and embeds
 #   Make an embed visualisation function outside of the command
 
+
 class StatsCog(commands.Cog, name="Stats"):
     def __init__(self, bot: InhouseBot):
         self.bot = bot
@@ -77,7 +78,7 @@ class StatsCog(commands.Cog, name="Stats"):
                 .join(GameParticipant)
                 .filter(GameParticipant.player_id == ctx.author.id)
                 .order_by(Game.start.desc())
-                .limit(10)
+                .limit(10)  # Limit after filtering if it happens
             ).all()
 
             table = [["Game ID", "Server", "Date", "Role", "Champion", "Result"]]
@@ -96,7 +97,7 @@ class StatsCog(commands.Cog, name="Stats"):
                     ]
                 )
 
-            await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
+        await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
 
     @commands.command(aliases=["mmr", "stats", "rating"])
     async def rank(self, ctx: commands.Context):
@@ -145,7 +146,7 @@ class StatsCog(commands.Cog, name="Stats"):
             # Added afterwards to allow sorting first
             table.insert(0, ["Server", "Role", "Games", "Rank", "MMR"])
 
-            await ctx.send(f"Ranks for {ctx.author.name}" f'```{tabulate(table, headers="firstrow")}```')
+        await ctx.send(f"Ranks for {ctx.author.name}" f'```{tabulate(table, headers="firstrow")}```')
 
     @commands.command(aliases=["rankings"])
     @guild_only()
@@ -168,11 +169,12 @@ class StatsCog(commands.Cog, name="Stats"):
                 .filter(Player.server_id == ctx.guild.id)
                 .group_by(Player, PlayerRating)
                 .order_by(PlayerRating.mmr.desc())
-                .limit(10)
             )
 
             if role:
                 ratings = ratings.filter(PlayerRating.role == role)
+
+            ratings = ratings.limit(10)
 
             table = [["Rank", "Name", "Role", "MMR", "Games"]]
 
@@ -181,6 +183,6 @@ class StatsCog(commands.Cog, name="Stats"):
                     [inflect_engine.ordinal(idx + 1), row.name, row.role, round(row.mmr, 2), row.count,]
                 )
 
-            await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
+        await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
 
     # TODO LOW PRIO fancy mmr_history graph once again

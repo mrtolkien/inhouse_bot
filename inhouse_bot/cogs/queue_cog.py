@@ -140,7 +140,7 @@ class QueueCog(commands.Cog, name="Queue"):
                 await self.run_matchmaking_logic(ctx)
 
             elif ready is None:
-                # We remove the timed out players from *all* channels
+                # We remove the timed out players from *all* channels (hence giving server id)
                 game_queue.cancel_ready_check(
                     ready_check_id=message.id, ids_to_drop=players_to_drop, server_id=ctx.guild.id,
                 )
