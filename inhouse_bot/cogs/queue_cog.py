@@ -112,18 +112,18 @@ class QueueCog(commands.Cog, name="Queue"):
             )
 
             if ready is True:
+                # We drop all 10 players from the queue
+                game_queue.validate_ready_check(message.id)
+
                 # We commit the game to the database (without a winner)
                 with session_scope() as session:
                     session.add(game)
 
-                # We drop all 10 players from the queue
-                game_queue.validate_ready_check(message.id)
-
-                await ctx.send(
-                    f"The game has been validated with id {game.id}\n"
-                    f"Once the game has been played, one of the winners can score it with `!won`\n"
-                    f"If you wish to cancel the game, use `!cancel`"
-                )
+                    await ctx.send(
+                        f"The game has been validated and added to the database!\n"
+                        f"Once the game has been played, one of the winners can score it with `!won`\n"
+                        f"If you wish to cancel the game, use `!cancel`"
+                    )
 
             elif ready is False:
                 # We remove the player who cancelled
@@ -247,10 +247,11 @@ class QueueCog(commands.Cog, name="Queue"):
                 await ctx.send("Score input was either cancelled or timed out")
                 return
 
-        # If we get there, the score was validated and we can simply update the game and the ratings
-        await ctx.send(
-            f"Game {game.id} has been scored as a win for {participant.side} and ratings have been updated"
-        )
+            # If we get there, the score was validated and we can simply update the game and the ratings
+            await ctx.send(
+                f"Game {game.id} has been scored as a win for {participant.side} and ratings have been updated"
+            )
+
         matchmaking_logic.score_game_from_winning_player(player_id=ctx.author.id, server_id=ctx.guild.id)
 
     @commands.command(aliases=["cancel"])

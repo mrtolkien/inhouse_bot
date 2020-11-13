@@ -26,7 +26,9 @@ class GameParticipant(bot_declarative_base):
 
     # Player relationship
     player = relationship("Player", viewonly=True)
-    player_rating = relationship("PlayerRating", viewonly=True, backref="game_participant_objects")
+    player_rating = relationship(
+        "PlayerRating", viewonly=True, backref="game_participant_objects", sync_backref=False
+    )
 
     # Champion id, only filled if the player updates it by themselves after the game
     champion_id = Column(Integer)
