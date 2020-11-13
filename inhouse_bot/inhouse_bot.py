@@ -37,9 +37,6 @@ class InhouseBot(commands.Bot):
 
             self.add_cog(TestCog(self))
 
-        self.short_notice_duration = 10
-        self.validation_duration = 60
-
     def run(self, *args, **kwargs):
         super().run(os.environ["INHOUSE_BOT_TOKEN"], *args, **kwargs)
 

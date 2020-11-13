@@ -1,38 +1,17 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 # LoL in-house bot
-A Discord bot to handle League of Legends in-house games, with role queue, balanced matchmaking, and basic stats.
+A Discord bot to handle League of Legends in-house games, with role queue, matchmaking, and rankings.
 
-⚠ THE BOT IS CURRENTLY IN THE MIDDLE OF A DEEP REFACTOR AND DOCUMENTATION IS OUT OF DATE ⚠
-
-# Demo
-![Demo](inhouse_bot_demo.gif)
 
 # Installation
-Get your Discord bot token from https://discord.com/developers/applications.
 
-You can use a \*.env file to store the environment variables, as shown in the example.env file.
+⚠ A FULL INSTALLATION WORKFLOW WILL BE WRITTEN SOON, ALONG WITH AN INSTALLATION VIDEO ⚠
 
-### Docker image
-The sqlite database is saved in /data inside the container. Use a mount if you want to save it.
+Get your Discord bot token from [the Discord developer portal](https://discord.com/developers/applications).
 
-Example `docker-compose.yml` file:
-```yaml
-version: "3.8"
+The most recent image can be found at [mrtolkien/inhouse_bot](https://hub.docker.com/r/mrtolkien/inhouse_bot/tags).
 
-services:
-  inhouse_bot:
-    image: mrtolkien/inhouse_bot
-    env_file:
-      - example.env
-    volumes:
-    - type: bind
-      source: ./data
-      target: /data
-    restart: always
-```
-
-Afterwards, you can run the bot with `docker-compose up`.
 
 # Basic use
 ```
@@ -40,11 +19,11 @@ Afterwards, you can run the bot with `docker-compose up`.
 !queue mid
 >>> 🇲
 
-# Accept queue by reacting to the ready check message
+# Accept games by reacting to the ready check message
 >>> ✅✅✅✅✅✅✅✅✅✅✅
->>> Game 1 has started.
+>>> Game 1 has started
 
-# Games can be scored with !won and !lost
+# Games can be scored with !won
 !won
 >>> ✅✅✅✅✅✅✅
 >>> Game 1 has been scored as a win for blue and ratings have been updated
@@ -53,90 +32,68 @@ Afterwards, you can run the bot with `docker-compose up`.
 !champion riven
 >>> Champion for game 1 set to Riven for Tolki
 
-# Your server-wide rank can be seen with !rank
-# You can see top players with !ranking
+# Your rank, mmr, and # of games can be seen with !rank or !mmr
 !rank
-Role     Rank
--------  ------
-Jungle   1st
-
-# MMR and winrate per role can be accessed with !stats
-!stats
-Role      MMR    Games  Winrate
-------  -----  -------  ---------
-Jungle   1.43        1  100.00%
+>>> Server    Role      Games  Rank      MMR
+    --------  ------  -------  ------  -----
+    LEA       MID           1  1st    27.09
 ```
+
+# Rating and matchmaking explanation
+
+Rating:
+- Each player has one rating per server and role, and each rating is completely independent
+- There is one queue per discord channel the bot is in, but ratings are server-wide
+- The ratings are loosely based on [Microsoft TrueSkill](https://en.wikipedia.org/wiki/TrueSkill)
+- The displayed MMR is a conservative estimate of skill, 
+
+Matchmaking:
+- Players who have been in queue the longest will be favored when creating a game
+- Matchmaking aims to select the game with a predicted winrate as close as possible to 50%
 
 # Use case and behaviour
 
-This bot is made to be used by trustworthy players queuing regularly for one or two roles.
-
-There is one queue per discord channel the bot is in, but player ratings are common to all channels.
+This bot is made to be used by trustworthy players queuing regularly for one or two roles. It will not transfer well to
+an uncontrolled environment.
 
 Players can queue in multiple channels and multiple roles. A game starting will drop them from 
 all queues in all channels. A player can’t re-enter a queue as long as any game they’re in has not been scored or 
 cancelled.
 
-Each player’s role rating is treated as an independent entity, and they all start from the same rating.
-The rating system is based on [Microsoft TrueSkill](https://en.wikipedia.org/wiki/TrueSkill).
-
 # Queue features
-`!queue role` puts you in the current channel’s queue for the given role.
+- `!queue role` puts you in the current channel’s queue for the given role
 
-`!leave` removes you from the channel’s queue for all roles.
+- `!leave` removes you from the channel’s queue for all roles
 
-`!leave all` removes you from all channel’s queue for all roles.
+- `!won` scores your last game as a win for your team and waits for validation from at least 6 players from the game
 
-`!won` scores your last game as a win for your team and waits for validation from at least 6 players from the game.
+- `!champion champion_name [game_id]` informs which champion you used for winrate tracking
+    - If you don’t supply the `game_id`, it will apply to your last game
 
-`!lost` is the counterpart to `!won`.
-
-`!champion champion_name [game_id]` informs which champion you used for winrate tracking.
-If you don’t supply the `game_id`, it will apply to your last game.
-
-`!view_queue` shows the queue in the current channel.
-
-`!view_games` shows the ongoing games for all channels.
-
-`!cancel_game` cancels your ongoing game, requiring validation from at least 6 players in the game.
+- `!cancel` cancels your ongoing game, requiring validation from at least 6 players in the game
  
 # Stats features
-`!history` returns your match history.
+- `!history` returns your match history
 
-`!rank` returns your server-wide rank for each role.
+- `!rank` returns your server-wide rank for each role
 
-`!ranking` returns the top 20 players.
-
-`!mmr` returns your current MMR.
-
-`!mmr_history` displays a graph of your MMR per role in the past month.
-
-`!champions_stats` returns statistics about the champions you played.
-
-`!view_team` returns players in your team. Players in the same team can access their teammate’s stats by using
-`!champions_stats user_id`, with `user_id` being their 
-[discord id](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-).
+- `!ranking` returns the top players
 
 # Admin features
-`!admin_score game_id winner` is an admin-only command that scores the game without asking for validation.
+- `!admin reset @user` removes the user from all queues (his name or discord ID work too)
 
-`!admin_queue user_id role` is an admin-only command to queue a given user.
+- `!admin reset #channel` resets the queue in the given channel (or the current channel with `!admin reset`)
 
-`!reset_queue` is an admin-only command to reset the queue.
+- `!admin won @user` scores the game as a win for the user without asking for validation
 
-`!team user_id team_name` puts the chosen user in the given team. This is admin-only for information security.
+- `!admin cancel @user` cancels the ongoing game of the specified user
+
 
 # Wanted contributions (2020-05-11)
-- `dpytest` does not support reactions to messages, which means the test functions are currently failing.
-Any help with mocking those would be greatly welcomed.
+- `dpytest` does not support reactions to messages, which means the test functions are currently failing
 
-- The current data flow needs to be slightly reviewed. The easy way is likely to simply store all ongoing games in memory
-before committing them.
-
-- The matchmaking algorithm is currently fully brute-force and can definitely be improved in terms of calculation time.
+- The matchmaking algorithm is currently fully brute-force and can definitely be improved in terms of calculation time
 
 - Additions to stats visualisations are always welcomed!
 
 - Make it more flexible so it can work with other games/games without roles (Valorant, ...)
-
-- Make sure it works with multiple queues popping together

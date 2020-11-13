@@ -31,6 +31,8 @@ class AdminCog(commands.Cog, name="Admin"):
 
         If no argument is given, resets the queue in the current channel
         """
+        # TODO LOW PRIO RESEND THE QUEUE (but it’s a QueueCog function, so will need some code rearrangement)
+
         if not member_or_channel or type(member_or_channel) == discord.TextChannel:
             channel = ctx.channel if not member_or_channel else member_or_channel
             game_queue.reset_queue(channel.id)

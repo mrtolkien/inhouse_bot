@@ -86,7 +86,7 @@ class QueueCog(commands.Cog, name="Queue"):
             # We notify the players
             message = await ctx.send(
                 f"A match has been found for "
-                f"{', '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])}.\n"
+                f"{', '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])}\n"
                 f"Blue side expected winrate is {game.blue_expected_winrate * 100:.1f}%\n"
                 "You can refuse the match and leave the queue by pressing ❎\n"
                 "If you are ready to play, press ✅",
@@ -158,6 +158,8 @@ class QueueCog(commands.Cog, name="Queue"):
                 f"The best match found had a side with a {(.5 + game.matchmaking_score)*100:.1f}%"
                 f" predicted winrate and was not started"
             )
+
+    # TODO MID PRIO Add view and view_queue once again
 
     @commands.command()
     @guild_only()

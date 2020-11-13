@@ -105,6 +105,7 @@ class StatsCog(commands.Cog, name="Stats"):
         Returns your rank, MMR, and games played
         """
         # TODO LOW PRIO Make it not output the server only in DMs, otherwise filter on the server
+        # TODO MED PRIO ADD WINRATE
 
         with session_scope() as session:
             rating_objects = (
