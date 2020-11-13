@@ -180,7 +180,7 @@ class QueueCog(commands.Cog, name="Queue"):
         # Queuing the player
         game_queue.add_player(
             player_id=ctx.author.id,
-            name=ctx.author.name,
+            name=ctx.author.display_name,
             role=role,
             channel_id=ctx.channel.id,
             server_id=ctx.guild.id,

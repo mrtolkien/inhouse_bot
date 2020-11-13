@@ -52,7 +52,7 @@ class AdminCog(commands.Cog, name="Admin"):
         matchmaking_logic.score_game_from_winning_player(player_id=member.id, server_id=ctx.guild.id)
 
         await ctx.send(
-            f"{member.name}’s last game has been scored as a win for his team and ratings have been recalculated"
+            f"{member.display_name}’s last game has been scored as a win for his team and ratings have been recalculated"
         )
 
     @admin.command()
@@ -69,4 +69,4 @@ class AdminCog(commands.Cog, name="Admin"):
 
             session.delete(game)
 
-        await ctx.send(f"{member.name}’s ongoing game was cancelled and deleted from the database")
+        await ctx.send(f"{member.display_name}’s ongoing game was cancelled and deleted from the database")
