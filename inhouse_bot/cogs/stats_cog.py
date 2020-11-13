@@ -61,7 +61,7 @@ class StatsCog(commands.Cog, name="Stats"):
 
         await ctx.send(
             f"Champion for game {game_id} was set to "
-            f"{lol_id_tools.get_name(champion_id, object_type='champion')} for {ctx.author.name}"
+            f"{lol_id_tools.get_name(champion_id, object_type='champion')} for {ctx.author.display_name}"
         )
 
     @commands.command(aliases=["match_history", "mh"])
@@ -154,7 +154,7 @@ class StatsCog(commands.Cog, name="Stats"):
             # Added afterwards to allow sorting first
             table.insert(0, ["Server", "Role", "Rank", "MMR", "Games", "Win%"])
 
-        await ctx.send(f"Ranks for {ctx.author.name}" f'```{tabulate(table, headers="firstrow")}```')
+        await ctx.send(f"Ranks for {ctx.author.display_name}" f'```{tabulate(table, headers="firstrow")}```')
 
     @commands.command(aliases=["rankings"])
     @guild_only()

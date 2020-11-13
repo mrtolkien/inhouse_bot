@@ -230,7 +230,7 @@ class QueueCog(commands.Cog, name="Queue"):
                 return
 
             message = await ctx.send(
-                f"{ctx.author.name} wants to score game {game.id} as a win for {participant.side}\n"
+                f"{ctx.author.display_name} wants to score game {game.id} as a win for {participant.side}\n"
                 f"{', '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])} can validate the result\n"
                 f"Result will be validated once 6 players from the game press ✅"
             )
@@ -273,7 +273,7 @@ class QueueCog(commands.Cog, name="Queue"):
                 return
 
             message = await ctx.send(
-                f"{ctx.author.name} wants to cancel game {game.id}\n"
+                f"{ctx.author.display_name} wants to cancel game {game.id}\n"
                 f"{', '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])} can cancel the game\n"
                 f"Game will be canceled once 6 players from the game press ✅"
             )

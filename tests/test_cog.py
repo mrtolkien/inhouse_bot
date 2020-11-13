@@ -89,7 +89,7 @@ class TestCog(commands.Cog, name="TEST"):
         """
         matchmaking_logic.score_game_from_winning_player(player_id=ctx.author.id, server_id=ctx.guild.id)
 
-        await ctx.send(f"{ctx.author.name}’s last game has been scored as a win")
+        await ctx.send(f"{ctx.author.display_name}’s last game has been scored as a win")
 
     @test.command()
     async def cancel(self, ctx: commands.Context):
