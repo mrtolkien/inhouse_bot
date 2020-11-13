@@ -1,5 +1,6 @@
 from typing import Optional
 
+import discord
 from discord import Embed, TextChannel
 from discord.ext import commands
 from discord.ext.commands import guild_only
@@ -69,7 +70,7 @@ class QueueCog(commands.Cog, name="Queue"):
 
         # Sequenced that way for smoother scrolling in discord
         if old_queue_message:
-            await old_queue_message.delete()
+            await old_queue_message.delete(delay=.1)    # By adding a mini delay fails are silently ignored
 
     async def run_matchmaking_logic(
         self, ctx: commands.Context,
