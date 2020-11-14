@@ -19,12 +19,13 @@ def find_best_game(queue: GameQueue, game_quality_threshold=0.1) -> Optional[Gam
     # If we get there, we know there are at least 10 players in the queue
     # We start with the 10 players who have been in queue for the longest time
 
-    # TODO MED PRIO THIS IS WRONG, SPLIT BY ROLE
     best_game = None
     for players_threshold in range(10, len(queue) + 1):
-
+        # The queue_players are already ordered the right way to take age into account in matchmaking
+        #   We first try with the 10 first players, then 11, ...
         best_game = find_best_game_for_queue_players(queue.queue_players[:players_threshold])
 
+        # We stop when we beat the game quality threshold (below 60% winrate for one side)
         if best_game and best_game.matchmaking_score < game_quality_threshold:
             return best_game
 

@@ -39,3 +39,20 @@ def test_matchmaking_logic():
             participant = game.participants[side, role]
 
             assert participant.player.ratings[role].trueskill_mu != 25
+
+
+def test_matchmaking_logic_priority():
+    """
+    Making sure players who spent more time in queue will be considered first
+    """
+    game_queue.reset_queue()
+
+    # We queue for everything, with 0, 1, 2, 3 being top, 4, 5, 6, 7 being jgl, ...
+    for player_id in range(0, 20):
+        game_queue.add_player(player_id, roles_list[int(player_id / 4 % 5)], 0, 0)
+
+    game = find_best_game(GameQueue(0))
+
+    # Assert we chose 0, 1, 4, 5, 8, 9, 13, 13, 16, 17 players
+    for participant in game.participants.values():
+        assert participant.player_id % 4 < 2

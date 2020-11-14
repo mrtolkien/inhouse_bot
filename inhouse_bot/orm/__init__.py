@@ -1,4 +1,4 @@
-from inhouse_bot.orm.session.session_handler import session_scope, get_session, bot_declarative_base
+from inhouse_bot.orm.session.session_handler import session_scope, bot_declarative_base
 
 from inhouse_bot.orm.tables.game import Game
 from inhouse_bot.orm.tables.game_participant import GameParticipant

@@ -15,7 +15,6 @@ class GameQueue:
     def __init__(self, channel_id: int):
         with session_scope() as session:
             # This allows use to keep using our objects after the session is closed
-            # TODO MIN PRIO Understand why this works even though we’re accessing children on a closed session
             session.expire_on_commit = False
 
             # TODO LOW PRIO Optimize the query (ideally, is_in_queue subquery hybrid property)
@@ -63,6 +62,19 @@ class GameQueue:
             self.queue_players = [
                 qp for qp in potential_queue_players if qp.player_id not in player_ids_in_ready_check
             ]
+
+            # We put 2 players per role *first* then fill the rest by time spent in queue
+            # TODO LOW PRIO Rework the whole class to have only one query and better/more readable properties
+            age_sorted_queue_players = []
+
+            for role in self.queue_players_dict:
+                age_sorted_queue_players += self.queue_players_dict[role][:2]
+
+            age_sorted_queue_players += [
+                qp for qp in self.queue_players if qp not in age_sorted_queue_players
+            ]
+
+            self.queue_players = age_sorted_queue_players
 
     def __len__(self):
         return len(self.queue_players)
