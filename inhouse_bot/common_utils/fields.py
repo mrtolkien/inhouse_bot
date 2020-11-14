@@ -25,6 +25,16 @@ full_roles_dict = {
     "support": "SUP",
 }
 
+class MultiRoleConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        """
+        Converts an input string to a clean role
+        """
+        roles = str(argument).split()
+        converted_roles = []
+        for role in roles:
+            converted_roles.append(RoleConverter(role))
+        return converted_roles
 
 class RoleConverter(commands.Converter):
     async def convert(self, ctx, argument):

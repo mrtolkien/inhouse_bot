@@ -7,7 +7,7 @@ from discord.ext.commands import guild_only
 from inhouse_bot.orm import session_scope
 from inhouse_bot.cogs.cogs_utils.validation_dialog import checkmark_validation
 
-from inhouse_bot.common_utils.fields import RoleConverter
+from inhouse_bot.common_utils.fields import MultiRoleConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.config.embeds import embeds_color
 from inhouse_bot.config.emoji_and_thumbnaills import get_role_emoji
@@ -186,7 +186,7 @@ class QueueCog(commands.Cog, name="Queue"):
     @commands.command()
     @guild_only()
     async def queue(
-        self, ctx: commands.Context, role: RoleConverter(),
+        self, ctx: commands.Context, roles: MultiRoleConverter(),
     ):
         """
         Adds you to the current channel’s queue for the given role
@@ -201,13 +201,14 @@ class QueueCog(commands.Cog, name="Queue"):
         """
 
         # Queuing the player
-        game_queue.add_player(
-            player_id=ctx.author.id,
-            name=ctx.author.display_name,
-            role=role,
-            channel_id=ctx.channel.id,
-            server_id=ctx.guild.id,
-        )
+        for role in roles:
+            game_queue.add_player(
+                player_id=ctx.author.id,
+                name=ctx.author.display_name,
+                role=role,
+                channel_id=ctx.channel.id,
+                server_id=ctx.guild.id,
+            )
 
         await self.run_matchmaking_logic(ctx=ctx)
 
