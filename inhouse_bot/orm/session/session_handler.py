@@ -37,21 +37,12 @@ class GhostSessionMaker:
 ghost_session_maker = GhostSessionMaker()
 
 
-def get_session() -> sqlalchemy.orm.Session:
-    """
-    Returns an SQLAlchemy session to interact with the database.
-
-    It needs to get closed once it won’t be used anymore.
-    """
-    return ghost_session_maker.session_maker()
-
-
 @contextmanager
 def session_scope():
     """
     Provide a transactional scope around a series of operations.
     """
-    session = get_session()
+    session = ghost_session_maker.session_maker()
     try:
         yield session
         session.commit()

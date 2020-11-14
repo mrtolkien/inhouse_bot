@@ -18,6 +18,8 @@ def find_best_game(queue: GameQueue, game_quality_threshold=0.1) -> Optional[Gam
 
     # If we get there, we know there are at least 10 players in the queue
     # We start with the 10 players who have been in queue for the longest time
+
+    # TODO MED PRIO THIS IS WRONG, SPLIT BY ROLE
     best_game = None
     for players_threshold in range(10, len(queue) + 1):
 
@@ -67,20 +69,20 @@ def find_best_game_for_queue_players(queue_players: List[QueuePlayer]) -> Game:
 
         # We transform it to a more manageable dictionary of players
         # {(team, role)} = Player
-        queue_players = {
-            ("BLUE" if bool(tuple_idx) == shuffle else "RED", roles_list[role_idx]): players_tuple[
+        players = {
+            ("BLUE" if bool(tuple_idx) == shuffle else "RED", roles_list[role_idx]): queue_players_tuple[
                 tuple_idx
             ].player  # We take the Player object of our QueuePlayer here
-            for role_idx, players_tuple in enumerate(team_composition)
+            for role_idx, queue_players_tuple in enumerate(team_composition)
             for tuple_idx in (0, 1)
         }
 
         # We check to make sure all 10 players are different
-        if set(queue_players.values()).__len__() != 10:
+        if set(players.values()).__len__() != 10:
             continue
 
         # We create a Game object for easier handling, and it will compute the matchmaking score
-        game = Game(queue_players)
+        game = Game(players)
 
         # Importantly, we do *not* add the game to the session, as that will be handled by the bot logic itself
 
