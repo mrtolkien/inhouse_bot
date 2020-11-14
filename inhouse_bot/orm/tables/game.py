@@ -75,8 +75,7 @@ class Game(bot_declarative_base):
             headers="keys",
         )
 
-    def beautiful_embed(self) -> Embed:
-        embed = Embed(title="Matchmade Game")
+    def beautiful_embed(self, embed: Embed) -> Embed:
 
         for side in ("BLUE", "RED"):
             embed.add_field(

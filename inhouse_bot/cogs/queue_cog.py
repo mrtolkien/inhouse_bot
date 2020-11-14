@@ -23,6 +23,7 @@ class QueueCog(commands.Cog, name="Queue"):
     """
     Manage your queue status and score games
     """
+
     def __init__(self, bot: InhouseBot):
         self.bot = bot
 
@@ -89,16 +90,18 @@ class QueueCog(commands.Cog, name="Queue"):
             return
 
         elif game and game.matchmaking_score < 0.2:
-            embed = game.beautiful_embed()
+            embed = Embed(
+                title="📢 Game found 📢",
+                description=f"Blue side expected winrate is {game.blue_expected_winrate * 100:.1f}%\n"
+                "If you are ready to play, press ✅\n"
+                "If you cannot play, press ❎",
+            )
+
+            embed = game.beautiful_embed(embed)
 
             # We notify the players
-            # TODO MED PRIO this looks terrible, make it beautiful
             message = await ctx.send(
-                f"A match has been found for "
-                f"{', '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])}\n"
-                f"Blue side expected winrate is {game.blue_expected_winrate * 100:.1f}%\n"
-                "You can refuse the match and leave the queue by pressing ❎\n"
-                "If you are ready to play, press ✅",
+                content=f"||{' '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])}||",
                 embed=embed,
             )
 
@@ -280,9 +283,9 @@ class QueueCog(commands.Cog, name="Queue"):
 
         matchmaking_logic.score_game_from_winning_player(player_id=ctx.author.id, server_id=ctx.guild.id)
 
-    @commands.command(aliases=["cancel"])
+    @commands.command(aliases=["cancel_game"])
     @guild_only()
-    async def cancel_game(
+    async def cancel(
         self, ctx: commands.Context,
     ):
         """

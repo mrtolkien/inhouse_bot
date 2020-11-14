@@ -1,3 +1,6 @@
+import asyncio
+import random
+
 from discord.ext import commands
 from discord.ext.commands import group
 
@@ -81,6 +84,39 @@ class TestCog(commands.Cog, name="TEST"):
 
         game_queue.start_ready_check([i for i in range(0, 9)] + [ctx.author.id], ctx.channel.id, msg.id)
         game_queue.validate_ready_check(msg.id)
+
+    @test.command()
+    async def games(self, ctx: commands.Context):
+        """
+        Creates 100 games in the database with random results
+        """
+        game_queue.reset_queue()
+
+        for game_count in range(100):
+
+            # We reset the queue
+            # We put 20 people in the queue
+            for i in range(0, 20):
+                game_queue.add_player(i, roles_list[i % 5], ctx.channel.id, ctx.guild.id, name=str(i))
+
+            # We add the context creator as well
+            game_queue.add_player(
+                ctx.author.id, roles_list[4], ctx.channel.id, ctx.guild.id, name=ctx.author.display_name
+            )
+
+            game = matchmaking_logic.find_best_game(GameQueue(ctx.channel.id))
+
+            with session_scope() as session:
+                session.add(game)
+
+            game_queue.start_ready_check([i for i in range(0, 9)] + [ctx.author.id], ctx.channel.id, 0)
+            game_queue.validate_ready_check(0)
+
+            matchmaking_logic.score_game_from_winning_player(
+                player_id=int(random.random() * 9), server_id=ctx.guild.id
+            )
+
+        await ctx.send("100 games have been created in the database")
 
     @test.command()
     async def score(self, ctx: commands.Context):

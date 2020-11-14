@@ -1,6 +1,6 @@
 import lol_id_tools
 import sqlalchemy
-from discord.ext import commands
+from discord.ext import commands, menus
 from discord.ext.commands import guild_only
 from sqlalchemy import func
 from tabulate import tabulate
@@ -12,6 +12,8 @@ from inhouse_bot.common_utils.fields import ChampionNameConverter, RoleConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
 
 from inhouse_bot.inhouse_bot import InhouseBot
+from inhouse_bot.stats_menus.history_pages import HistoryPagesSource
+from inhouse_bot.stats_menus.ranking_pages import RankingPagesSource
 
 inflect_engine = inflect.engine()
 
@@ -24,6 +26,7 @@ class StatsCog(commands.Cog, name="Stats"):
     """
     Display game-related statistics
     """
+
     def __init__(self, bot: InhouseBot):
         self.bot = bot
 
@@ -79,35 +82,24 @@ class StatsCog(commands.Cog, name="Stats"):
         # TODO LOW PRIO Make it not output the server only in DMs, otherwise filter on the server
 
         with session_scope() as session:
+            session.expire_on_commit = False
+
             game_participant_list = (
                 session.query(Game, GameParticipant)
                 .select_from(Game)
                 .join(GameParticipant)
                 .filter(GameParticipant.player_id == ctx.author.id)
                 .order_by(Game.start.desc())
-                .limit(10)  # Limit after filtering if it happens
+                .limit(100)
             ).all()
 
-            table = [["Game ID", "Server", "Date", "Role", "Champion", "Result"]]
-            for game, participant in game_participant_list:
+        pages = menus.MenuPages(
+            source=HistoryPagesSource(game_participant_list, self.bot), clear_reactions_after=True
+        )
+        await pages.start(ctx)
 
-                table.append(
-                    [
-                        game.id,
-                        self.bot.get_guild(game.server_id).name,
-                        game.start.date(),
-                        participant.role,
-                        lol_id_tools.get_name(participant.champion_id, object_type="champion")
-                        if participant.champion_id
-                        else "N/A",
-                        "WIN" if game.winner == participant.side else "LOSS",
-                    ]
-                )
-
-        await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
-
-    @commands.command(aliases=["mmr", "stats", "rating"])
-    async def rank(self, ctx: commands.Context):
+    @commands.command(aliases=["mmr", "rank", "rating"])
+    async def stats(self, ctx: commands.Context):
         """
         Returns your rank, MMR, and games played
 
@@ -115,14 +107,11 @@ class StatsCog(commands.Cog, name="Stats"):
             !rank
         """
         # TODO LOW PRIO Make it not output the server only in DMs, otherwise filter on the server
-        # TODO MED PRIO ADD WINRATE
 
         with session_scope() as session:
             rating_objects = (
                 session.query(
-                    PlayerRating.player_server_id,
-                    PlayerRating.mmr,
-                    PlayerRating.role,
+                    PlayerRating,
                     func.count().label("count"),
                     (
                         sqlalchemy.func.sum((Game.winner == GameParticipant.side).cast(sqlalchemy.Integer))
@@ -169,7 +158,7 @@ class StatsCog(commands.Cog, name="Stats"):
     @guild_only()
     async def ranking(self, ctx: commands.Context, role: RoleConverter() = None):
         """
-        Returns the server mmr-based ranking
+        Displays the top players on the server
 
         A role can be supplied to only display the ranking for this role
 
@@ -178,9 +167,11 @@ class StatsCog(commands.Cog, name="Stats"):
             !ranking mid
         """
         with session_scope() as session:
+            session.expire_on_commit = False
+
             ratings = (
                 session.query(
-                    Player.short_name,
+                    Player,
                     PlayerRating.player_server_id,
                     PlayerRating.mmr,
                     PlayerRating.role,
@@ -189,7 +180,7 @@ class StatsCog(commands.Cog, name="Stats"):
                         sqlalchemy.func.sum((Game.winner == GameParticipant.side).cast(sqlalchemy.Integer))
                     ).label(
                         "wins"
-                    ),  # A bit verbose, ngl
+                    ),  # A bit verbose for sure
                 )
                 .select_from(Player)
                 .join(PlayerRating)
@@ -203,22 +194,9 @@ class StatsCog(commands.Cog, name="Stats"):
             if role:
                 ratings = ratings.filter(PlayerRating.role == role)
 
-            ratings = ratings.limit(10)
+            ratings = ratings.limit(100).all()
 
-            table = [["Rank", "Name", "Role", "MMR", "Games", "Win%"]]
-
-            for idx, row in enumerate(ratings):
-                table.append(
-                    [
-                        inflect_engine.ordinal(idx + 1),
-                        row.short_name,
-                        row.role,
-                        round(row.mmr, 2),
-                        row.count,
-                        f"{int(row.wins / row.count * 100)}%",
-                    ]
-                )
-
-        await ctx.send(f'```{tabulate(table, headers="firstrow")}```')
+        pages = menus.MenuPages(source=RankingPagesSource(ratings, self.bot), clear_reactions_after=True)
+        await pages.start(ctx)
 
     # TODO LOW PRIO fancy mmr_history graph once again
