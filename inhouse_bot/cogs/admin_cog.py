@@ -10,6 +10,9 @@ from inhouse_bot.inhouse_bot import InhouseBot
 
 
 class AdminCog(commands.Cog, name="Admin"):
+    """
+    Reset queues and manages games
+    """
     def __init__(self, bot: InhouseBot):
         self.bot = bot
 

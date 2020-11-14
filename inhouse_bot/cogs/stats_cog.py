@@ -21,6 +21,9 @@ inflect_engine = inflect.engine()
 
 
 class StatsCog(commands.Cog, name="Stats"):
+    """
+    Display game-related statistics
+    """
     def __init__(self, bot: InhouseBot):
         self.bot = bot
 
@@ -32,7 +35,7 @@ class StatsCog(commands.Cog, name="Stats"):
         """
         Saves the champion you used in your last game
 
-        Older games can be filled with `!champion champion_name game_id`
+        Older games can be filled with !champion champion_name game_id
         You can find the ID of the games you played with !history
 
         Example:

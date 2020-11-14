@@ -20,6 +20,9 @@ from inhouse_bot.inhouse_bot import InhouseBot
 
 
 class QueueCog(commands.Cog, name="Queue"):
+    """
+    Manage your queue status and score games
+    """
     def __init__(self, bot: InhouseBot):
         self.bot = bot
 
@@ -234,7 +237,7 @@ class QueueCog(commands.Cog, name="Queue"):
         """
         Scores your last game as a win
 
-        Will require validation from at least 5 other players in the game
+        Will require validation from at least 6 players in the game
 
         Example:
             !won
@@ -285,7 +288,7 @@ class QueueCog(commands.Cog, name="Queue"):
         """
         Cancels your ongoing game
 
-        Will require validation from at least 5 other players in the game
+        Will require validation from at least 6 players in the game
 
         Example:
             !cancel

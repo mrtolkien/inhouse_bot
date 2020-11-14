@@ -5,20 +5,20 @@ import discord
 from discord.ext import commands
 
 
-# Defining intents to get full members list
 from discord.ext.commands import NoPrivateMessage
 
-from inhouse_bot.orm import session_scope
 from inhouse_bot import game_queue
 
+# Defining intents to get full members list
 intents = discord.Intents.default()
 intents.members = True
 
-# Defining warnings display duration
-WARNING_DURATION = 30
-
 
 class InhouseBot(commands.Bot):
+    """
+    A bot handling role-based matchmaking for LoL games
+    """
+
     def __init__(self, **options):
         super().__init__("!", intents=intents, case_insensitive=True, **options)
 
@@ -31,7 +31,7 @@ class InhouseBot(commands.Bot):
         self.add_cog(AdminCog(self))
         self.add_cog(StatsCog(self))
 
-        # While I hate mixing production and testing code, it is the most convenient solution to test the bot
+        # While I hate mixing production and testing code, this is the most convenient solution to test the bot
         if os.environ.get("INHOUSE_BOT_TEST"):
             from tests.test_cog import TestCog
 
@@ -41,7 +41,7 @@ class InhouseBot(commands.Bot):
         super().run(os.environ["INHOUSE_BOT_TOKEN"], *args, **kwargs)
 
     async def on_ready(self):
-        logging.info(f"{self.user.name} has connected to Discord!")
+        logging.info(f"{self.user.name} has connected to Discord")
 
         # We start by reposting all the ongoing queues
         game_queue.cancel_all_ready_checks()
@@ -50,7 +50,7 @@ class InhouseBot(commands.Bot):
         for channel_id in active_queues:
             channel = self.get_channel(channel_id)
 
-            if not channel:
+            if not channel:  # Happens when the channel does not exist anymore
                 continue
 
             try:
@@ -64,19 +64,17 @@ class InhouseBot(commands.Bot):
         Custom error command that catches CommandNotFound as well as MissingRequiredArgument for readable feedback
         """
         if isinstance(error, commands.CommandNotFound):
-            await ctx.send(f"Command `{ctx.invoked_with}` not found", delete_after=WARNING_DURATION)
+            await ctx.send(f"Command `{ctx.invoked_with}` not found, use !help to see the commands list",)
 
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(
-                f"Arguments missing. Type `!help {ctx.invoked_with}` for help", delete_after=WARNING_DURATION,
-            )
+            await ctx.send(f"Arguments missing, use `!help {ctx.invoked_with}` to see the arguments list",)
 
         elif isinstance(error, commands.ConversionError):
             # Conversion errors feedback are handled in my converters
             pass
 
         elif isinstance(error, NoPrivateMessage):
-            await ctx.send(f"This command cannot be used in private messages")
+            await ctx.send(f"This command can only be used inside a server")
 
         # This handles errors that happen during a command
         elif isinstance(error, commands.CommandInvokeError):
@@ -91,7 +89,7 @@ class InhouseBot(commands.Bot):
 
             elif isinstance(og_error, game_queue.PlayerInReadyCheck):
                 await ctx.send(
-                    f"A game has already been found for you and you cannot queue before it is accepted or cancelled\n"
+                    f"A game has already been found for you and you cannot queue until it is accepted or cancelled\n"
                     f"If it is a bug, contact an admin and ask them to use `!admin reset` with your name"
                 )
 
@@ -100,7 +98,8 @@ class InhouseBot(commands.Bot):
 
                 # User-facing error
                 await ctx.send(
-                    f"{og_error.__class__.__name__}: {og_error}\n" f"Contact server admins for bugs.",
+                    f"{og_error.__class__.__name__}: {og_error}\n"
+                    f"Use !help for the commands list or contact server admins for bugs",
                 )
 
                 raise og_error
@@ -109,6 +108,9 @@ class InhouseBot(commands.Bot):
             print(type(error))
 
             # User-facing error
-            await ctx.send(f"{error.__class__.__name__}: {error}\n" f"Contact server admins for bugs.",)
+            await ctx.send(
+                f"{error.__class__.__name__}: {error}\n"
+                f"Use !help for the commands list or contact server admins for bugs",
+            )
 
             raise error
