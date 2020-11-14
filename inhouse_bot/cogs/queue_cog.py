@@ -1,6 +1,5 @@
 from typing import Optional
 
-import discord
 from discord import Embed, TextChannel
 from discord.ext import commands
 from discord.ext.commands import guild_only
@@ -160,7 +159,17 @@ class QueueCog(commands.Cog, name="Queue"):
                 f" predicted winrate and was not started"
             )
 
-    # TODO MID PRIO Add view and view_queue once again
+    @commands.command(aliases=["view"])
+    @guild_only()
+    async def view_queue(
+        self, ctx: commands.Context,
+    ):
+        """
+        Refreshes the queue in the current channel
+
+        Almost never needs to get used directly
+        """
+        await self.send_queue(ctx=ctx)
 
     @commands.command()
     @guild_only()

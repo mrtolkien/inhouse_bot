@@ -45,11 +45,12 @@ Rating:
 - Each player has one rating per server and role, and each rating is completely independent
 - There is one queue per discord channel the bot is in, but ratings are server-wide
 - The ratings are loosely based on [Microsoft TrueSkill](https://en.wikipedia.org/wiki/TrueSkill)
-- The displayed MMR is a conservative estimate of skill, 
+- The displayed MMR is a conservative estimate of skill and starts at 25 for everybody
 
 Matchmaking:
 - Players who have been in queue the longest will be favored when creating a game
 - Matchmaking aims to select the game with a predicted winrate as close as possible to 50%
+- Side assignment is random
 
 # Use case and behaviour
 
