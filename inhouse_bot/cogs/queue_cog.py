@@ -31,7 +31,7 @@ class QueueCog(commands.Cog, name="Queue"):
         """
         Deletes the previous queue message and sends a new one in the channel
 
-        If channel is supplied instead of a context (in the case of a bot reboot), perform a reboot instead
+        If channel is supplied instead of a context (in the case of a bot reboot), send the reboot message instead
         """
         if ctx:
             channel_id = ctx.channel.id

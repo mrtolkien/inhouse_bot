@@ -10,7 +10,7 @@ bot_declarative_base = declarative_base()
 
 class GhostSessionMaker:
     """
-    Small class that only generates the schema in the database when a session is created.
+    Small class that only generates the schema in the database when a session is created
     """
 
     _session_maker = None
@@ -23,7 +23,9 @@ class GhostSessionMaker:
 
     def _initialize_sqlalchemy(self):
         # We create the engine to connect to the database
-        engine = sqlalchemy.create_engine(os.environ["INHOUSE_BOT_CONNECTION_STRING"])
+        engine = sqlalchemy.create_engine(
+            os.environ["INHOUSE_BOT_CONNECTION_STRING"], pool_pre_ping=True, pool_size=10
+        )   # Very conservative settings to make sure it *always* work, slightly overkill
 
         # We create all the tables and columns as required by the classes in the other parts of the program
         bot_declarative_base.metadata.create_all(bind=engine)
@@ -53,9 +55,9 @@ def session_scope():
     try:
         yield session
         session.commit()
-    except:
-        # Bare except don’t look good but make sense here to not become blocking
+    except Exception as e:
+        # Bare except don’t look good but make sense here to not become blocking in the database
         session.rollback()
-        raise
+        raise e
     finally:
         session.close()
