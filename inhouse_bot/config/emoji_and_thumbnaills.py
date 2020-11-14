@@ -13,15 +13,16 @@ role_emoji_dict = {
     "SUP": os.environ.get("INHOUSE_BOT_SUP_EMOJI") or "SUP",
 }
 
-cdragon_root = 'https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images'
-positions_pictures_url = cdragon_root + '/position-selector/positions/icon-position-'
+cdragon_root = "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images"
+positions_pictures_url = cdragon_root + "/position-selector/positions/icon-position-"
 
 role_thumbnail_dict = {
-    'TOP': positions_pictures_url + 'top.png',
-    'JGL': positions_pictures_url + 'jungle.png',
-    'MID': positions_pictures_url + 'middle.png',
-    'BOT': positions_pictures_url + 'bottom.png',
-    'SUP': positions_pictures_url + 'utility.png '}
+    "TOP": positions_pictures_url + "top.png",
+    "JGL": positions_pictures_url + "jungle.png",
+    "MID": positions_pictures_url + "middle.png",
+    "BOT": positions_pictures_url + "bottom.png",
+    "SUP": positions_pictures_url + "utility.png ",
+}
 
 
 def get_role_emoji(role: str) -> str:
@@ -37,7 +38,7 @@ def get_champion_emoji(champion_id: Optional[int], bot) -> str:
 
     champion_name = lol_id_tools.get_name(champion_id, object_type="champion")
 
-    emoji_name = re.sub(r"[^\w]", " ", champion_name)
+    emoji_name = no_symbols_regex.sub("", champion_name).replace(" ", "")
 
     for emoji in bot.emojis:
         emoji: Emoji
