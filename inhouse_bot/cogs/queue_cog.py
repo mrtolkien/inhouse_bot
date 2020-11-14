@@ -10,7 +10,7 @@ from inhouse_bot.cogs.cogs_utils.validation_dialog import checkmark_validation
 from inhouse_bot.common_utils.fields import RoleConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.config.embeds import embeds_color
-from inhouse_bot.config.emoji import get_role_emoji
+from inhouse_bot.config.emoji_and_thumbnaills import get_role_emoji
 
 from inhouse_bot import game_queue
 from inhouse_bot import matchmaking_logic

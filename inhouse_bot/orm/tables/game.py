@@ -13,7 +13,7 @@ from inhouse_bot.orm import bot_declarative_base
 from inhouse_bot.orm.tables.player import Player
 
 from inhouse_bot.common_utils.fields import roles_list, side_enum
-from inhouse_bot.config.emoji import get_role_emoji
+from inhouse_bot.config.emoji_and_thumbnaills import get_role_emoji
 
 
 class Game(bot_declarative_base):

@@ -1,12 +1,13 @@
-import asyncio
 import random
 
+import lol_id_tools
 from discord.ext import commands
 from discord.ext.commands import group
 
+from inhouse_bot.config.emoji_and_thumbnaills import get_champion_emoji
 from inhouse_bot.orm import session_scope
 from inhouse_bot.cogs.cogs_utils.validation_dialog import checkmark_validation
-from inhouse_bot.common_utils.fields import roles_list
+from inhouse_bot.common_utils.fields import roles_list, ChampionNameConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.game_queue import GameQueue
 from inhouse_bot.inhouse_bot import InhouseBot
@@ -140,6 +141,12 @@ class TestCog(commands.Cog, name="TEST"):
             session.delete(game)
 
         await ctx.send(f"{ctx.author.display_name}’s last game was cancelled and deleted from the database")
+
+    @test.command()
+    async def emoji(self, ctx: commands.Context, champion_id: ChampionNameConverter()):
+        emoji_text = get_champion_emoji(lol_id_tools.get_name(champion_id, object_type="champion"), self.bot)
+
+        await ctx.send(f"{champion_id} - {emoji_text}")
 
     # TODO LOW PRIO A test function to test accepting the queue/cancelling a game by spoofing reactions
     # @commands.command()

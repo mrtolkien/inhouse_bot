@@ -94,7 +94,8 @@ class StatsCog(commands.Cog, name="Stats"):
             ).all()
 
         pages = menus.MenuPages(
-            source=HistoryPagesSource(game_participant_list, self.bot), clear_reactions_after=True
+            source=HistoryPagesSource(game_participant_list, self.bot, player_name=ctx.author.display_name),
+            delete_message_after=True,
         )
         await pages.start(ctx)
 
@@ -196,7 +197,7 @@ class StatsCog(commands.Cog, name="Stats"):
 
             ratings = ratings.limit(100).all()
 
-        pages = menus.MenuPages(source=RankingPagesSource(ratings, self.bot), clear_reactions_after=True)
+        pages = menus.MenuPages(source=RankingPagesSource(ratings, self.bot), delete_message_after=True)
         await pages.start(ctx)
 
     # TODO LOW PRIO fancy mmr_history graph once again
