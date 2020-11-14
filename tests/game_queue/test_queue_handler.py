@@ -65,3 +65,12 @@ def test_queue_remove():
     game_queue.remove_player(0, 0)
 
     assert len(GameQueue(0)) == 0
+
+
+def test_multiple_queues():
+    game_queue.reset_queue()
+    game_queue.add_player(0, roles_list[0], 0, 0)
+
+    # This will take at least 30s to crash because of the queue timeout
+    for i in range(1000):
+        GameQueue(0)
