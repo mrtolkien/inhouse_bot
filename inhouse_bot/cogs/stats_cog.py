@@ -30,9 +30,9 @@ class StatsCog(commands.Cog, name="Stats"):
         self, ctx: commands.Context, champion_id: ChampionNameConverter(), game_id: int = None
     ):
         """
-        Saves the champion you used in your last game on this server
+        Saves the champion you used in your last game
 
-        Older games can also be filled with !champion champion_name game_id
+        Older games can be filled with `!champion champion_name game_id`
         You can find the ID of the games you played with !history
 
         Example:
@@ -69,6 +69,9 @@ class StatsCog(commands.Cog, name="Stats"):
         # TODO LOW PRIO Add an @ user for admins
         """
         Displays your games history
+
+        Example:
+            !history
         """
         # TODO LOW PRIO Make it not output the server only in DMs, otherwise filter on the server
 
@@ -104,6 +107,9 @@ class StatsCog(commands.Cog, name="Stats"):
     async def rank(self, ctx: commands.Context):
         """
         Returns your rank, MMR, and games played
+
+        Example:
+            !rank
         """
         # TODO LOW PRIO Make it not output the server only in DMs, otherwise filter on the server
         # TODO MED PRIO ADD WINRATE
@@ -160,7 +166,13 @@ class StatsCog(commands.Cog, name="Stats"):
     @guild_only()
     async def ranking(self, ctx: commands.Context, role: RoleConverter() = None):
         """
-        Returns the ranking on the current server
+        Returns the server mmr-based ranking
+
+        A role can be supplied to only display the ranking for this role
+
+        Example:
+            !ranking
+            !ranking mid
         """
         with session_scope() as session:
             ratings = (

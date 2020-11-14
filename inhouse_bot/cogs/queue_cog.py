@@ -74,6 +74,11 @@ class QueueCog(commands.Cog, name="Queue"):
     async def run_matchmaking_logic(
         self, ctx: commands.Context,
     ):
+        """
+        Runs the matchmaking logic in the channel defined by the context
+
+        Should only be called inside guilds
+        """
         queue = GameQueue(ctx.channel.id)
         game = matchmaking_logic.find_best_game(queue)
 
@@ -84,6 +89,7 @@ class QueueCog(commands.Cog, name="Queue"):
             embed = game.beautiful_embed()
 
             # We notify the players
+            # TODO MED PRIO this looks terrible, make it beautiful
             message = await ctx.send(
                 f"A match has been found for "
                 f"{', '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])}\n"
@@ -159,9 +165,9 @@ class QueueCog(commands.Cog, name="Queue"):
                 f" predicted winrate and was not started"
             )
 
-    @commands.command(aliases=["view"])
+    @commands.command(aliases=["view_queue", "refresh"])
     @guild_only()
-    async def view_queue(
+    async def view(
         self, ctx: commands.Context,
     ):
         """
@@ -177,10 +183,11 @@ class QueueCog(commands.Cog, name="Queue"):
         self, ctx: commands.Context, role: RoleConverter(),
     ):
         """
-        Puts you in a queue in the current channel for the specified roles.
+        Adds you to the current channel’s queue for the given role
+
         Roles are TOP, JGL, MID, BOT/ADC, and SUP
 
-        Example usage:
+        Example:
             !queue SUP
             !queue support
             !queue bot
@@ -201,16 +208,17 @@ class QueueCog(commands.Cog, name="Queue"):
         # Currently, we only update the current queue even if other queues got changed
         await self.send_queue(ctx=ctx)
 
-    @commands.command(aliases=["leave", "stop"])
+    @commands.command(aliases=["leave_queue", "stop"])
     @guild_only()
-    async def leave_queue(
+    async def leave(
         self, ctx: commands.Context,
     ):
         """
         Removes you from the queue in the current channel
 
-        Example usage:
-            !stop_queue
+        Example:
+            !leave
+            !leave_queue
         """
 
         game_queue.remove_player(player_id=ctx.author.id, channel_id=ctx.channel.id)
@@ -225,6 +233,11 @@ class QueueCog(commands.Cog, name="Queue"):
     ):
         """
         Scores your last game as a win
+
+        Will require validation from at least 5 other players in the game
+
+        Example:
+            !won
         """
         with session_scope() as session:
             # Get the latest game
@@ -270,7 +283,12 @@ class QueueCog(commands.Cog, name="Queue"):
         self, ctx: commands.Context,
     ):
         """
-        Cancels your last game after it has been accepted but before it was scored
+        Cancels your ongoing game
+
+        Will require validation from at least 5 other players in the game
+
+        Example:
+            !cancel
         """
         with session_scope() as session:
             # Get the latest game

@@ -16,6 +16,9 @@ class AdminCog(commands.Cog, name="Admin"):
     @commands.group(case_insensitive=True)
     @commands.has_permissions(administrator=True)
     async def admin(self, ctx: commands.Context):
+        """
+        Admin functions, use !help admin for a complete list
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 f"The accepted subcommands are "
@@ -58,7 +61,9 @@ class AdminCog(commands.Cog, name="Admin"):
     @admin.command()
     async def cancel(self, ctx: commands.Context, member: discord.Member):
         """
-        Cancels the user’s ongoing game if it was not scored yet
+        Cancels the user’s ongoing game
+
+        Only works if the game has not been scored yet
         """
         with session_scope() as session:
             game, participant = get_last_game(player_id=member.id, server_id=ctx.guild.id, session=session)

@@ -34,3 +34,6 @@ psycopg2
 
 # Beautiful Discord menus
 git+https://github.com/Rapptz/discord-ext-menus
+
+# Pretty help
+discord-pretty-help
