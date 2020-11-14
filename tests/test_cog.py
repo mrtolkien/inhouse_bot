@@ -1,6 +1,5 @@
 import random
 
-import lol_id_tools
 from discord.ext import commands
 from discord.ext.commands import group
 

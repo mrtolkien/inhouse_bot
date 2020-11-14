@@ -36,12 +36,16 @@ class HistoryPagesSource(menus.ListPageSource):
             else:
                 result = "❌"
 
-            rows.append(f"{result} {role} {emoji} | game #{game.id} on {game.start.date()}")
+            rows.append(f"{result}   {role}   " f"{emoji}"
+                        f"   #{game.id}   {game.start.date()}")
 
         embed.set_thumbnail(url=role_thumbnail_dict[role_counter.most_common(1)[0][0]])
 
         embed.add_field(name=f"{self.player_name}’s match history", value="\n".join(rows))
 
-        embed.set_footer(text=f"Page {menu.current_page + 1} out of {self._max_pages}")
+        embed.set_footer(
+            text=f"Page {menu.current_page + 1} of {self._max_pages} "
+            f"| Use !champion [name] [game_id] to save champions"
+        )
 
         return embed
