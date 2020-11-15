@@ -84,18 +84,28 @@ class StatsCog(commands.Cog, name="Stats"):
         with session_scope() as session:
             session.expire_on_commit = False
 
-            game_participant_list = (
+            game_participant_query = (
                 session.query(Game, GameParticipant)
                 .select_from(Game)
                 .join(GameParticipant)
                 .filter(GameParticipant.player_id == ctx.author.id)
                 .order_by(Game.start.desc())
-                .limit(100)
-            ).all()
+            )
+
+            # If we’re on a server, we only show games played on that server
+            if ctx.guild:
+                game_participant_query = game_participant_query.filter(Game.server_id == ctx.guild.id)
+
+            game_participant_list = game_participant_query.limit(100).all()
 
         pages = menus.MenuPages(
-            source=HistoryPagesSource(game_participant_list, self.bot, player_name=ctx.author.display_name),
-            delete_message_after=True,
+            source=HistoryPagesSource(
+                game_participant_list,
+                self.bot,
+                player_name=ctx.author.display_name,
+                is_dms=True if not ctx.guild else False,
+            ),
+            clear_reactions_after=True,
         )
         await pages.start(ctx)
 
@@ -197,7 +207,7 @@ class StatsCog(commands.Cog, name="Stats"):
 
             ratings = ratings.limit(100).all()
 
-        pages = menus.MenuPages(source=RankingPagesSource(ratings, self.bot), delete_message_after=True)
+        pages = menus.MenuPages(source=RankingPagesSource(ratings, self.bot), clear_reactions_after=True)
         await pages.start(ctx)
 
     # TODO LOW PRIO fancy mmr_history graph once again

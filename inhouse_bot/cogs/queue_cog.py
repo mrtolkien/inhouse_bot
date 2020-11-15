@@ -94,11 +94,13 @@ class QueueCog(commands.Cog, name="Queue"):
                 title="📢 Game found 📢",
                 description=f"Blue side expected winrate is {game.blue_expected_winrate * 100:.1f}%\n"
                 "If you are ready to play, press ✅\n"
-                "If you cannot play, press ❎",
+                "If you cannot play, press ❌",
             )
 
             embed = game.beautiful_embed(embed)
 
+
+            # TODO UPDATE THE MESSAGE WITH PLAYERS WHO ACCEPTED
             # We notify the players
             message = await ctx.send(
                 content=f"||{' '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])}||",
