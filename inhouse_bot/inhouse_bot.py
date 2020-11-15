@@ -2,6 +2,7 @@ import logging
 import os
 
 import discord
+from discord import Message
 from discord.ext import commands
 
 
@@ -54,7 +55,7 @@ class InhouseBot(commands.Bot):
                 continue
 
             try:
-                await self.cogs["Queue"].send_queue(channel=channel)
+                await self.cogs["Queue"].refresh_queue(channel=channel)
             except AttributeError:
                 # TODO LOW PRIO Should be logging
                 print(f"Could not access channel {channel_id}")
@@ -75,6 +76,9 @@ class InhouseBot(commands.Bot):
 
         elif isinstance(error, NoPrivateMessage):
             await ctx.send(f"This command can only be used inside a server")
+
+        elif isinstance(error, game_queue.QueueChannelsOnlyError):
+            await ctx.send(f"This command can only be used in a channel marked as a queue by an admin")
 
         # This handles errors that happen during a command
         elif isinstance(error, commands.CommandInvokeError):

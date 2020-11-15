@@ -1,7 +1,7 @@
 from sqlalchemy.orm import relationship
 
 from inhouse_bot.orm import bot_declarative_base
-from sqlalchemy import Column, BigInteger, ForeignKeyConstraint, DateTime
+from sqlalchemy import Column, BigInteger, ForeignKeyConstraint, DateTime, ForeignKey
 
 from inhouse_bot.orm import Player
 from inhouse_bot.common_utils.fields import role_enum, foreignkey_cascade_options
@@ -14,13 +14,16 @@ class QueuePlayer(bot_declarative_base):
 
     __tablename__ = "queue_player"
 
-    channel_id = Column(BigInteger, primary_key=True, index=True)
+    channel_id = Column(BigInteger, ForeignKey("channel_information.id"), primary_key=True, index=True,)
+
+    channel_information = relationship(
+        "ChannelInformation", viewonly=True, backref="game_participant_objects", sync_backref=False
+    )
+
     role = Column(role_enum, primary_key=True)
 
-    # This cannot be a Foreign Key as a Player is defined by its id *and server* that we don’t need here
+    # Saving both allows us to going to the Player table
     player_id = Column(BigInteger, primary_key=True, index=True)
-
-    # We save the server_id for simplicity
     player_server_id = Column(BigInteger)
 
     # Queue start time to favor players who have been in queue longer

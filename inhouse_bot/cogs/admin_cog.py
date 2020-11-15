@@ -2,9 +2,10 @@ from typing import Union
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import guild_only
 
 from inhouse_bot import game_queue, matchmaking_logic
-from inhouse_bot.orm import session_scope
+from inhouse_bot.orm import session_scope, ChannelInformation
 from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.inhouse_bot import InhouseBot
 
@@ -13,6 +14,7 @@ class AdminCog(commands.Cog, name="Admin"):
     """
     Reset queues and manages games
     """
+
     def __init__(self, bot: InhouseBot):
         self.bot = bot
 
@@ -78,3 +80,32 @@ class AdminCog(commands.Cog, name="Admin"):
             session.delete(game)
 
         await ctx.send(f"{member.display_name}’s ongoing game was cancelled and deleted from the database")
+
+    @admin.command()
+    @guild_only()
+    async def mark(self, ctx: commands.Context, channel_type: str):
+        """
+        Marks the current channel as a queue or ranking channel
+        """
+        if channel_type.upper() == "QUEUE":
+            game_queue.mark_queue_channel(ctx.channel.id, ctx.guild.id)
+
+            await ctx.send(f"Current channel marked as a queue channel", delete_after=30)
+
+        # TODO Handle RANKING
+        else:
+            await ctx.send("Accepted values for !admin mark are QUEUE and RANKING")
+
+    @admin.command()
+    @guild_only()
+    async def unmark(self, ctx: commands.Context):
+        """
+        Reverts the current channel to "normal"
+        """
+        # TODO Low prio make that its own function
+        with session_scope() as session:
+            query = session.query(ChannelInformation).filter(ChannelInformation.id == ctx.channel.id)
+
+            query.delete(synchronize_session=False)
+
+            await ctx.send(f"The current channel has been reverted to a normal channel")

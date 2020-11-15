@@ -18,10 +18,6 @@ from inhouse_bot.stats_menus.ranking_pages import RankingPagesSource
 inflect_engine = inflect.engine()
 
 
-# TODO MEDIUM PRIO Make all outputs into beautiful menus and embeds
-#   Make an embed visualisation function outside of the command
-
-
 class StatsCog(commands.Cog, name="Stats"):
     """
     Display game-related statistics
@@ -79,7 +75,6 @@ class StatsCog(commands.Cog, name="Stats"):
         Example:
             !history
         """
-        # TODO LOW PRIO Make it not output the server only in DMs, otherwise filter on the server
 
         with session_scope() as session:
             session.expire_on_commit = False
@@ -138,6 +133,9 @@ class StatsCog(commands.Cog, name="Stats"):
                 .filter(PlayerRating.player_id == ctx.author.id)
                 .group_by(PlayerRating)
             )
+
+            if ctx.guild:
+                rating_objects = rating_objects.filter(PlayerRating.player_server_id == ctx.guild.id)
 
             table = []
 

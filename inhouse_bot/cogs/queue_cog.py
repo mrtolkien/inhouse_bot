@@ -1,10 +1,10 @@
-from typing import Optional
+from typing import Optional, List
 
-from discord import Embed, TextChannel
+from discord import Embed, TextChannel, Message
 from discord.ext import commands
 from discord.ext.commands import guild_only
 
-from inhouse_bot.orm import session_scope
+from inhouse_bot.orm import session_scope, ChannelInformation
 from inhouse_bot.cogs.cogs_utils.validation_dialog import checkmark_validation
 
 from inhouse_bot.common_utils.fields import RoleConverter
@@ -30,7 +30,18 @@ class QueueCog(commands.Cog, name="Queue"):
         # This should be a table
         self.latest_queue_messages = {}
 
-    async def send_queue(self, ctx: Optional[commands.Context] = None, channel: Optional[TextChannel] = None):
+    @commands.Cog.listener("on_message")
+    async def check_messages_in_queue_channel(self, msg: Message):
+        if (
+            msg.channel.id in game_queue.get_queue_channels()
+        ):  # Can we make that a property? It would look better
+            # TODO Treat and delete the message
+
+            await msg.delete(delay=1)
+
+    async def refresh_queue(
+        self, ctx: Optional[commands.Context] = None, channel: Optional[TextChannel] = None
+    ):
         """
         Deletes the previous queue message and sends a new one in the channel
 
@@ -40,6 +51,7 @@ class QueueCog(commands.Cog, name="Queue"):
             channel_id = ctx.channel.id
             send_destination = ctx
         elif channel:
+            # TODO In that situation, start by deleting ready-check messages
             channel_id = channel.id
             send_destination = channel
         else:
@@ -99,7 +111,6 @@ class QueueCog(commands.Cog, name="Queue"):
 
             embed = game.beautiful_embed(embed)
 
-
             # TODO UPDATE THE MESSAGE WITH PLAYERS WHO ACCEPTED
             # We notify the players
             message = await ctx.send(
@@ -114,7 +125,7 @@ class QueueCog(commands.Cog, name="Queue"):
 
             # We update the queue directly for readability
             # TODO LOW PRIO Have an "update_all_queues" function as this removes people from other queues
-            await self.send_queue(ctx)
+            await self.refresh_queue(ctx)
 
             # Good situation where we have a relatively fair game
             ready, players_to_drop = await checkmark_validation(
@@ -174,7 +185,7 @@ class QueueCog(commands.Cog, name="Queue"):
             )
 
     @commands.command(aliases=["view_queue", "refresh"])
-    @guild_only()
+    @game_queue.queue_channel_only()
     async def view(
         self, ctx: commands.Context,
     ):
@@ -183,10 +194,10 @@ class QueueCog(commands.Cog, name="Queue"):
 
         Almost never needs to get used directly
         """
-        await self.send_queue(ctx=ctx)
+        await self.refresh_queue(ctx=ctx)
 
     @commands.command()
-    @guild_only()
+    @game_queue.queue_channel_only()
     async def queue(
         self, ctx: commands.Context, role: RoleConverter(),
     ):
@@ -214,10 +225,10 @@ class QueueCog(commands.Cog, name="Queue"):
         await self.run_matchmaking_logic(ctx=ctx)
 
         # Currently, we only update the current queue even if other queues got changed
-        await self.send_queue(ctx=ctx)
+        await self.refresh_queue(ctx=ctx)
 
     @commands.command(aliases=["leave_queue", "stop"])
-    @guild_only()
+    @game_queue.queue_channel_only()
     async def leave(
         self, ctx: commands.Context,
     ):
@@ -232,10 +243,10 @@ class QueueCog(commands.Cog, name="Queue"):
         game_queue.remove_player(player_id=ctx.author.id, channel_id=ctx.channel.id)
 
         # Currently, we only update the current queue even if other queues got changed
-        await self.send_queue(ctx=ctx)
+        await self.refresh_queue(ctx=ctx)
 
     @commands.command(aliases=["win", "wins", "victory"])
-    @guild_only()
+    @game_queue.queue_channel_only()
     async def won(
         self, ctx: commands.Context,
     ):
@@ -247,6 +258,7 @@ class QueueCog(commands.Cog, name="Queue"):
         Example:
             !won
         """
+        # TODO MED PRIO ONLY ONE ONGOING CANCEL/SCORING MESSAGE PER GAME
         with session_scope() as session:
             # Get the latest game
             game, participant = get_last_game(
@@ -286,7 +298,7 @@ class QueueCog(commands.Cog, name="Queue"):
         matchmaking_logic.score_game_from_winning_player(player_id=ctx.author.id, server_id=ctx.guild.id)
 
     @commands.command(aliases=["cancel_game"])
-    @guild_only()
+    @game_queue.queue_channel_only()
     async def cancel(
         self, ctx: commands.Context,
     ):
@@ -298,6 +310,8 @@ class QueueCog(commands.Cog, name="Queue"):
         Example:
             !cancel
         """
+        # TODO MED PRIO ONLY ONE ONGOING CANCEL/SCORING MESSAGE PER GAME
+
         with session_scope() as session:
             # Get the latest game
             game, participant = get_last_game(
