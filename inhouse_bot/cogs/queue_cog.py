@@ -186,7 +186,7 @@ class QueueCog(commands.Cog, name="Queue"):
     @commands.command()
     @guild_only()
     async def test_command(self, ctx: commands.Context):
-        ctx.send('This works')
+        await ctx.send('This works')
     
     @commands.command()
     @guild_only()
@@ -204,7 +204,7 @@ class QueueCog(commands.Cog, name="Queue"):
             !queue bot
             !queue adc
         """
-
+        await ctx.send('Queue called')
         # Queuing the player
         for role in roles:
             await ctx.send(role
@@ -216,11 +216,12 @@ class QueueCog(commands.Cog, name="Queue"):
                 channel_id=ctx.channel.id,
                 server_id=ctx.guild.id,
             )
-
+         await ctx.send('roles added')
         await self.run_matchmaking_logic(ctx=ctx)
-
+        await ctx.send('matchmaking logic')
         # Currently, we only update the current queue even if other queues got changed
         await self.send_queue(ctx=ctx)
+        await ctx.send('Queue sent')
 
     @commands.command(aliases=["leave_queue", "stop"])
     @guild_only()
