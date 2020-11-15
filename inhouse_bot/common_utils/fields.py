@@ -26,7 +26,7 @@ full_roles_dict = {
 }
 
 class MultiRoleConverter(commands.Converter):
-    def convert_role(self, ctx, argument):
+    async def convert_role(self, ctx, argument):
         """
         Converts an input string to a clean role
         """
