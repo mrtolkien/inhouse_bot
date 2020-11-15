@@ -183,7 +183,7 @@ class QueueCog(commands.Cog, name="Queue"):
         """
         await self.send_queue(ctx=ctx)
 
-    @commands.command()
+    @commands.command(aliases=["queue"])
     @guild_only()
     async def queue(
         self, ctx: commands.Context, roles: MultiRoleConverter(),
