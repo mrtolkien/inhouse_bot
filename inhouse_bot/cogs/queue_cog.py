@@ -202,6 +202,8 @@ class QueueCog(commands.Cog, name="Queue"):
 
         # Queuing the player
         for role in roles:
+            await ctx.send(role
+            )
             game_queue.add_player(
                 player_id=ctx.author.id,
                 name=ctx.author.display_name,
