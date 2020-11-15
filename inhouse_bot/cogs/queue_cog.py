@@ -216,7 +216,7 @@ class QueueCog(commands.Cog, name="Queue"):
                 channel_id=ctx.channel.id,
                 server_id=ctx.guild.id,
             )
-         await ctx.send('roles added')
+        await ctx.send('roles added')
         await self.run_matchmaking_logic(ctx=ctx)
         await ctx.send('matchmaking logic')
         # Currently, we only update the current queue even if other queues got changed
