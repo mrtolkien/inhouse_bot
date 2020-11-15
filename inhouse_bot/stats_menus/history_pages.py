@@ -27,6 +27,9 @@ class HistoryPagesSource(menus.ListPageSource):
 
         rows = []
         role_counter = Counter()
+
+        max_game_id_length = max(len(str(game.id)) for game, participant in entries)
+
         for game, participant in entries:
             champion_emoji = get_champion_emoji(participant.champion_id, self.bot)
             role = get_role_emoji(participant.role)
@@ -40,11 +43,13 @@ class HistoryPagesSource(menus.ListPageSource):
             else:
                 result = "❌"
 
-            output_string = f"{result}   {role}   {champion_emoji}   #{game.id}   {game.start.date()}"
+            id_padding = max_game_id_length - len(str(game.id)) + 2
 
-            # We only show server names when it’s in DMs and can be games from multiple servers
-            if self.is_dms:
-                output_string += f"   {self.bot.get_guild(game.server_id).name}"
+            output_string = (
+                f"{result}   {role}   {champion_emoji}  "
+                f"`#{game.id}{' '*id_padding}{game.start.date()}"
+                + ("`" if not self.is_dms else f"  {self.bot.get_guild(game.server_id).name}`")
+            )
 
             rows.append(output_string)
 

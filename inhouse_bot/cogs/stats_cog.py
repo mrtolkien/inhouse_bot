@@ -98,6 +98,10 @@ class StatsCog(commands.Cog, name="Stats"):
 
             game_participant_list = game_participant_query.limit(100).all()
 
+        if not game_participant_list:
+            await ctx.send("No games found")
+            return
+
         pages = menus.MenuPages(
             source=HistoryPagesSource(
                 game_participant_list,
@@ -206,6 +210,10 @@ class StatsCog(commands.Cog, name="Stats"):
                 ratings = ratings.filter(PlayerRating.role == role)
 
             ratings = ratings.limit(100).all()
+
+        if not ratings:
+            await ctx.send("No games played yet")
+            return
 
         pages = menus.MenuPages(
             source=RankingPagesSource(
