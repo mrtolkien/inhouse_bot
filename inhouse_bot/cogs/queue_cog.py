@@ -182,8 +182,13 @@ class QueueCog(commands.Cog, name="Queue"):
         Almost never needs to get used directly
         """
         await self.send_queue(ctx=ctx)
-
-    @commands.command(aliases=["queue"])
+    
+    @commands.command()
+    @guild_only()
+    async def test_command(self, ctx: commands.Context):
+        ctx.send('This works')
+    
+    @commands.command()
     @guild_only()
     async def queue(
         self, ctx: commands.Context, roles: MultiRoleConverter(),
