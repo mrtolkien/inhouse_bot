@@ -32,7 +32,8 @@ class MultiRoleConverter(commands.Converter):
         """
         await ctx.send(f"MultiRoleConverter")
         await ctx.send(argument);
-        roles = str(argument).split(',')
+        roles = argument.split(',')
+        await ctx.send(len(roles))
         
         converted_roles = []
         for role in roles:
