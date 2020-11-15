@@ -20,10 +20,15 @@ class HistoryPagesSource(menus.ListPageSource):
     async def format_page(self, menu: menus.MenuPages, entries: entries_type):
         embed = Embed()
 
+        embed.set_footer(
+            text=f"Page {menu.current_page + 1} of {self._max_pages} "
+            f"| Use !champion [name] [game_id] to save champions"
+        )
+
         rows = []
         role_counter = Counter()
         for game, participant in entries:
-            emoji = get_champion_emoji(participant.champion_id, self.bot)
+            champion_emoji = get_champion_emoji(participant.champion_id, self.bot)
             role = get_role_emoji(participant.role)
 
             role_counter[participant.role] += 1
@@ -35,7 +40,7 @@ class HistoryPagesSource(menus.ListPageSource):
             else:
                 result = "❌"
 
-            output_string = f"{result}   {role}   " f"{emoji}" f"" f"   #{game.id}   {game.start.date()}"
+            output_string = f"{result}   {role}   {champion_emoji}   #{game.id}   {game.start.date()}"
 
             # We only show server names when it’s in DMs and can be games from multiple servers
             if self.is_dms:
@@ -46,10 +51,5 @@ class HistoryPagesSource(menus.ListPageSource):
         embed.set_thumbnail(url=role_thumbnail_dict[role_counter.most_common(1)[0][0]])
 
         embed.add_field(name=f"{self.player_name}’s match history", value="\n".join(rows))
-
-        embed.set_footer(
-            text=f"Page {menu.current_page + 1} of {self._max_pages} "
-            f"| Use !champion [name] [game_id] to save champions"
-        )
 
         return embed

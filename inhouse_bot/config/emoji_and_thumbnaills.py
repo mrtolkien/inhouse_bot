@@ -5,14 +5,7 @@ from typing import Optional
 import lol_id_tools
 from discord import Emoji
 
-role_emoji_dict = {
-    "TOP": os.environ.get("INHOUSE_BOT_TOP_EMOJI") or "TOP",
-    "JGL": os.environ.get("INHOUSE_BOT_JGL_EMOJI") or "JGL",
-    "MID": os.environ.get("INHOUSE_BOT_MID_EMOJI") or "MID",
-    "BOT": os.environ.get("INHOUSE_BOT_BOT_EMOJI") or "BOT",
-    "SUP": os.environ.get("INHOUSE_BOT_SUP_EMOJI") or "SUP",
-}
-
+# Raw images for embed thumbnails
 cdragon_root = "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images"
 positions_pictures_url = cdragon_root + "/position-selector/positions/icon-position-"
 
@@ -22,6 +15,19 @@ role_thumbnail_dict = {
     "MID": positions_pictures_url + "middle.png",
     "BOT": positions_pictures_url + "bottom.png",
     "SUP": positions_pictures_url + "utility.png ",
+}
+
+lol_logo = (
+    "https://raw.communitydragon.org/10.5/plugins/rcp-fe-lol-loading-screen/global/default/lol_icon.png"
+)
+
+# Emoji dict built from environment variables
+role_emoji_dict = {
+    "TOP": os.environ.get("INHOUSE_BOT_TOP_EMOJI") or "TOP",
+    "JGL": os.environ.get("INHOUSE_BOT_JGL_EMOJI") or "JGL",
+    "MID": os.environ.get("INHOUSE_BOT_MID_EMOJI") or "MID",
+    "BOT": os.environ.get("INHOUSE_BOT_BOT_EMOJI") or "BOT",
+    "SUP": os.environ.get("INHOUSE_BOT_SUP_EMOJI") or "SUP",
 }
 
 

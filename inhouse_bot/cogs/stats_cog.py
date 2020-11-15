@@ -6,7 +6,7 @@ from sqlalchemy import func
 from tabulate import tabulate
 import inflect
 
-
+from inhouse_bot.config.emoji_and_thumbnaills import get_role_emoji
 from inhouse_bot.orm import session_scope, GameParticipant, Game, Player, PlayerRating
 from inhouse_bot.common_utils.fields import ChampionNameConverter, RoleConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
@@ -207,7 +207,14 @@ class StatsCog(commands.Cog, name="Stats"):
 
             ratings = ratings.limit(100).all()
 
-        pages = menus.MenuPages(source=RankingPagesSource(ratings, self.bot), clear_reactions_after=True)
+        pages = menus.MenuPages(
+            source=RankingPagesSource(
+                ratings,
+                self.bot,
+                embed_name_suffix=f"on {ctx.guild.name}{f' - {get_role_emoji(role)}' if role else ''}",
+            ),
+            clear_reactions_after=True,
+        )
         await pages.start(ctx)
 
     # TODO LOW PRIO fancy mmr_history graph once again
