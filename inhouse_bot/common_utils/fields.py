@@ -37,8 +37,8 @@ class MultiRoleConverter(commands.Converter):
         
         converted_roles = []
         for role in roles:
-            converted_roles.append(PrivateRoleConverter(self, ctx, role))
-            await ctx.send(PrivateRoleConverter(self, ctx, role))
+            converted_roles.append(await PrivateRoleConverter(self, ctx, role))
+            await ctx.send(await PrivateRoleConverter(self, ctx, role))
         return converted_roles
 
 class RoleConverter(commands.Converter):
