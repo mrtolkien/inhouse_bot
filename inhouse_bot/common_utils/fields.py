@@ -30,6 +30,7 @@ class MultiRoleConverter(commands.Converter):
         """
         Converts an input string to a clean role
         """
+        await ctx.send(f"MultiRoleConverter")
         roles = str(argument).split(',')
         
         converted_roles = []
