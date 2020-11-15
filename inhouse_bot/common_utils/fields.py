@@ -30,15 +30,15 @@ class MultiRoleConverter(commands.Converter):
         """
         Converts an input string to a clean role
         """
-        roles = str(argument).split()
+        roles = str(argument).split(',')
         
         await ctx.send(roles
             )
         converted_roles = []
         for role in roles:
+            converted_roles.append(RoleConverter(role))
             await ctx.send(role
             )
-            converted_roles.append(RoleConverter(role))
         return converted_roles
 
 class RoleConverter(commands.Converter):
@@ -46,8 +46,11 @@ class RoleConverter(commands.Converter):
         """
         Converts an input string to a clean role
         """
+        await ctx.send("1"
+            )
         matched_string, ratio = rapidfuzz.process.extractOne(argument, full_roles_dict.keys())
-
+        await ctx.send("2"
+            )
         if ratio < 85:
             await ctx.send(f"The role was not understood")
             raise ConversionError
