@@ -39,7 +39,7 @@ class MultiRoleConverter(commands.Converter):
             )
         return converted_roles
 
-class RoleConverter(commands.Converter):
+class RoleConverter():
     async def convert(self, ctx, argument):
         """
         Converts an input string to a clean role
