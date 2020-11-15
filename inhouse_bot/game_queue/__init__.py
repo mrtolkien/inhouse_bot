@@ -12,9 +12,3 @@ from inhouse_bot.game_queue.queue_handler import (
     get_active_queues,
     reset_queue,
 )
-from inhouse_bot.game_queue.queue_channels_handler import (
-    mark_queue_channel,
-    get_queue_channels,
-    queue_channel_only,
-    QueueChannelsOnlyError,
-)

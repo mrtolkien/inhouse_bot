@@ -2,15 +2,16 @@ import logging
 import os
 
 import discord
-from discord import Message
 from discord.ext import commands
 
 
 from discord.ext.commands import NoPrivateMessage
 
 from inhouse_bot import game_queue
+from inhouse_bot.queue_channel_handler.queue_channel_handler import QueueChannelsOnly, queue_channel_handler
 
 # Defining intents to get full members list
+
 intents = discord.Intents.default()
 intents.members = True
 
@@ -44,31 +45,25 @@ class InhouseBot(commands.Bot):
     async def on_ready(self):
         logging.info(f"{self.user.name} has connected to Discord")
 
-        # We start by reposting all the ongoing queues
+        # We cancel all ready-checks, and queue_channel_handler will handle rewriting the queues
         game_queue.cancel_all_ready_checks()
-        active_queues = game_queue.get_active_queues()
 
-        for channel_id in active_queues:
-            channel = self.get_channel(channel_id)
-
-            if not channel:  # Happens when the channel does not exist anymore
-                continue
-
-            try:
-                await self.cogs["Queue"].refresh_queue(channel=channel)
-            except AttributeError:
-                # TODO LOW PRIO Should be logging
-                print(f"Could not access channel {channel_id}")
+        await queue_channel_handler.update_server_queues(self, None)
 
     async def on_command_error(self, ctx, error):
         """
         Custom error command that catches CommandNotFound as well as MissingRequiredArgument for readable feedback
         """
         if isinstance(error, commands.CommandNotFound):
-            await ctx.send(f"Command `{ctx.invoked_with}` not found, use !help to see the commands list",)
+            await ctx.send(
+                f"Command `{ctx.invoked_with}` not found, use !help to see the commands list", delete_after=20
+            )
 
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(f"Arguments missing, use `!help {ctx.invoked_with}` to see the arguments list",)
+            await ctx.send(
+                f"Arguments missing, use `!help {ctx.invoked_with}` to see the arguments list",
+                delete_after=20,
+            )
 
         elif isinstance(error, commands.ConversionError):
             # Conversion errors feedback are handled in my converters
@@ -77,7 +72,7 @@ class InhouseBot(commands.Bot):
         elif isinstance(error, NoPrivateMessage):
             await ctx.send(f"This command can only be used inside a server")
 
-        elif isinstance(error, game_queue.QueueChannelsOnlyError):
+        elif isinstance(error, QueueChannelsOnly):
             await ctx.send(f"This command can only be used in a channel marked as a queue by an admin")
 
         # This handles errors that happen during a command
@@ -88,13 +83,15 @@ class InhouseBot(commands.Bot):
                 await ctx.send(
                     f"Your last game was not scored and you are not allowed to queue at the moment\n"
                     f"One of the winners can score the game with `!won`, "
-                    f"or players can agree to cancel it with `!cancel`"
+                    f"or players can agree to cancel it with `!cancel`",
+                    delete_after=10,
                 )
 
             elif isinstance(og_error, game_queue.PlayerInReadyCheck):
                 await ctx.send(
                     f"A game has already been found for you and you cannot queue until it is accepted or cancelled\n"
-                    f"If it is a bug, contact an admin and ask them to use `!admin reset` with your name"
+                    f"If it is a bug, contact an admin and ask them to use `!admin reset` with your name",
+                    delete_after=10,
                 )
 
             else:

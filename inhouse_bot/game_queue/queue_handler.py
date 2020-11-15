@@ -81,7 +81,9 @@ def remove_player(player_id: int, channel_id: int = None):
     """
     with session_scope() as session:
         # First, check if he’s in a ready-check.
-        if is_in_ready_check(player_id, session):
+        if (
+            is_in_ready_check(player_id, session) and channel_id
+        ):  # If we have no channel ID, it’s an !admin reset and we bypass the issue here
             raise PlayerInReadyCheck
 
         # We select the player’s rows

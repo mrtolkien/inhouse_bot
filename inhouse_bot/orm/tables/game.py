@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Optional
 import datetime
 
 from discord import Embed
@@ -75,14 +75,23 @@ class Game(bot_declarative_base):
             headers="keys",
         )
 
-    def beautiful_embed(self, embed: Embed) -> Embed:
+    def add_game_field(self, embed: Embed, validated_players: Optional[List[int]] = None) -> Embed:
 
+        # TODO This warrants a rewrite + a new function that returns the right embed directly
         for side in ("BLUE", "RED"):
             embed.add_field(
                 name=side,
                 value="\n".join(
                     [
-                        f"{get_role_emoji(roles_list[idx])} {p.short_name}"
+                        f"{get_role_emoji(roles_list[idx])}"  # We start with the role emoji
+                        + (  # Then add ? or ✅ if we are looking at a validation embed
+                            ""
+                            if validated_players is None
+                            else " ❔"
+                            if p.player_id not in validated_players
+                            else " ✅"
+                        )
+                        + f" {p.short_name}"  # And finally add the player name
                         for idx, p in enumerate(getattr(self.teams, side))
                     ]
                 ),

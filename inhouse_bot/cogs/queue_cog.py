@@ -1,22 +1,18 @@
-from typing import Optional, List
-
-from discord import Embed, TextChannel, Message
+from discord import Embed, Message
 from discord.ext import commands
-from discord.ext.commands import guild_only
 
-from inhouse_bot.orm import session_scope, ChannelInformation
+from inhouse_bot.orm import session_scope
 from inhouse_bot.cogs.cogs_utils.validation_dialog import checkmark_validation
 
 from inhouse_bot.common_utils.fields import RoleConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
-from inhouse_bot.config.embeds import embeds_color
-from inhouse_bot.config.emoji_and_thumbnaills import get_role_emoji
 
 from inhouse_bot import game_queue
 from inhouse_bot import matchmaking_logic
-from inhouse_bot.game_queue import GameQueue
 
 from inhouse_bot.inhouse_bot import InhouseBot
+from inhouse_bot.queue_channel_handler import queue_channel_handler
+from inhouse_bot.queue_channel_handler.queue_channel_handler import queue_channel_only
 
 
 class QueueCog(commands.Cog, name="Queue"):
@@ -27,65 +23,10 @@ class QueueCog(commands.Cog, name="Queue"):
     def __init__(self, bot: InhouseBot):
         self.bot = bot
 
-        # This should be a table
-        self.latest_queue_messages = {}
-
+    # TODO LOW PRIO This is in a cog for simplicity’s sake, see how to group it with the QueueChannelHandler
     @commands.Cog.listener("on_message")
-    async def check_messages_in_queue_channel(self, msg: Message):
-        if (
-            msg.channel.id in game_queue.get_queue_channels()
-        ):  # Can we make that a property? It would look better
-            # TODO Treat and delete the message
-
-            await msg.delete(delay=1)
-
-    async def refresh_queue(
-        self, ctx: Optional[commands.Context] = None, channel: Optional[TextChannel] = None
-    ):
-        """
-        Deletes the previous queue message and sends a new one in the channel
-
-        If channel is supplied instead of a context (in the case of a bot reboot), send the reboot message instead
-        """
-        if ctx:
-            channel_id = ctx.channel.id
-            send_destination = ctx
-        elif channel:
-            # TODO In that situation, start by deleting ready-check messages
-            channel_id = channel.id
-            send_destination = channel
-        else:
-            raise ValueError
-
-        try:
-            old_queue_message = self.latest_queue_messages[channel_id]
-        except KeyError:
-            old_queue_message = None
-
-        rows = []
-
-        # Creating the queue visualisation requires getting the Player objects from the DB to have the names
-        queue = GameQueue(channel_id)
-
-        for role, role_queue in queue.queue_players_dict.items():
-            rows.append(f"{get_role_emoji(role)} " + ", ".join(qp.player.short_name for qp in role_queue))
-
-        # Create the queue embed
-        embed = Embed(colour=embeds_color)
-        embed.add_field(name="Queue", value="\n".join(rows))
-
-        # We save the message object in our local cache
-        self.latest_queue_messages[channel_id] = await send_destination.send(
-            "The bot was restarted and all players in ready-check have been put back in queue\n"
-            "The matchmaking process will restart once anybody queues or re-queues"
-            if channel
-            else None,
-            embed=embed,
-        )
-
-        # Sequenced that way for smoother scrolling in discord
-        if old_queue_message:
-            await old_queue_message.delete(delay=0.1)  # By adding a mini delay fails are silently ignored
+    async def purge_messages_in_queue_channel(self, msg: Message):
+        await queue_channel_handler.purge_queue_channels(msg)
 
     async def run_matchmaking_logic(
         self, ctx: commands.Context,
@@ -95,7 +36,8 @@ class QueueCog(commands.Cog, name="Queue"):
 
         Should only be called inside guilds
         """
-        queue = GameQueue(ctx.channel.id)
+        queue = game_queue.GameQueue(ctx.channel.id)
+
         game = matchmaking_logic.find_best_game(queue)
 
         if not game:
@@ -109,56 +51,74 @@ class QueueCog(commands.Cog, name="Queue"):
                 "If you cannot play, press ❌",
             )
 
-            embed = game.beautiful_embed(embed)
+            embed = game.add_game_field(embed, [])
 
-            # TODO UPDATE THE MESSAGE WITH PLAYERS WHO ACCEPTED
-            # We notify the players
-            message = await ctx.send(
+            # We notify the players and send the message
+            ready_check_message = await ctx.send(
                 content=f"||{' '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])}||",
                 embed=embed,
             )
 
-            # We mark the ready check as ongoing (which will update the queue)
+            # Because it still takes some time, we *directly* add it to the *no delete* list
+            # That’s dirty and should likely be handled in a better way (maybe by *not* using purge
+            # and choosing what to delete instead, but it also has its issues)
+            # TODO HIGH PRIO Think about saving a "messages to not delete list" in the queue handler memory and
+            #  use it in the cog listener, and automatically delete any other one after 5s? should work better (less bugs)
+
+            queue_channel_handler.mark_queue_related_message(ready_check_message)
+
+            # We mark the ready check as ongoing (which will be used to the queue)
             game_queue.start_ready_check(
-                player_ids=game.player_ids_list, channel_id=ctx.channel.id, ready_check_message_id=message.id
+                player_ids=game.player_ids_list,
+                channel_id=ctx.channel.id,
+                ready_check_message_id=ready_check_message.id,
             )
 
-            # We update the queue directly for readability
-            # TODO LOW PRIO Have an "update_all_queues" function as this removes people from other queues
-            await self.refresh_queue(ctx)
+            # We update the queue in all channels
+            await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
 
-            # Good situation where we have a relatively fair game
+            # And then we wait for the validation
             ready, players_to_drop = await checkmark_validation(
                 bot=self.bot,
-                message=message,
+                message=ready_check_message,
                 validating_players_ids=game.player_ids_list,
                 validation_threshold=10,
                 timeout=3 * 60,
+                game=game,
             )
 
             if ready is True:
                 # We drop all 10 players from the queue
-                game_queue.validate_ready_check(message.id)
+                game_queue.validate_ready_check(ready_check_message.id)
 
                 # We commit the game to the database (without a winner)
                 with session_scope() as session:
                     session.add(game)
 
-                    await ctx.send(
-                        f"The game has been validated and added to the database!\n"
+                    embed = Embed(
+                        title="📢 Game accepted 📢",
+                        description=f"Game {game.id} has been validated and added to the database\n"
                         f"Once the game has been played, one of the winners can score it with `!won`\n"
-                        f"If you wish to cancel the game, use `!cancel`"
+                        f"If you wish to cancel the game, use `!cancel`",
                     )
+
+                    embed = game.add_game_field(embed)
+
+                    queue_channel_handler.mark_queue_related_message(await ctx.send(embed=embed,))
 
             elif ready is False:
                 # We remove the player who cancelled
                 game_queue.cancel_ready_check(
-                    ready_check_id=message.id, ids_to_drop=players_to_drop, channel_id=ctx.channel.id
+                    ready_check_id=ready_check_message.id,
+                    ids_to_drop=players_to_drop,
+                    channel_id=ctx.channel.id,
                 )
 
-                await ctx.send(
-                    f"<@{next(iter(players_to_drop))}> cancelled the game and was removed from the queue\n"
-                    f"All other players have been put back in the queue"
+                queue_channel_handler.mark_queue_related_message(
+                    await ctx.send(
+                        f"A player cancelled the game and was removed from the queue\n"
+                        f"All other players have been put back in the queue"
+                    )
                 )
 
                 # We restart the matchmaking logic
@@ -167,25 +127,29 @@ class QueueCog(commands.Cog, name="Queue"):
             elif ready is None:
                 # We remove the timed out players from *all* channels (hence giving server id)
                 game_queue.cancel_ready_check(
-                    ready_check_id=message.id, ids_to_drop=players_to_drop, server_id=ctx.guild.id,
+                    ready_check_id=ready_check_message.id,
+                    ids_to_drop=players_to_drop,
+                    server_id=ctx.guild.id,
                 )
 
-                await ctx.send(
-                    "The check timed out and players who did not answer have been dropped from all queues"
+                queue_channel_handler.mark_queue_related_message(
+                    await ctx.send(
+                        "The check timed out and players who did not answer have been dropped from all queues"
+                    )
                 )
 
                 # We restart the matchmaking logic
                 await self.run_matchmaking_logic(ctx)
 
         elif game and game.matchmaking_score >= 0.2:
-            # One side has over 70% predicted winrate, we do not start
+            # One side has over 70% predicted winrate, we do not start anything
             await ctx.send(
                 f"The best match found had a side with a {(.5 + game.matchmaking_score)*100:.1f}%"
                 f" predicted winrate and was not started"
             )
 
     @commands.command(aliases=["view_queue", "refresh"])
-    @game_queue.queue_channel_only()
+    @queue_channel_only()
     async def view(
         self, ctx: commands.Context,
     ):
@@ -194,10 +158,10 @@ class QueueCog(commands.Cog, name="Queue"):
 
         Almost never needs to get used directly
         """
-        await self.refresh_queue(ctx=ctx)
+        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
 
     @commands.command()
-    @game_queue.queue_channel_only()
+    @queue_channel_only()
     async def queue(
         self, ctx: commands.Context, role: RoleConverter(),
     ):
@@ -224,11 +188,10 @@ class QueueCog(commands.Cog, name="Queue"):
 
         await self.run_matchmaking_logic(ctx=ctx)
 
-        # Currently, we only update the current queue even if other queues got changed
-        await self.refresh_queue(ctx=ctx)
+        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
 
     @commands.command(aliases=["leave_queue", "stop"])
-    @game_queue.queue_channel_only()
+    @queue_channel_only()
     async def leave(
         self, ctx: commands.Context,
     ):
@@ -242,11 +205,10 @@ class QueueCog(commands.Cog, name="Queue"):
 
         game_queue.remove_player(player_id=ctx.author.id, channel_id=ctx.channel.id)
 
-        # Currently, we only update the current queue even if other queues got changed
-        await self.refresh_queue(ctx=ctx)
+        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
 
     @commands.command(aliases=["win", "wins", "victory"])
-    @game_queue.queue_channel_only()
+    @queue_channel_only()
     async def won(
         self, ctx: commands.Context,
     ):
@@ -272,7 +234,7 @@ class QueueCog(commands.Cog, name="Queue"):
                 )
                 return
 
-            message = await ctx.send(
+            win_validation_message = await ctx.send(
                 f"{ctx.author.display_name} wants to score game {game.id} as a win for {participant.side}\n"
                 f"{', '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])} can validate the result\n"
                 f"Result will be validated once 6 players from the game press ✅"
@@ -280,7 +242,7 @@ class QueueCog(commands.Cog, name="Queue"):
 
             validated, players_who_refused = await checkmark_validation(
                 bot=self.bot,
-                message=message,
+                message=win_validation_message,
                 validating_players_ids=game.player_ids_list,
                 validation_threshold=6,
                 timeout=60,
@@ -291,14 +253,16 @@ class QueueCog(commands.Cog, name="Queue"):
                 return
 
             # If we get there, the score was validated and we can simply update the game and the ratings
-            await ctx.send(
-                f"Game {game.id} has been scored as a win for {participant.side} and ratings have been updated"
+            queue_channel_handler.mark_queue_related_message(
+                await ctx.send(
+                    f"Game {game.id} has been scored as a win for {participant.side} and ratings have been updated"
+                )
             )
 
         matchmaking_logic.score_game_from_winning_player(player_id=ctx.author.id, server_id=ctx.guild.id)
 
     @commands.command(aliases=["cancel_game"])
-    @game_queue.queue_channel_only()
+    @queue_channel_only()
     async def cancel(
         self, ctx: commands.Context,
     ):
@@ -322,7 +286,7 @@ class QueueCog(commands.Cog, name="Queue"):
                 await ctx.send("It does not look like you are part of an ongoing game")
                 return
 
-            message = await ctx.send(
+            cancel_validation_message = await ctx.send(
                 f"{ctx.author.display_name} wants to cancel game {game.id}\n"
                 f"{', '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])} can cancel the game\n"
                 f"Game will be canceled once 6 players from the game press ✅"
@@ -330,7 +294,7 @@ class QueueCog(commands.Cog, name="Queue"):
 
             validated, players_who_refused = await checkmark_validation(
                 bot=self.bot,
-                message=message,
+                message=cancel_validation_message,
                 validating_players_ids=game.player_ids_list,
                 validation_threshold=6,
                 timeout=60,
@@ -340,4 +304,6 @@ class QueueCog(commands.Cog, name="Queue"):
                 await ctx.send(f"Game {game.id} was not cancelled")
             else:
                 session.delete(game)
-                await ctx.send(f"Game {game.id} was cancelled")
+                queue_channel_handler.mark_queue_related_message(
+                    await ctx.send(f"Game {game.id} was cancelled")
+                )

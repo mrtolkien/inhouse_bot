@@ -11,6 +11,7 @@ from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.game_queue import GameQueue
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot import game_queue, matchmaking_logic
+from inhouse_bot.queue_channel_handler import queue_channel_handler
 
 
 class TestCog(commands.Cog, name="TEST"):
@@ -49,6 +50,7 @@ class TestCog(commands.Cog, name="TEST"):
         )
 
         await ctx.send(f"{ready=}\n{players_to_drop=}")
+        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
 
     @test.command()
     async def queue(self, ctx: commands.Context):
@@ -60,6 +62,7 @@ class TestCog(commands.Cog, name="TEST"):
             game_queue.add_player(i, roles_list[i % 5], ctx.channel.id, ctx.guild.id, name=str(i))
 
         await ctx.send("The queue has been filled")
+        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
 
     @test.command()
     async def game(self, ctx: commands.Context):
@@ -84,6 +87,7 @@ class TestCog(commands.Cog, name="TEST"):
 
         game_queue.start_ready_check([i for i in range(0, 9)] + [ctx.author.id], ctx.channel.id, msg.id)
         game_queue.validate_ready_check(msg.id)
+        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
 
     @test.command()
     async def games(self, ctx: commands.Context):
@@ -117,6 +121,7 @@ class TestCog(commands.Cog, name="TEST"):
             )
 
         await ctx.send("100 games have been created in the database")
+        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
 
     @test.command()
     async def score(self, ctx: commands.Context):
@@ -126,6 +131,7 @@ class TestCog(commands.Cog, name="TEST"):
         matchmaking_logic.score_game_from_winning_player(player_id=ctx.author.id, server_id=ctx.guild.id)
 
         await ctx.send(f"{ctx.author.display_name}’s last game has been scored as a win")
+        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
 
     @test.command()
     async def cancel(self, ctx: commands.Context):
@@ -140,6 +146,7 @@ class TestCog(commands.Cog, name="TEST"):
             session.delete(game)
 
         await ctx.send(f"{ctx.author.display_name}’s last game was cancelled and deleted from the database")
+        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
 
     @test.command()
     async def emoji(self, ctx: commands.Context, champion_id: ChampionNameConverter()):
