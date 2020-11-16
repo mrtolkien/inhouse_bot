@@ -29,6 +29,13 @@ class AdminCog(commands.Cog, name="Admin"):
             )
 
     @admin.command()
+    async def set_mmr(self, ctx: commands.Context, id, role, mmr):
+        """
+        Sets the MMR for a specific ID an role
+        """
+        await ctx.send('Not yet implemented')
+    
+    @admin.command()
     async def reset(
         self, ctx: commands.Context, member_or_channel: Union[discord.Member, discord.TextChannel] = None
     ):
