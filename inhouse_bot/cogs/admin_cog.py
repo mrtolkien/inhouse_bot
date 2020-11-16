@@ -98,7 +98,7 @@ class AdminCog(commands.Cog, name="Admin"):
 
             await ctx.send(f"Current channel marked as a queue channel")
 
-        if channel_type.upper() == "RANKING":
+        elif channel_type.upper() == "RANKING":
             ranking_channel_handler.mark_ranking_channel(channel_id=ctx.channel.id, server_id=ctx.guild.id)
             await ctx.send(f"Current channel marked as a ranking channel")
 

@@ -30,9 +30,6 @@ class RankingChannelHandler:
                 .all()
             )
 
-        # channel id -> message
-        self.ranking_messages = {}
-
     @property
     def ranking_channel_ids(self) -> List[int]:
         return [c.id for c in self._ranking_channels]
@@ -74,22 +71,21 @@ class RankingChannelHandler:
             await self.refresh_channel_rankings(channel=channel, bot=bot)
 
     async def refresh_channel_rankings(self, channel: TextChannel, bot: Bot):
-        ranking_message = self.ranking_messages.get(channel.id)
-        ranking_message: Message
-
-        if not ranking_message:
-            # We create a ranking message and restart
-            self.ranking_messages[channel.id] = await channel.send(embed=Embed(description="Loading ranking..."))
-            await self.refresh_channel_rankings(channel, bot)
-            return
-
         ratings = self.get_server_ratings(channel.guild.id, limit=30)
-        source = RankingPagesSource(ratings, bot, embed_name_suffix=f"on {channel.guild.name}")
 
-        await ranking_message.edit(embed=await source.format_page(menu=None, entries=ratings))
+        # We need 3 messages because of character limits
+        source = RankingPagesSource(ratings, embed_name_suffix=f"on {channel.guild.name}")
+
+        new_msgs_ids = set()
+        for page in range(0, 3):
+            if page < source.get_max_pages():
+                rating_message = await channel.send(
+                    embed=await source.format_page(None, await source.get_page(page), offset=page)
+                )
+                new_msgs_ids.add(rating_message.id)
 
         # Finally, we do that just in case
-        await channel.purge(check=lambda msg: msg.id != ranking_message.id)
+        await channel.purge(check=lambda msg: msg.id not in new_msgs_ids)
 
     @staticmethod
     def get_server_ratings(server_id: int, role: str = None, limit=100):

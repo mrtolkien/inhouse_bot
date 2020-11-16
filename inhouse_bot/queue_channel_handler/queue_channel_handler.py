@@ -33,7 +33,7 @@ class QueueChannelHandler:
         self.permanent_messages = set()
 
         # Guarantees we do not purge too fast
-        self.latest_purge_message_id = 0
+        self.latest_purge_message_id = {}
 
     async def queue_channel_message_listener(self, msg: Message):
         """
@@ -44,12 +44,12 @@ class QueueChannelHandler:
         if self.is_queue_channel(msg.channel.id):
             # If it was, we trigger a purge of non-marked messages
 
-            # We save the msg id and will only delete if it’s still the latest msg to purge after 5s
-            self.latest_purge_message_id = msg.id
+            # We save the msg id and will only delete if it’s still the latest msg in the channel to purge after 5s
+            self.latest_purge_message_id[msg.channel.id] = msg.id
+
             await asyncio.sleep(5)  # Hardcoded right now, will need a sanity pass
 
-            if self.latest_purge_message_id == msg.id:
-                # TODO LOW PRIO Weird behaviour here, does not *always* delete properly
+            if self.latest_purge_message_id.get(msg.channel.id) == msg.id:
                 await msg.channel.purge(check=self.is_not_queue_related_message)
 
     async def refresh_channel_queue(self, channel: TextChannel, restart: bool):

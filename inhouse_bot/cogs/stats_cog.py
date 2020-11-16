@@ -187,7 +187,6 @@ class StatsCog(commands.Cog, name="Stats"):
         pages = menus.MenuPages(
             source=RankingPagesSource(
                 ratings,
-                self.bot,
                 embed_name_suffix=f"on {ctx.guild.name}{f' - {get_role_emoji(role)}' if role else ''}",
             ),
             clear_reactions_after=True,
