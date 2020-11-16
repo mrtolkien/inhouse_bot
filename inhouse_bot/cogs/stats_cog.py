@@ -109,10 +109,9 @@ class StatsCog(commands.Cog, name="Stats"):
         """
         # TODO LOW PRIO Make it not output the server only in DMs, otherwise filter on the server
         damon = 227956630338142209
-        omni = 376172241898962948
         
-        if ctx.author.id == omni:
-            await ctx.send('Doesn\'t matter, just a Kha OTP')
+        if ctx.author.id == damon:
+            await ctx.send('Hardstuck Gold')
             return
 
         with session_scope() as session:
