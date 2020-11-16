@@ -44,7 +44,7 @@ class RankingPagesSource(menus.ListPageSource):
 
             if rank > 10:
                 rank_str = inflect_engine.ordinal(rank)
-                rank_str = f"`{rank_str}{' '*(4-len(rank_str))}`"
+                rank_str = f"`{rank_str}{' '*(4-len(rank_str))}` "
             else:
                 rank_str = rank_emoji_dict[rank] + "   "
 
