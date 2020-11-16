@@ -190,7 +190,7 @@ class QueueCog(commands.Cog, name="Queue"):
     @commands.command()
     @guild_only()
     async def damon(self, ctx: commands.Context):
-        await ctx.send('Hard stuck Gold top laner. :'(')
+        await ctx.send('Hard stuck Gold top laner. :\'(')
     
     @commands.command()
     @guild_only()
