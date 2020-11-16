@@ -37,8 +37,8 @@ class MultiRoleConverter(commands.Converter):
         
         converted_roles = []
         for role in roles:
-            await ctx.send(argument)
-            matched_string, ratio = rapidfuzz.process.extractOne(argument, full_roles_dict.keys())
+            await ctx.send(role)
+            matched_string, ratio = rapidfuzz.process.extractOne(role, full_roles_dict.keys())
             await ctx.send(matched_string)
             if ratio < 85:
                 await ctx.send(f"The role was not understood")
