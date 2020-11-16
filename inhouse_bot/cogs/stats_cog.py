@@ -112,7 +112,7 @@ class StatsCog(commands.Cog, name="Stats"):
         omni = 376172241898962948
         
         if ctx.author.id == omni:
-            ctx.send('Doesn\'t matter, just a Kha OTP')
+            await ctx.send('Doesn\'t matter, just a Kha OTP')
             return
 
         with session_scope() as session:
