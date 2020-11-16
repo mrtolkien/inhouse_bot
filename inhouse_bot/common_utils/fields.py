@@ -30,10 +30,7 @@ class MultiRoleConverter(commands.Converter):
         """
         Converts an input string to a clean role
         """
-        await ctx.send(f"MultiRoleConverter")
-        await ctx.send(argument);
         roles = argument.split(' ')
-        await ctx.send(len(roles))
         
         converted_roles = []
         for role in roles:
@@ -43,11 +40,8 @@ class MultiRoleConverter(commands.Converter):
                 raise ConversionError
 
             else:
-                await ctx.send(full_roles_dict[matched_string]);
                 converted_roles.append(full_roles_dict[matched_string])
-
-        await ctx.send(len(converted_roles))
-        await ctx.send(' '.join(converted_roles))
+                
         return converted_roles
 
 class RoleConverter(commands.Converter):
