@@ -47,8 +47,8 @@ class MultiRoleConverter(commands.Converter):
                 converted_roles.append(full_roles_dict[matched_string])
 
         await ctx.send(len(converted_roles))
-        await ctx.send(converted_roles.join(' '))
-        argument = converted_roles
+        await ctx.send(' '.join(converted_roles))
+        return converted_roles
 
 class RoleConverter(commands.Converter):
     async def convert(self, ctx, argument):
