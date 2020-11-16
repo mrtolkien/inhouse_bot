@@ -111,7 +111,7 @@ class StatsCog(commands.Cog, name="Stats"):
         damon = 227956630338142209
         omni = 376172241898962948
         
-        if ctx.author_id == omni:
+        if ctx.author.id == omni:
             ctx.send('Doesn\'t matter, just a Kha OTP')
             return
 
