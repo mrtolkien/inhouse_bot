@@ -44,5 +44,5 @@ class PlayerRating(bot_declarative_base):
         self.role = role
 
         # Initializing TrueSkill to default base values
-        self.trueskill_mu = 25
+        self.trueskill_mu = 15
         self.trueskill_sigma = 25 / 3
