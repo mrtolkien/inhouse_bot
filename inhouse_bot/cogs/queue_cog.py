@@ -54,13 +54,16 @@ class QueueCog(commands.Cog, name="Queue"):
 
         # Creating the queue visualisation requires getting the Player objects from the DB to have the names
         queue = GameQueue(channel_id)
-
+        unique_players = [];
         for role, role_queue in queue.queue_players_dict.items():
+            if qp.player.short_name no in unique_players
+                unique_players.append(qp.player.short_name)
+                
             rows.append(f"{get_role_emoji(role)} " + ", ".join(qp.player.short_name for qp in role_queue))
 
         # Create the queue embed
         embed = Embed(colour=embeds_color)
-        embed.add_field(name="Queue", value="\n".join(rows))
+        embed.add_field(name="Queue ({len(unique_players)})", value="\n".join(rows))
 
         # We save the message object in our local cache
         self.latest_queue_messages[channel_id] = await send_destination.send(
