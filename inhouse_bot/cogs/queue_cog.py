@@ -191,7 +191,7 @@ class QueueCog(commands.Cog, name="Queue"):
     @commands.command()
     @guild_only()
     async def queue(
-        self, ctx: commands.Context, roles: MultiRoleConverter(),
+        self, ctx: commands.Context, *, roles: MultiRoleConverter(),
     ):
         """
         Adds you to the current channel’s queue for the given role
