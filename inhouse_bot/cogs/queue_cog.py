@@ -56,7 +56,7 @@ class QueueCog(commands.Cog, name="Queue"):
         queue = GameQueue(channel_id)
         unique_players = [];
         for role, role_queue in queue.queue_players_dict.items():
-            if qp.player.short_name no in unique_players
+            if qp.player.short_name not in unique_players
                 unique_players.append(qp.player.short_name)
                 
             rows.append(f"{get_role_emoji(role)} " + ", ".join(qp.player.short_name for qp in role_queue))
