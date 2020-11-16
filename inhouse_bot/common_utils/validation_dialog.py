@@ -2,7 +2,6 @@ import asyncio
 from typing import Tuple, Optional, List, Set
 
 import discord
-from discord import Embed
 from discord.ext.commands import Bot
 
 from inhouse_bot.queue_channel_handler import queue_channel_handler

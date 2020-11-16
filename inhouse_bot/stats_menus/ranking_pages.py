@@ -43,8 +43,7 @@ class RankingPagesSource(menus.ListPageSource):
             rank = idx + 1 + offset
 
             if rank > 10:
-                rank_str = inflect_engine.ordinal(rank)
-                rank_str = f"`{rank_str}{' '*(4-len(rank_str))}` "
+                rank_str = f" {inflect_engine.ordinal(rank)}` "
             else:
                 rank_str = rank_emoji_dict[rank] + "   "
 
