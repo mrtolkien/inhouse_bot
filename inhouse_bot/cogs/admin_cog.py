@@ -109,7 +109,7 @@ class AdminCog(commands.Cog, name="Admin"):
         """
         Reverts the current channel to "normal"
         """
-        queue_channel_handler.remove_queue_channel(ctx.channel.id)
+        queue_channel_handler.unmark_queue_channel(ctx.channel.id)
         # TODO Unmark ranking too
 
         await ctx.send(f"The current channel has been reverted to a normal channel")

@@ -23,6 +23,8 @@ class QueueCog(commands.Cog, name="Queue"):
     def __init__(self, bot: InhouseBot):
         self.bot = bot
 
+        self.games_getting_scored_ids = set()
+
     async def run_matchmaking_logic(
         self, ctx: commands.Context,
     ):
@@ -53,8 +55,6 @@ class QueueCog(commands.Cog, name="Queue"):
                 content=f"||{' '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])}||",
                 embed=embed,
             )
-
-            queue_channel_handler.mark_queue_related_message(ready_check_message)
 
             # We mark the ready check as ongoing (which will be used to the queue)
             game_queue.start_ready_check(
@@ -103,12 +103,9 @@ class QueueCog(commands.Cog, name="Queue"):
                     channel_id=ctx.channel.id,
                 )
 
-                queue_channel_handler.mark_queue_related_message(
-                    await ctx.send(
-                        f"A player cancelled the game and was removed from the queue\n"
-                        f"All other players have been put back in the queue",
-                        delete_after=60,
-                    )
+                await ctx.send(
+                    f"A player cancelled the game and was removed from the queue\n"
+                    f"All other players have been put back in the queue",
                 )
 
                 # We restart the matchmaking logic
@@ -122,11 +119,8 @@ class QueueCog(commands.Cog, name="Queue"):
                     server_id=ctx.guild.id,
                 )
 
-                queue_channel_handler.mark_queue_related_message(
-                    await ctx.send(
-                        "The check timed out and players who did not answer have been dropped from all queues",
-                        delete_after=60,
-                    )
+                await ctx.send(
+                    "The check timed out and players who did not answer have been dropped from all queues",
                 )
 
                 # We restart the matchmaking logic
@@ -211,7 +205,6 @@ class QueueCog(commands.Cog, name="Queue"):
         Example:
             !won
         """
-        # TODO MED PRIO ONLY ONE ONGOING CANCEL/SCORING MESSAGE PER GAME
         with session_scope() as session:
             # Get the latest game
             game, participant = get_last_game(
@@ -224,6 +217,13 @@ class QueueCog(commands.Cog, name="Queue"):
                     "If there was an issue, please contact an admin"
                 )
                 return
+
+            elif game.id in self.games_getting_scored_ids:
+                await ctx.send("There is already a scoring or cancellation message active for this game")
+                return
+
+            else:
+                self.games_getting_scored_ids.add(game.id)
 
             win_validation_message = await ctx.send(
                 f"{ctx.author.display_name} wants to score game {game.id} as a win for {participant.side}\n"
@@ -238,6 +238,9 @@ class QueueCog(commands.Cog, name="Queue"):
                 validation_threshold=6,
                 timeout=60,
             )
+
+            # Whatever happens, we’re not scoring it anymore if we get here
+            self.games_getting_scored_ids.remove(game.id)
 
             if not validated:
                 await ctx.send("Score input was either cancelled or timed out")
@@ -265,8 +268,6 @@ class QueueCog(commands.Cog, name="Queue"):
         Example:
             !cancel
         """
-        # TODO MED PRIO ONLY ONE ONGOING CANCEL/SCORING MESSAGE PER GAME
-
         with session_scope() as session:
             # Get the latest game
             game, participant = get_last_game(
@@ -276,6 +277,13 @@ class QueueCog(commands.Cog, name="Queue"):
             if game and game.winner:
                 await ctx.send("It does not look like you are part of an ongoing game")
                 return
+
+            elif game.id in self.games_getting_scored_ids:
+                await ctx.send("There is already a scoring or cancellation message active for this game")
+                return
+
+            else:
+                self.games_getting_scored_ids.add(game.id)
 
             cancel_validation_message = await ctx.send(
                 f"{ctx.author.display_name} wants to cancel game {game.id}\n"
@@ -290,6 +298,8 @@ class QueueCog(commands.Cog, name="Queue"):
                 validation_threshold=6,
                 timeout=60,
             )
+
+            self.games_getting_scored_ids.remove(game.id)
 
             if not validated:
                 await ctx.send(f"Game {game.id} was not cancelled")

@@ -116,8 +116,6 @@ class StatsCog(commands.Cog, name="Stats"):
         Example:
             !rank
         """
-        # TODO LOW PRIO Make it not output the server only in DMs, otherwise filter on the server
-
         with session_scope() as session:
             rating_objects = (
                 session.query(

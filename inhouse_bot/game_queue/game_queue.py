@@ -64,7 +64,7 @@ class GameQueue:
             ]
 
             # We put 2 players per role *first* then fill the rest by time spent in queue
-            # TODO LOW PRIO Rework the whole class to have only one query and better/more readable properties
+            # This helps guarantee players who have been in queue longer are favored
             age_sorted_queue_players = []
 
             for role in self.queue_players_dict:

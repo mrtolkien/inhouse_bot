@@ -4,6 +4,16 @@ from inhouse_bot.common_utils.fields import roles_list
 from inhouse_bot import game_queue
 from inhouse_bot.game_queue import GameQueue
 
+# Ideally, that should not be hardcoded
+# This needs to be called after the first part is it creates a session
+from inhouse_bot.queue_channel_handler import queue_channel_handler
+
+
+# This will recreate the tables and mark the channels as possible queues
+queue_channel_handler.mark_queue_channel(0, 0)
+queue_channel_handler.mark_queue_channel(1, 0)
+queue_channel_handler.mark_queue_channel(2, 0)
+
 
 def test_queue_full():
     game_queue.reset_queue()
@@ -74,3 +84,13 @@ def test_multiple_queues():
     # This will take at least 30s to crash because of the queue timeout
     for i in range(1000):
         GameQueue(0)
+
+
+def test_unmark_queue():
+    game_queue.add_player(0, roles_list[0], 2, 0)
+
+    assert len(GameQueue(2)) == 1
+
+    queue_channel_handler.unmark_queue_channel(2)
+
+    assert len(GameQueue(2)) == 0

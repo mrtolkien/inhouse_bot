@@ -8,7 +8,6 @@ from discord.ext.commands import Bot
 from inhouse_bot import game_queue
 from inhouse_bot.config.embeds import embeds_color
 from inhouse_bot.config.emoji_and_thumbnaills import get_role_emoji
-from inhouse_bot.game_queue import reset_queue
 from inhouse_bot.orm import session_scope, ChannelInformation
 
 
@@ -32,6 +31,26 @@ class QueueChannelHandler:
 
         # IDs of messages we do not want to delete directly
         self.permanent_messages = set()
+
+        # Guarantees we do not purge too fast
+        self.latest_purge_message_id = 0
+
+    async def queue_channel_message_listener(self, msg: Message):
+        """
+        This is a listener that’s meant to be called on all messages and delete unnecessary ones
+        """
+
+        # We check if the message is in a queue channel
+        if self.is_queue_channel(msg.channel.id):
+            # If it was, we trigger a purge of non-marked messages
+
+            # We save the msg id and will only delete if it’s still the latest msg to purge after 5s
+            self.latest_purge_message_id = msg.id
+            await asyncio.sleep(5)  # Hardcoded right now, will need a sanity pass
+
+            if self.latest_purge_message_id == msg.id:
+                # TODO LOW PRIO Weird behaviour here, does not *always* delete properly
+                await msg.channel.purge(check=self.is_not_queue_related_message)
 
     async def refresh_channel_queue(self, channel: TextChannel, restart: bool):
         """
@@ -57,7 +76,9 @@ class QueueChannelHandler:
         # Create the queue embed
         embed = Embed(colour=embeds_color)
         embed.add_field(name="Queue", value="\n".join(rows))
-        embed.set_footer(text="Use !queue [role] to join or !leave to leave | All non-queue messages are deleted")
+        embed.set_footer(
+            text="Use !queue [role] to join or !leave to leave | All non-queue messages are deleted"
+        )
 
         message_text = ""
 
@@ -97,14 +118,11 @@ class QueueChannelHandler:
 
         self._queue_channels.append(channel)
 
-    def remove_queue_channel(self, channel_id):
+    def unmark_queue_channel(self, channel_id):
         game_queue.reset_queue(channel_id)
 
         with session_scope() as session:
-            reset_queue(channel_id)
-
             channel_query = session.query(ChannelInformation).filter(ChannelInformation.id == channel_id)
-
             channel_query.delete(synchronize_session=False)
 
         self._queue_channels = [c for c in self._queue_channels if c.id != channel_id]
@@ -115,20 +133,6 @@ class QueueChannelHandler:
     # Needs unmark to make sure the object does not get too full
     def unmark_queue_related_message(self, msg):
         self.permanent_messages.remove(msg.id)
-
-    async def queue_channel_message_listener(self, msg: Message):
-        """
-        This is a listener that’s meant to be called on all messages and delete unnecessary ones
-        """
-
-        # We check if the message is in a queue channel
-        if self.is_queue_channel(msg.channel.id):
-            # If it was, we trigger a purge of non-marked messages
-            # TODO Have an internal purge timer (for successive messages)?
-            # TODO Clear very old messages (maybe have an addition timestamp?)
-
-            await asyncio.sleep(5)  # Hardcoded right now, will need a sanity pass
-            await msg.channel.purge(check=self.is_not_queue_related_message)
 
     async def update_server_queues(self, bot: Bot, server_id: Optional[int]):
         """
@@ -143,13 +147,11 @@ class QueueChannelHandler:
             restart = False
             channels_to_check = self.get_server_queues(server_id)
 
-        # TODO This is just restart code atm, should handle all cases with queue caching (to not spam it)
-
         for channel_id in channels_to_check:
             channel = bot.get_channel(channel_id)
 
             if not channel:  # Happens when the channel does not exist anymore
-                self.remove_queue_channel(channel_id)  # We remove it for the future
+                self.unmark_queue_channel(channel_id)  # We remove it for the future
                 continue
 
             await self.refresh_channel_queue(channel=channel, restart=restart)

@@ -51,7 +51,7 @@ def get_orianna_emoji(emoji_input: Optional[Union[int, str]], bot) -> str:
         return "❔"
     elif emoji_input == "loading":
         emoji_name = emoji_input
-        fallback = emoji_input
+        fallback = "❔"
     elif type(emoji_input) == int:
         fallback = lol_id_tools.get_name(emoji_input, object_type="champion")
         emoji_name = no_symbols_regex.sub("", fallback).replace(" ", "")
