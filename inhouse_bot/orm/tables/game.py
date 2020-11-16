@@ -13,7 +13,7 @@ from inhouse_bot.orm import bot_declarative_base
 from inhouse_bot.orm.tables.player import Player
 
 from inhouse_bot.common_utils.fields import roles_list, side_enum
-from inhouse_bot.config.emoji_and_thumbnaills import get_role_emoji
+from inhouse_bot.config.emoji_and_thumbnaills import get_role_emoji, get_orianna_emoji
 
 
 class Game(bot_declarative_base):
@@ -75,7 +75,7 @@ class Game(bot_declarative_base):
             headers="keys",
         )
 
-    def add_game_field(self, embed: Embed, validated_players: Optional[List[int]] = None) -> Embed:
+    def add_game_field(self, embed: Embed, validated_players: Optional[List[int]] = None, bot=None) -> Embed:
 
         # TODO This warrants a rewrite + a new function that returns the right embed directly
         for side in ("BLUE", "RED"):
@@ -87,7 +87,7 @@ class Game(bot_declarative_base):
                         + (  # Then add ? or ✅ if we are looking at a validation embed
                             ""
                             if validated_players is None
-                            else " ❔"
+                            else f" {get_orianna_emoji('loading', bot)}"
                             if p.player_id not in validated_players
                             else " ✅"
                         )

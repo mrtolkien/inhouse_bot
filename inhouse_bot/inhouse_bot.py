@@ -8,7 +8,10 @@ from discord.ext import commands
 from discord.ext.commands import NoPrivateMessage
 
 from inhouse_bot import game_queue
-from inhouse_bot.queue_channel_handler.queue_channel_handler import QueueChannelsOnly, queue_channel_handler
+from inhouse_bot.queue_channel_handler.queue_channel_handler import (
+    QueueChannelsOnly,
+    queue_channel_handler,
+)
 
 # Defining intents to get full members list
 
@@ -32,6 +35,9 @@ class InhouseBot(commands.Bot):
         self.add_cog(QueueCog(self))
         self.add_cog(AdminCog(self))
         self.add_cog(StatsCog(self))
+
+        # Setting up the on_message listener that will handle queue channels
+        self.add_listener(queue_channel_handler.queue_channel_message_listener, "on_message")
 
         # While I hate mixing production and testing code, this is the most convenient solution to test the bot
         if os.environ.get("INHOUSE_BOT_TEST"):

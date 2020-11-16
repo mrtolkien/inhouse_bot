@@ -24,22 +24,14 @@ class QueueChannelHandler:
                 .all()
             )
 
-        # channel_id -> GameQueue, to know when there were updates?
+        # channel_id -> GameQueue
         self._queue_cache = {}
 
         # Helps untag older message that needs to be deleted
         self.latest_queue_message_ids = {}
 
-        # IDs of messages we do not want to delete
-        self.queue_related_messages_ids = set()
-
-    async def purge_queue_channels(self, msg: Message):
-        # We check if the message is in a queue channel
-        if self.is_queue_channel(msg.channel.id):
-            # If it was, we trigger a purge of non-marked messages
-
-            await asyncio.sleep(5)  # Hardcoded right now, will need a sanity pass
-            await msg.channel.purge(check=self.is_not_queue_related_message)
+        # IDs of messages we do not want to delete directly
+        self.permanent_messages = set()
 
     async def refresh_channel_queue(self, channel: TextChannel, restart: bool):
         """
@@ -47,32 +39,38 @@ class QueueChannelHandler:
 
         If channel is supplied instead of a context (in the case of a bot reboot), send the reboot message instead
         """
+        # Creating the queue visualisation requires getting the Player objects from the DB to have the names
+        new_queue = game_queue.GameQueue(channel.id)
+
+        # If the new queue is the same as the cache, we simple return
+        if new_queue == self._queue_cache.get(channel.id):
+            return
+        else:
+            # Else, we update our cache (useful to not send too many messages)
+            self._queue_cache[channel.id] = new_queue
 
         rows = []
 
-        # Creating the queue visualisation requires getting the Player objects from the DB to have the names
-        queue = game_queue.GameQueue(channel.id)
-
-        for role, role_queue in queue.queue_players_dict.items():
+        for role, role_queue in new_queue.queue_players_dict.items():
             rows.append(f"{get_role_emoji(role)} " + ", ".join(qp.player.short_name for qp in role_queue))
 
         # Create the queue embed
         embed = Embed(colour=embeds_color)
         embed.add_field(name="Queue", value="\n".join(rows))
-        embed.set_footer(
-            text="Use !queue [role] to queue | All non-queue messages in this channel are deleted"
-        )
+        embed.set_footer(text="Use !queue [role] to join or !leave to leave | All non-queue messages are deleted")
+
+        message_text = ""
+
+        if restart:
+            message_text += (
+                "\nThe bot was restarted and all players in ready-check have been put back in queue\n"
+                "The matchmaking process will restart once anybody queues or re-queues"
+            )
 
         # We save the message object in our local cache
-        new_queue = await channel.send(
-            "The bot was restarted and all players in ready-check have been put back in queue\n"
-            "The matchmaking process will restart once anybody queues or re-queues"
-            if channel
-            else None,
-            embed=embed,
-        )
+        new_queue_message = await channel.send(message_text, embed=embed,)
 
-        self.latest_queue_message_ids[channel.id] = new_queue.id
+        self.latest_queue_message_ids[channel.id] = new_queue_message.id
 
     @property
     def queue_channel_ids(self) -> List[int]:
@@ -85,7 +83,7 @@ class QueueChannelHandler:
         return channel_id in self.queue_channel_ids
 
     def is_not_queue_related_message(self, msg) -> bool:
-        return (msg.id not in self.queue_related_messages_ids) and (
+        return (msg.id not in self.permanent_messages) and (
             msg.id not in self.latest_queue_message_ids.values()
         )
 
@@ -112,10 +110,25 @@ class QueueChannelHandler:
         self._queue_channels = [c for c in self._queue_channels if c.id != channel_id]
 
     def mark_queue_related_message(self, msg):
-        self.queue_related_messages_ids.add(msg.id)
+        self.permanent_messages.add(msg.id)
 
+    # Needs unmark to make sure the object does not get too full
     def unmark_queue_related_message(self, msg):
-        self.queue_related_messages_ids.remove(msg.id)
+        self.permanent_messages.remove(msg.id)
+
+    async def queue_channel_message_listener(self, msg: Message):
+        """
+        This is a listener that’s meant to be called on all messages and delete unnecessary ones
+        """
+
+        # We check if the message is in a queue channel
+        if self.is_queue_channel(msg.channel.id):
+            # If it was, we trigger a purge of non-marked messages
+            # TODO Have an internal purge timer (for successive messages)?
+            # TODO Clear very old messages (maybe have an addition timestamp?)
+
+            await asyncio.sleep(5)  # Hardcoded right now, will need a sanity pass
+            await msg.channel.purge(check=self.is_not_queue_related_message)
 
     async def update_server_queues(self, bot: Bot, server_id: Optional[int]):
         """
@@ -130,7 +143,7 @@ class QueueChannelHandler:
             restart = False
             channels_to_check = self.get_server_queues(server_id)
 
-        # TODO This is just restart code atm, should handle all cases with queue caching
+        # TODO This is just restart code atm, should handle all cases with queue caching (to not spam it)
 
         for channel_id in channels_to_check:
             channel = bot.get_channel(channel_id)

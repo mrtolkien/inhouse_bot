@@ -79,6 +79,15 @@ class GameQueue:
     def __len__(self):
         return len(self.queue_players)
 
+    def __eq__(self, other):
+        if type(other) != GameQueue:
+            return False
+
+        simple_queue = [(qp.player_id, qp.role) for qp in self.queue_players]
+        simple_other_queue = [(qp.player_id, qp.role) for qp in other.queue_players]
+
+        return simple_queue == simple_other_queue
+
     @property
     def queue_players_dict(self) -> Dict[str, List[QueuePlayer]]:
         """

@@ -63,7 +63,9 @@ async def checkmark_validation(
                         "If you are ready to play, press ✅\n"
                         "If you cannot play, press ❌",
                     )
-                    await message.edit(embed=game.add_game_field(embed, ids_of_players_who_validated))
+                    await message.edit(
+                        embed=game.add_game_field(embed, ids_of_players_who_validated, bot=bot)
+                    )
 
             # A player cancels, we return it and will drop him
             elif str(reaction.emoji) == "❌":
@@ -77,6 +79,6 @@ async def checkmark_validation(
             set(i for i in validating_players_ids if i not in ids_of_players_who_validated),
         )
 
-    # Finally, we arrive here only if the validation went through
     queue_channel_handler.unmark_queue_related_message(message)
+
     return result, ids_to_drop

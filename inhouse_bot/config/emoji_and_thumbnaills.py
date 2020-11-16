@@ -1,6 +1,6 @@
 import os
 import re
-from typing import Optional
+from typing import Optional, Union
 
 import lol_id_tools
 from discord import Emoji
@@ -38,17 +38,28 @@ def get_role_emoji(role: str) -> str:
 no_symbols_regex = re.compile(r"[^\w]")
 
 
-def get_champion_emoji(champion_id: Optional[int], bot) -> str:
-    if champion_id is None:
+def get_orianna_emoji(emoji_input: Optional[Union[int, str]], bot) -> str:
+    """
+    Orianna is a framework and supplies emoji from its server
+
+    Accepts champion IDs, "loading", and None
+    """
+    emoji_name = None
+    fallback = None
+
+    if emoji_input is None:
         return "❔"
-
-    champion_name = lol_id_tools.get_name(champion_id, object_type="champion")
-
-    emoji_name = no_symbols_regex.sub("", champion_name).replace(" ", "")
+    elif emoji_input == "loading":
+        emoji_name = emoji_input
+        fallback = emoji_input
+    elif type(emoji_input) == int:
+        fallback = lol_id_tools.get_name(emoji_input, object_type="champion")
+        emoji_name = no_symbols_regex.sub("", fallback).replace(" ", "")
 
     for emoji in bot.emojis:
         emoji: Emoji
         if emoji.name == emoji_name:
             return str(emoji)
 
-    return champion_name
+    # Fallback that should only be reached when we don’t find the rights emoji
+    return fallback

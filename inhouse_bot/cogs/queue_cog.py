@@ -1,8 +1,8 @@
-from discord import Embed, Message
+from discord import Embed
 from discord.ext import commands
 
 from inhouse_bot.orm import session_scope
-from inhouse_bot.cogs.cogs_utils.validation_dialog import checkmark_validation
+from inhouse_bot.common_utils.validation_dialog import checkmark_validation
 
 from inhouse_bot.common_utils.fields import RoleConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
@@ -22,11 +22,6 @@ class QueueCog(commands.Cog, name="Queue"):
 
     def __init__(self, bot: InhouseBot):
         self.bot = bot
-
-    # TODO LOW PRIO This is in a cog for simplicity’s sake, see how to group it with the QueueChannelHandler
-    @commands.Cog.listener("on_message")
-    async def purge_messages_in_queue_channel(self, msg: Message):
-        await queue_channel_handler.purge_queue_channels(msg)
 
     async def run_matchmaking_logic(
         self, ctx: commands.Context,
@@ -51,19 +46,13 @@ class QueueCog(commands.Cog, name="Queue"):
                 "If you cannot play, press ❌",
             )
 
-            embed = game.add_game_field(embed, [])
+            embed = game.add_game_field(embed, [], bot=self.bot)
 
             # We notify the players and send the message
             ready_check_message = await ctx.send(
                 content=f"||{' '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])}||",
                 embed=embed,
             )
-
-            # Because it still takes some time, we *directly* add it to the *no delete* list
-            # That’s dirty and should likely be handled in a better way (maybe by *not* using purge
-            # and choosing what to delete instead, but it also has its issues)
-            # TODO HIGH PRIO Think about saving a "messages to not delete list" in the queue handler memory and
-            #  use it in the cog listener, and automatically delete any other one after 5s? should work better (less bugs)
 
             queue_channel_handler.mark_queue_related_message(ready_check_message)
 
@@ -117,7 +106,8 @@ class QueueCog(commands.Cog, name="Queue"):
                 queue_channel_handler.mark_queue_related_message(
                     await ctx.send(
                         f"A player cancelled the game and was removed from the queue\n"
-                        f"All other players have been put back in the queue"
+                        f"All other players have been put back in the queue",
+                        delete_after=60,
                     )
                 )
 
@@ -134,7 +124,8 @@ class QueueCog(commands.Cog, name="Queue"):
 
                 queue_channel_handler.mark_queue_related_message(
                     await ctx.send(
-                        "The check timed out and players who did not answer have been dropped from all queues"
+                        "The check timed out and players who did not answer have been dropped from all queues",
+                        delete_after=60,
                     )
                 )
 
