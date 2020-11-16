@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Float, BigInteger, ForeignKeyConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from inhouse_bot.orm import bot_declarative_base
-from inhouse_bot.orm.tables.player import Player
+from inhouse_bot.database_orm import bot_declarative_base
+from inhouse_bot.database_orm.tables.player import Player
 from inhouse_bot.common_utils.fields import role_enum, foreignkey_cascade_options
 
 

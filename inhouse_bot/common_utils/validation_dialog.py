@@ -56,15 +56,10 @@ async def checkmark_validation(
                 ids_of_players_who_validated.add(user.id)
 
                 if game:
-                    # TODO MEDIUM PRIO cleanup code duplication
-                    embed = Embed(
-                        title="📢 Game found 📢",
-                        description=f"Blue side expected winrate is {game.blue_expected_winrate * 100:.1f}%\n"
-                        "If you are ready to play, press ✅\n"
-                        "If you cannot play, press ❌",
-                    )
                     await message.edit(
-                        embed=game.add_game_field(embed, ids_of_players_who_validated, bot=bot)
+                        embed=game.get_embed(
+                            embed_type="GAME_FOUND", validated_players=ids_of_players_who_validated, bot=bot
+                        )
                     )
 
             # A player cancels, we return it and will drop him

@@ -9,11 +9,11 @@ from sqlalchemy import Column, Integer, DateTime, Float, BigInteger
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.collections import mapped_collection
 
-from inhouse_bot.orm import bot_declarative_base
-from inhouse_bot.orm.tables.player import Player
+from inhouse_bot.database_orm import bot_declarative_base
+from inhouse_bot.database_orm.tables.player import Player
 
 from inhouse_bot.common_utils.fields import roles_list, side_enum
-from inhouse_bot.config.emoji_and_thumbnaills import get_role_emoji, get_orianna_emoji
+from inhouse_bot.common_utils.emoji_and_thumbnaills import get_role_emoji, get_orianna_emoji
 
 
 class Game(bot_declarative_base):
@@ -49,7 +49,7 @@ class Game(bot_declarative_base):
     # We define teams only as properties as it should be easier to work with
     @property
     def teams(self):
-        from inhouse_bot.orm import GameParticipant
+        from inhouse_bot.database_orm import GameParticipant
 
         @dataclass
         class Teams:
@@ -69,24 +69,44 @@ class Game(bot_declarative_base):
     def player_ids_list(self):
         return [p.player_id for p in self.participants.values()]
 
+    @property
+    def players_ping(self) -> str:
+        return f"||{' '.join([f'<@{discord_id}>' for discord_id in self.player_ids_list])}||\n"
+
     def __str__(self):
         return tabulate(
             {"BLUE": [p.short_name for p in self.teams.BLUE], "RED": [p.short_name for p in self.teams.BLUE]},
             headers="keys",
         )
 
-    def add_game_field(self, embed: Embed, validated_players: Optional[List[int]] = None, bot=None) -> Embed:
+    def get_embed(self, embed_type: str, validated_players: Optional[List[int]] = None, bot=None) -> Embed:
+        if embed_type == "GAME_FOUND":
+            embed = Embed(
+                title="📢 Game found 📢",
+                description=f"Blue side expected winrate is {self.blue_expected_winrate * 100:.1f}%\n"
+                "If you are ready to play, press ✅\n"
+                "If you cannot play, press ❌",
+            )
+        elif embed_type == "GAME_ACCEPTED":
+            embed = Embed(
+                title="📢 Game accepted 📢",
+                description=f"Game {self.id} has been validated and added to the database\n"
+                f"Once the game has been played, one of the winners can score it with `!won`\n"
+                f"If you wish to cancel the game, use `!cancel`",
+            )
+        else:
+            raise ValueError
 
-        # TODO This warrants a rewrite + a new function that returns the right embed directly
+        # Not the prettiest piece of code but it works well
         for side in ("BLUE", "RED"):
             embed.add_field(
                 name=side,
-                value="\n".join(
+                value="\n".join(    # This adds one side as an inline field
                     [
                         f"{get_role_emoji(roles_list[idx])}"  # We start with the role emoji
-                        + (  # Then add ? or ✅ if we are looking at a validation embed
+                        + (  # Then add loading or ✅ if we are looking at a validation embed
                             ""
-                            if validated_players is None
+                            if embed_type != "GAME_FOUND"
                             else f" {get_orianna_emoji('loading', bot)}"
                             if p.player_id not in validated_players
                             else " ✅"
@@ -107,7 +127,7 @@ class Game(bot_declarative_base):
             players: [team, role] -> Player dictionary
         """
         # We use local imports to not have circular imports
-        from inhouse_bot.orm import GameParticipant
+        from inhouse_bot.database_orm import GameParticipant
         from inhouse_bot.matchmaking_logic import evaluate_game
 
         self.start = datetime.datetime.now()

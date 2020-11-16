@@ -14,6 +14,7 @@ from inhouse_bot.queue_channel_handler.queue_channel_handler import (
 )
 
 # Defining intents to get full members list
+from inhouse_bot.ranking_channel_handler.ranking_channel_handler import ranking_channel_handler
 
 intents = discord.Intents.default()
 intents.members = True
@@ -54,7 +55,8 @@ class InhouseBot(commands.Bot):
         # We cancel all ready-checks, and queue_channel_handler will handle rewriting the queues
         game_queue.cancel_all_ready_checks()
 
-        await queue_channel_handler.update_server_queues(self, None)
+        await queue_channel_handler.update_queue_channels(bot=self, server_id=None)
+        await ranking_channel_handler.update_ranking_channels(bot=self, server_id=None)
 
     async def on_command_error(self, ctx, error):
         """

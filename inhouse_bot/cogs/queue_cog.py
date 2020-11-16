@@ -1,7 +1,7 @@
 from discord import Embed
 from discord.ext import commands
 
-from inhouse_bot.orm import session_scope
+from inhouse_bot.database_orm import session_scope
 from inhouse_bot.common_utils.validation_dialog import checkmark_validation
 
 from inhouse_bot.common_utils.fields import RoleConverter
@@ -13,6 +13,7 @@ from inhouse_bot import matchmaking_logic
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.queue_channel_handler import queue_channel_handler
 from inhouse_bot.queue_channel_handler.queue_channel_handler import queue_channel_only
+from inhouse_bot.ranking_channel_handler.ranking_channel_handler import ranking_channel_handler
 
 
 class QueueCog(commands.Cog, name="Queue"):
@@ -41,20 +42,10 @@ class QueueCog(commands.Cog, name="Queue"):
             return
 
         elif game and game.matchmaking_score < 0.2:
-            embed = Embed(
-                title="📢 Game found 📢",
-                description=f"Blue side expected winrate is {game.blue_expected_winrate * 100:.1f}%\n"
-                "If you are ready to play, press ✅\n"
-                "If you cannot play, press ❌",
-            )
-
-            embed = game.add_game_field(embed, [], bot=self.bot)
+            embed = game.get_embed(embed_type="GAME_FOUND", validated_players=[], bot=self.bot)
 
             # We notify the players and send the message
-            ready_check_message = await ctx.send(
-                content=f"||{' '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])}||",
-                embed=embed,
-            )
+            ready_check_message = await ctx.send(content=game.players_ping, embed=embed,)
 
             # We mark the ready check as ongoing (which will be used to the queue)
             game_queue.start_ready_check(
@@ -64,7 +55,7 @@ class QueueCog(commands.Cog, name="Queue"):
             )
 
             # We update the queue in all channels
-            await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
+            await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
 
             # And then we wait for the validation
             ready, players_to_drop = await checkmark_validation(
@@ -84,16 +75,9 @@ class QueueCog(commands.Cog, name="Queue"):
                 with session_scope() as session:
                     session.add(game)
 
-                    embed = Embed(
-                        title="📢 Game accepted 📢",
-                        description=f"Game {game.id} has been validated and added to the database\n"
-                        f"Once the game has been played, one of the winners can score it with `!won`\n"
-                        f"If you wish to cancel the game, use `!cancel`",
+                    queue_channel_handler.mark_queue_related_message(
+                        await ctx.send(embed=game.get_embed("GAME_ACCEPTED"),)
                     )
-
-                    embed = game.add_game_field(embed)
-
-                    queue_channel_handler.mark_queue_related_message(await ctx.send(embed=embed,))
 
             elif ready is False:
                 # We remove the player who cancelled
@@ -143,7 +127,7 @@ class QueueCog(commands.Cog, name="Queue"):
 
         Almost never needs to get used directly
         """
-        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
+        await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
 
     @commands.command()
     @queue_channel_only()
@@ -173,7 +157,7 @@ class QueueCog(commands.Cog, name="Queue"):
 
         await self.run_matchmaking_logic(ctx=ctx)
 
-        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
+        await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
 
     @commands.command(aliases=["leave_queue", "stop"])
     @queue_channel_only()
@@ -190,7 +174,7 @@ class QueueCog(commands.Cog, name="Queue"):
 
         game_queue.remove_player(player_id=ctx.author.id, channel_id=ctx.channel.id)
 
-        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
+        await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
 
     @commands.command(aliases=["win", "wins", "victory"])
     @queue_channel_only()
@@ -226,8 +210,8 @@ class QueueCog(commands.Cog, name="Queue"):
                 self.games_getting_scored_ids.add(game.id)
 
             win_validation_message = await ctx.send(
+                f"{game.players_ping}\n"
                 f"{ctx.author.display_name} wants to score game {game.id} as a win for {participant.side}\n"
-                f"{', '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])} can validate the result\n"
                 f"Result will be validated once 6 players from the game press ✅"
             )
 
@@ -236,7 +220,7 @@ class QueueCog(commands.Cog, name="Queue"):
                 message=win_validation_message,
                 validating_players_ids=game.player_ids_list,
                 validation_threshold=6,
-                timeout=60,
+                timeout=60 * 3,
             )
 
             # Whatever happens, we’re not scoring it anymore if we get here
@@ -254,6 +238,7 @@ class QueueCog(commands.Cog, name="Queue"):
             )
 
         matchmaking_logic.score_game_from_winning_player(player_id=ctx.author.id, server_id=ctx.guild.id)
+        await ranking_channel_handler.update_ranking_channels(self.bot, ctx.guild.id)
 
     @commands.command(aliases=["cancel_game"])
     @queue_channel_only()
@@ -286,8 +271,8 @@ class QueueCog(commands.Cog, name="Queue"):
                 self.games_getting_scored_ids.add(game.id)
 
             cancel_validation_message = await ctx.send(
+                f"{game.players_ping}\n"
                 f"{ctx.author.display_name} wants to cancel game {game.id}\n"
-                f"{', '.join([f'<@{discord_id}>' for discord_id in game.player_ids_list])} can cancel the game\n"
                 f"Game will be canceled once 6 players from the game press ✅"
             )
 
@@ -296,7 +281,7 @@ class QueueCog(commands.Cog, name="Queue"):
                 message=cancel_validation_message,
                 validating_players_ids=game.player_ids_list,
                 validation_threshold=6,
-                timeout=60,
+                timeout=60 * 3,
             )
 
             self.games_getting_scored_ids.remove(game.id)

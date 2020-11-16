@@ -6,9 +6,9 @@ from discord.ext import commands
 from discord.ext.commands import Bot
 
 from inhouse_bot import game_queue
-from inhouse_bot.config.embeds import embeds_color
-from inhouse_bot.config.emoji_and_thumbnaills import get_role_emoji
-from inhouse_bot.orm import session_scope, ChannelInformation
+from inhouse_bot.common_utils.embeds import embeds_color
+from inhouse_bot.common_utils.emoji_and_thumbnaills import get_role_emoji
+from inhouse_bot.database_orm import session_scope, ChannelInformation
 
 
 class QueueChannelHandler:
@@ -134,7 +134,7 @@ class QueueChannelHandler:
     def unmark_queue_related_message(self, msg):
         self.permanent_messages.remove(msg.id)
 
-    async def update_server_queues(self, bot: Bot, server_id: Optional[int]):
+    async def update_queue_channels(self, bot: Bot, server_id: Optional[int]):
         """
         Updates the queues in the given server
 

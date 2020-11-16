@@ -4,8 +4,8 @@ from typing import Tuple, List
 from discord import Embed
 from discord.ext import menus
 
-from inhouse_bot.config.emoji_and_thumbnaills import get_orianna_emoji, get_role_emoji, role_thumbnail_dict
-from inhouse_bot.orm import GameParticipant, Game
+from inhouse_bot.common_utils.emoji_and_thumbnaills import get_orianna_emoji, get_role_emoji, role_thumbnail_dict
+from inhouse_bot.database_orm import GameParticipant, Game
 
 entries_type = List[Tuple[Game, GameParticipant]]
 

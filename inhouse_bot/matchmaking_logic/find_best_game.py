@@ -2,7 +2,7 @@ import itertools
 import random
 from typing import Optional, List
 
-from inhouse_bot.orm import Game, QueuePlayer
+from inhouse_bot.database_orm import Game, QueuePlayer
 from inhouse_bot.common_utils.fields import roles_list
 from inhouse_bot.game_queue import GameQueue
 

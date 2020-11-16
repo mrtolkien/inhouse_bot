@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from sqlalchemy import func
-from inhouse_bot.orm import QueuePlayer, PlayerRating, session_scope
+from inhouse_bot.database_orm import QueuePlayer, PlayerRating, session_scope
 from inhouse_bot.common_utils.fields import roles_list
 
 

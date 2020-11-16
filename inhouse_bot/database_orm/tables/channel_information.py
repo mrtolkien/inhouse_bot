@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, BigInteger
 
-from inhouse_bot.orm import bot_declarative_base
+from inhouse_bot.database_orm import bot_declarative_base
 
 
 class ChannelInformation(bot_declarative_base):

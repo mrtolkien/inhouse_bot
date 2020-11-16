@@ -1,8 +1,10 @@
+from typing import Optional
+
 import inflect
 from discord import Embed
 from discord.ext import menus
 
-from inhouse_bot.config.emoji_and_thumbnaills import get_role_emoji, lol_logo
+from inhouse_bot.common_utils.emoji_and_thumbnaills import get_role_emoji
 
 inflect_engine = inflect.engine()
 
@@ -17,16 +19,23 @@ rank_emoji_dict = {
 
 
 class RankingPagesSource(menus.ListPageSource):
+    # TODO LOW PRIO see if this really needs a bot in the constructor
+
     def __init__(self, entries, bot, embed_name_suffix):
         self.bot = bot
         self.embed_name_suffix = embed_name_suffix
         super().__init__(entries, per_page=10)
 
-    async def format_page(self, menu: menus.MenuPages, entries):
+    async def format_page(self, menu: Optional[menus.MenuPages], entries) -> Embed:
         embed = Embed()
-        embed.set_footer(text=f"Page {menu.current_page + 1} of {self._max_pages}")
 
-        offset = menu.current_page * self.per_page
+        if menu:
+            embed.set_footer(text=f"Page {menu.current_page + 1} of {self._max_pages}")
+            offset = menu.current_page * self.per_page
+        else:
+            # This is used for ranking channel messages (not linked to a menu)
+            embed.set_footer(text=f"Server-wide ranking")
+            offset = 0
 
         rows = []
 

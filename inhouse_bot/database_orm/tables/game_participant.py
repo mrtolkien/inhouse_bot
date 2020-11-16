@@ -2,9 +2,9 @@ from sqlalchemy import Column, Integer, ForeignKey, Float, ForeignKeyConstraint,
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
-from inhouse_bot.orm import bot_declarative_base
-from inhouse_bot.orm.tables.player_rating import PlayerRating
-from inhouse_bot.orm.tables.player import Player
+from inhouse_bot.database_orm import bot_declarative_base
+from inhouse_bot.database_orm.tables.player_rating import PlayerRating
+from inhouse_bot.database_orm.tables.player import Player
 from inhouse_bot.common_utils.fields import side_enum, role_enum, foreignkey_cascade_options
 
 

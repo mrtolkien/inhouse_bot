@@ -3,8 +3,8 @@ import random
 from discord.ext import commands
 from discord.ext.commands import group
 
-from inhouse_bot.config.emoji_and_thumbnaills import get_orianna_emoji
-from inhouse_bot.orm import session_scope
+from inhouse_bot.common_utils.emoji_and_thumbnaills import get_orianna_emoji
+from inhouse_bot.database_orm import session_scope
 from inhouse_bot.common_utils.validation_dialog import checkmark_validation
 from inhouse_bot.common_utils.fields import roles_list, ChampionNameConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
@@ -12,6 +12,7 @@ from inhouse_bot.game_queue import GameQueue
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot import game_queue, matchmaking_logic
 from inhouse_bot.queue_channel_handler import queue_channel_handler
+from inhouse_bot.ranking_channel_handler.ranking_channel_handler import ranking_channel_handler
 
 
 class TestCog(commands.Cog, name="TEST"):
@@ -50,7 +51,7 @@ class TestCog(commands.Cog, name="TEST"):
         )
 
         await ctx.send(f"{ready=}\n{players_to_drop=}")
-        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
+        await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
 
     @test.command()
     async def queue(self, ctx: commands.Context):
@@ -62,7 +63,7 @@ class TestCog(commands.Cog, name="TEST"):
             game_queue.add_player(i, roles_list[i % 5], ctx.channel.id, ctx.guild.id, name=str(i))
 
         await ctx.send("The queue has been filled")
-        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
+        await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
 
     @test.command()
     async def game(self, ctx: commands.Context):
@@ -87,7 +88,7 @@ class TestCog(commands.Cog, name="TEST"):
 
         game_queue.start_ready_check([i for i in range(0, 9)] + [ctx.author.id], ctx.channel.id, msg.id)
         game_queue.validate_ready_check(msg.id)
-        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
+        await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
 
     @test.command()
     async def games(self, ctx: commands.Context):
@@ -103,26 +104,25 @@ class TestCog(commands.Cog, name="TEST"):
                 ctx.author.id, roles_list[4], ctx.channel.id, ctx.guild.id, name=ctx.author.display_name
             )
 
-            # We put 20 people in the queue, but only the first ones should get picked
-            for i in range(0, 20):
+            # We put 15 people in the queue, but only the first ones should get picked
+            for i in range(0, 15):
                 game_queue.add_player(i, roles_list[i % 5], ctx.channel.id, ctx.guild.id, name=str(i))
-
 
             game = matchmaking_logic.find_best_game(GameQueue(ctx.channel.id))
 
             with session_scope() as session:
                 session.add(game)
-                winner = game.player_ids_list[int(random.random()*10)]
+                winner = game.player_ids_list[int(random.random() * 10)]
 
             game_queue.start_ready_check([i for i in range(0, 9)] + [ctx.author.id], ctx.channel.id, 0)
             game_queue.validate_ready_check(0)
 
-            matchmaking_logic.score_game_from_winning_player(
-                player_id=winner, server_id=ctx.guild.id
-            )
+            matchmaking_logic.score_game_from_winning_player(player_id=winner, server_id=ctx.guild.id)
+
+            await ranking_channel_handler.update_ranking_channels(self.bot, ctx.guild.id)
 
         await ctx.send("100 games have been created in the database")
-        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
+        await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
 
     @test.command()
     async def score(self, ctx: commands.Context):
@@ -132,7 +132,7 @@ class TestCog(commands.Cog, name="TEST"):
         matchmaking_logic.score_game_from_winning_player(player_id=ctx.author.id, server_id=ctx.guild.id)
 
         await ctx.send(f"{ctx.author.display_name}’s last game has been scored as a win")
-        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
+        await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
 
     @test.command()
     async def cancel(self, ctx: commands.Context):
@@ -147,7 +147,7 @@ class TestCog(commands.Cog, name="TEST"):
             session.delete(game)
 
         await ctx.send(f"{ctx.author.display_name}’s last game was cancelled and deleted from the database")
-        await queue_channel_handler.update_server_queues(bot=self.bot, server_id=ctx.guild.id)
+        await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
 
     @test.command()
     async def emoji(self, ctx: commands.Context, champion_id: ChampionNameConverter()):

@@ -1,0 +1,1 @@
+from inhouse_bot.database_orm.tables.player_rating import PlayerRating

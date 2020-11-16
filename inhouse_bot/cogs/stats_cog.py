@@ -6,12 +6,13 @@ from sqlalchemy import func
 from tabulate import tabulate
 import inflect
 
-from inhouse_bot.config.emoji_and_thumbnaills import get_role_emoji
-from inhouse_bot.orm import session_scope, GameParticipant, Game, Player, PlayerRating
+from inhouse_bot.common_utils.emoji_and_thumbnaills import get_role_emoji
+from inhouse_bot.database_orm import session_scope, GameParticipant, Game, Player, PlayerRating
 from inhouse_bot.common_utils.fields import ChampionNameConverter, RoleConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
 
 from inhouse_bot.inhouse_bot import InhouseBot
+from inhouse_bot.ranking_channel_handler.ranking_channel_handler import ranking_channel_handler
 from inhouse_bot.stats_menus.history_pages import HistoryPagesSource
 from inhouse_bot.stats_menus.ranking_pages import RankingPagesSource
 
@@ -177,35 +178,7 @@ class StatsCog(commands.Cog, name="Stats"):
             !ranking
             !ranking mid
         """
-        with session_scope() as session:
-            session.expire_on_commit = False
-
-            ratings = (
-                session.query(
-                    Player,
-                    PlayerRating.player_server_id,
-                    PlayerRating.mmr,
-                    PlayerRating.role,
-                    func.count().label("count"),
-                    (
-                        sqlalchemy.func.sum((Game.winner == GameParticipant.side).cast(sqlalchemy.Integer))
-                    ).label(
-                        "wins"
-                    ),  # A bit verbose for sure
-                )
-                .select_from(Player)
-                .join(PlayerRating)
-                .join(GameParticipant)
-                .join(Game)
-                .filter(Player.server_id == ctx.guild.id)
-                .group_by(Player, PlayerRating)
-                .order_by(PlayerRating.mmr.desc())
-            )
-
-            if role:
-                ratings = ratings.filter(PlayerRating.role == role)
-
-            ratings = ratings.limit(100).all()
+        ratings = ranking_channel_handler.get_server_ratings(ctx.guild.id, role=role)
 
         if not ratings:
             await ctx.send("No games played yet")
