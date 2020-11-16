@@ -32,13 +32,21 @@ class MultiRoleConverter(commands.Converter):
         """
         await ctx.send(f"MultiRoleConverter")
         await ctx.send(argument);
-        roles = argument.split(',')
+        roles = argument.split(' ')
         await ctx.send(len(roles))
         
         converted_roles = []
         for role in roles:
-            converted_roles.append(PrivateRoleConverter(self, ctx, role))
-            await ctx.send(PrivateRoleConverter(self, ctx, role))
+            await ctx.send(argument)
+            matched_string, ratio = rapidfuzz.process.extractOne(argument, full_roles_dict.keys())
+            await ctx.send(matched_string)
+            if ratio < 85:
+                await ctx.send(f"The role was not understood")
+                raise ConversionError
+
+            else:
+                converted_roles.append(full_roles_dict[matched_string])
+
         await ctx.send(len(converted_roles))
         await ctx.send(converted_roles.join(' '))
         return converted_roles
