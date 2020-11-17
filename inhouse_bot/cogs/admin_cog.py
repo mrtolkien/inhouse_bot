@@ -43,12 +43,13 @@ class AdminCog(commands.Cog, name="Admin"):
                     PlayerRating
                 )
                 .select_from(PlayerRating)
-                .filter(PlayerRating.player_id == ctx.author.id)
+                .filter(PlayerRating.player_id == player_id)
                 .filter(PlayerRating.role == role).first()
             )
             if not isinstance(player_rating, PlayerRating):
-                player_rating = PlayerRating(Player, role)
+                player_rating = PlayerRating(player, role)
                 
+            print(player_rating)
             player_rating.trueskill_mu = mmr
             session.merge(player_rating)
             await ctx.send('Updated')
