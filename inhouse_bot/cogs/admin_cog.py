@@ -29,11 +29,21 @@ class AdminCog(commands.Cog, name="Admin"):
             )
 
     @admin.command()
-    async def set_mmr(self, ctx: commands.Context, id, role, mmr):
+    async def set_mmr(self, ctx: commands.Context, player_id, role, mmr):
         """
         Sets the MMR for a specific ID an role
         """
-        await ctx.send('Not yet implemented')
+        with session_scope() as session:
+            rating_objects = (
+                session.query(
+                    PlayerRating
+                )
+                .select_from(PlayerRating)
+                .filter(PlayerRating.player_id == ctx.author.id)
+                .filter(PlayerRating.role == role).first()
+            )
+            print(rating_objects);
+            await ctx.send('fetched')
     
     @admin.command()
     async def reset(
