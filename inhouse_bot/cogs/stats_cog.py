@@ -147,8 +147,8 @@ class StatsCog(commands.Cog, name="Stats"):
                         self.bot.get_guild(row[0].player_server_id).name,
                         row[0].role,
                         inflect_engine.ordinal(rank + 1),
-                        round(row[0].mmr, 2),
-                        row.count,
+                        round(row.mmr) if type(row.mmr) is float else round(row[0].mmr, 2),
+                        row.count if type(row.count) is int else 0,
                         f"{int(row.wins / row.count * 100)}%",
                     ]
                 )
