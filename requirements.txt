@@ -10,7 +10,7 @@ sqlalchemy
 # The backend for our matchmaking
 trueskill
 
-# Nice tables
+# Nice tables (might be obsolete now)
 tabulate
 
 # Fuzzy string matching

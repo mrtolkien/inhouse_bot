@@ -1,20 +1,20 @@
 import lol_id_tools
 import sqlalchemy
+from discord import Embed
 from discord.ext import commands, menus
 from discord.ext.commands import guild_only
 from sqlalchemy import func
-from tabulate import tabulate
 import inflect
 
 from inhouse_bot.common_utils.emoji_and_thumbnaills import get_role_emoji
-from inhouse_bot.database_orm import session_scope, GameParticipant, Game, Player, PlayerRating
+from inhouse_bot.database_orm import session_scope, GameParticipant, Game, PlayerRating
 from inhouse_bot.common_utils.fields import ChampionNameConverter, RoleConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
 
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.ranking_channel_handler.ranking_channel_handler import ranking_channel_handler
 from inhouse_bot.stats_menus.history_pages import HistoryPagesSource
-from inhouse_bot.stats_menus.ranking_pages import RankingPagesSource
+from inhouse_bot.stats_menus.ranking_pages import RankingPagesSource, rank_emoji_dict
 
 inflect_engine = inflect.engine()
 
@@ -136,35 +136,39 @@ class StatsCog(commands.Cog, name="Stats"):
             if ctx.guild:
                 rating_objects = rating_objects.filter(PlayerRating.player_server_id == ctx.guild.id)
 
-            table = []
+            rows = []
 
-            for row in rating_objects:
+            for row in sorted(rating_objects.all(), key=lambda r: -r.count):
+                # TODO LOW PRIO Make that a subquery
                 rank = (
                     session.query(func.count())
                     .select_from(PlayerRating)
-                    .filter(PlayerRating.player_server_id == row.player_server_id)
-                    .filter(PlayerRating.role == row.role)
-                    .filter(PlayerRating.mmr > row.mmr)
+                    .filter(PlayerRating.player_server_id == row.PlayerRating.player_server_id)
+                    .filter(PlayerRating.role == row.PlayerRating.role)
+                    .filter(PlayerRating.mmr > row.PlayerRating.mmr)
                 ).first()[0]
 
-                table.append(
-                    [
-                        self.bot.get_guild(row.player_server_id).name,
-                        row.role,
-                        inflect_engine.ordinal(rank + 1),
-                        round(row.mmr, 2),
-                        row.count,
-                        f"{int(row.wins / row.count * 100)}%",
-                    ]
+                # TODO FIX DUPLICATION
+                if rank > 10:
+                    rank_str = inflect_engine.ordinal(rank+1)
+                    rank_str = f"`{rank_str}`"
+                else:
+                    rank_str = rank_emoji_dict[rank+1] + " "
+
+                # TODO C MOCHE
+                row_string = (
+                    f"{f'{self.bot.get_guild(row.PlayerRating.player_server_id).name} ' if not ctx.guild else ''}"
+                    f"{get_role_emoji(row.PlayerRating.role)} "
+                    f"{rank_str} "
+                    f"{round(row.PlayerRating.mmr, 2)} MMR, "
+                    f"{row.wins}W {row.count-row.wins}L"
                 )
 
-            # Sorting the table by games played
-            table = sorted(table, key=lambda x: -x[4])
+                rows.append(row_string)
 
-            # Added afterwards to allow sorting first
-            table.insert(0, ["Server", "Role", "Rank", "MMR", "Games", "Win%"])
+            embed = Embed(title=f"Ranks for {ctx.author.display_name}", description="\n".join(rows))
 
-        await ctx.send(f"Ranks for {ctx.author.display_name}" f'```{tabulate(table, headers="firstrow")}```')
+            await ctx.send(embed=embed)
 
     @commands.command(aliases=["rankings"])
     @guild_only()
