@@ -124,6 +124,7 @@ class StatsCog(commands.Cog, name="Stats"):
                     ).label("wins"),
                 )
                 .select_from(PlayerRating)
+                .join(Player)
                 .join(GameParticipant, isouter=True)
                 .join(Game, isouter=True)
                 .filter(PlayerRating.player_id == ctx.author.id)
@@ -136,11 +137,11 @@ class StatsCog(commands.Cog, name="Stats"):
                 rank = (
                     session.query(func.count())
                     .select_from(PlayerRating)
-                    .filter(PlayerRating.player_server_id == row.player_server_id)
+                    .filter(PlayerRating.player_server_id == row.server_id)
                     .filter(PlayerRating.role == row.role)
                     .filter(PlayerRating.mmr > row.mmr)
                 ).first()[0]
-
+                
                 table.append(
                     [
                         self.bot.get_guild(row.player_server_id).name,
