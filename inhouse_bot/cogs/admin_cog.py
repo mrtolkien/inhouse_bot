@@ -35,8 +35,10 @@ class AdminCog(commands.Cog, name="Admin"):
         """
         with session_scope() as session:
             # Create or update Player object
-            session.merge(Player(id=player_id, server_id=ctx.guild.id))
-            rating_object = (
+            player = Player(id=player_id, server_id=ctx.guild.id)
+            session.merge(player)
+     
+            player_rating = (
                 session.query(
                     PlayerRating
                 )
@@ -44,10 +46,12 @@ class AdminCog(commands.Cog, name="Admin"):
                 .filter(PlayerRating.player_id == ctx.author.id)
                 .filter(PlayerRating.role == role).first()
             )
-            print(rating_object);
-            rating_object.trueskill_mu = mmr
-            session.merge(rating_object)
-            await ctx.send('fetched')
+            if (!player_rating):
+                player_rating = PlayerRating(Player, role)
+                
+            player_rating.trueskill_mu = mmr
+            session.merge(player_rating)
+            await ctx.send('Updated')
     
     @admin.command()
     async def reset(
