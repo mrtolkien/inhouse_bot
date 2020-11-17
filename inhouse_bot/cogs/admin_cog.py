@@ -46,7 +46,7 @@ class AdminCog(commands.Cog, name="Admin"):
                 .filter(PlayerRating.player_id == ctx.author.id)
                 .filter(PlayerRating.role == role).first()
             )
-            if isinstance(player_rating, PlayerRating) == false:
+            if not isinstance(player_rating, PlayerRating:
                 player_rating = PlayerRating(Player, role)
                 
             player_rating.trueskill_mu = mmr
