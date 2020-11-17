@@ -133,7 +133,6 @@ class StatsCog(commands.Cog, name="Stats"):
             table = []
 
             for row in rating_objects:
-                print(row)
                 rank = (
                     session.query(func.count())
                     .select_from(PlayerRating)
