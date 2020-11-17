@@ -34,7 +34,7 @@ class AdminCog(commands.Cog, name="Admin"):
         Sets the MMR for a specific ID an role
         """
         with session_scope() as session:
-            rating_objects = (
+            rating_object = (
                 session.query(
                     PlayerRating
                 )
@@ -42,7 +42,9 @@ class AdminCog(commands.Cog, name="Admin"):
                 .filter(PlayerRating.player_id == ctx.author.id)
                 .filter(PlayerRating.role == role).first()
             )
-            print(rating_objects);
+            print(rating_object);
+            rating_object.trueskill_mu = mmr
+            session.merge(rating_object)
             await ctx.send('fetched')
     
     @admin.command()
