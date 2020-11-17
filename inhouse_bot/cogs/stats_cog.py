@@ -138,7 +138,7 @@ class StatsCog(commands.Cog, name="Stats"):
                 rank = (
                     session.query(func.count())
                     .select_from(PlayerRating)
-                    .filter(PlayerRating.player_server_id == row.server_id)
+                    .filter(PlayerRating.player_server_id == row.player_server_id)
                     .filter(PlayerRating.role == row.role)
                     .filter(PlayerRating.mmr > row.mmr)
                 ).first()[0]
