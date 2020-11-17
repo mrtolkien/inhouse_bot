@@ -7,7 +7,7 @@ from inhouse_bot import game_queue, matchmaking_logic
 from inhouse_bot.orm import session_scope, Player, PlayerRating
 from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.inhouse_bot import InhouseBot
-from inhouse_bot.common_utils.fields import RoleConverter
+from inhouse_bot.common_utils.fields import MultiRoleConverter
 
 
 class AdminCog(commands.Cog, name="Admin"):
@@ -39,22 +39,23 @@ class AdminCog(commands.Cog, name="Admin"):
             player = Player(id=player_id, server_id=ctx.guild.id)
             session.merge(player)
             
-            role = await RoleConverter.convert(self, ctx, role)
+            roles = await MultiRoleConverter.convert(self, ctx, role.split(','))
      
-            player_rating = (
-                session.query(
-                    PlayerRating
+            for role in roles:
+                player_rating = (
+                    session.query(
+                        PlayerRating
+                    )
+                    .select_from(PlayerRating)
+                    .filter(PlayerRating.player_id == player_id)
+                    .filter(PlayerRating.role == role).first()
                 )
-                .select_from(PlayerRating)
-                .filter(PlayerRating.player_id == player_id)
-                .filter(PlayerRating.role == role).first()
-            )
-            if not isinstance(player_rating, PlayerRating):
-                player_rating = PlayerRating(player, role)
-                
-            print(player_rating)
-            player_rating.trueskill_mu = mmr
-            session.merge(player_rating)
+                if not isinstance(player_rating, PlayerRating):
+                    player_rating = PlayerRating(player, role)
+
+                print(player_rating)
+                player_rating.trueskill_mu = mmr
+                session.merge(player_rating)
             await ctx.send('Updated')
     
     @admin.command()
