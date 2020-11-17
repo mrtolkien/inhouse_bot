@@ -144,10 +144,10 @@ class StatsCog(commands.Cog, name="Stats"):
                 
                 table.append(
                     [
-                        self.bot.get_guild(row.player_server_id).name,
-                        row.role,
+                        self.bot.get_guild(row[0].player_server_id).name,
+                        row[0].role,
                         inflect_engine.ordinal(rank + 1),
-                        round(row.mmr, 2),
+                        round(row[0].mmr, 2),
                         row.count,
                         f"{int(row.wins / row.count * 100)}%",
                     ]
