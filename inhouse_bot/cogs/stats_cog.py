@@ -141,15 +141,16 @@ class StatsCog(commands.Cog, name="Stats"):
                     .filter(PlayerRating.role == row[0].role)
                     .filter(PlayerRating.mmr > row[0].mmr)
                 ).first()[0]
-                
+                count = 0 if row.count is None else row.count
+                wins = 0 if row.wins is None else row.wins
                 table.append(
                     [
                         self.bot.get_guild(row[0].player_server_id).name,
                         row[0].role,
                         inflect_engine.ordinal(rank + 1),
                         round(row[0].mmr, 2) if not hasattr(row, 'mmr') else round(row.mmr, 2),
-                        0 if row.count is None else row.count,
-                        f"{int(row.wins / row.count * 100)}%",
+                        count,
+                        f"{int(wins / count * 100)}%",
                     ]
                 )
 
