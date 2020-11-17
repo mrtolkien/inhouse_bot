@@ -148,7 +148,7 @@ class StatsCog(commands.Cog, name="Stats"):
                         row[0].role,
                         inflect_engine.ordinal(rank + 1),
                         round(row[0].mmr, 2) if not hasattr(row, 'mmr') else round(row.mmr, 2),
-                        row.count if type(row.count) is int else 0,
+                        0 if type(row.count) is NoneType else row.count,
                         f"{int(row.wins / row.count * 100)}%",
                     ]
                 )
