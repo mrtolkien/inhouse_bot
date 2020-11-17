@@ -124,8 +124,8 @@ class StatsCog(commands.Cog, name="Stats"):
                     ).label("wins"),
                 )
                 .select_from(PlayerRating)
-                .join(GameParticipant)
-                .join(Game)
+                .join(GameParticipant, isouter=True)
+                .join(Game, isouter=True)
                 .filter(PlayerRating.player_id == ctx.author.id)
                 .group_by(PlayerRating)
             )
