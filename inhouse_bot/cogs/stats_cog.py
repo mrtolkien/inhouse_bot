@@ -138,8 +138,8 @@ class StatsCog(commands.Cog, name="Stats"):
                     session.query(func.count())
                     .select_from(PlayerRating)
                     .filter(PlayerRating.player_server_id == row[0].player_server_id)
-                    .filter(PlayerRating.role == row.role)
-                    .filter(PlayerRating.mmr > row.mmr)
+                    .filter(PlayerRating.role == row[0].role)
+                    .filter(PlayerRating.mmr > row[0].mmr)
                 ).first()[0]
                 
                 table.append(
