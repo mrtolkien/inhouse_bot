@@ -39,7 +39,7 @@ class AdminCog(commands.Cog, name="Admin"):
             player = Player(id=player_id, server_id=ctx.guild.id)
             session.merge(player)
             
-            role = await RoleConverter.convert(ctx, role)
+            role = await RoleConverter.convert(self, ctx, role)
      
             player_rating = (
                 session.query(
