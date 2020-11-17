@@ -34,6 +34,8 @@ class AdminCog(commands.Cog, name="Admin"):
         Sets the MMR for a specific ID an role
         """
         with session_scope() as session:
+            # Create or update Player object
+            session.merge(Player(id=player_id, server_id=ctx.guild.id))
             rating_object = (
                 session.query(
                     PlayerRating
