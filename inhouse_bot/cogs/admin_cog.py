@@ -7,6 +7,7 @@ from inhouse_bot import game_queue, matchmaking_logic
 from inhouse_bot.orm import session_scope, Player, PlayerRating
 from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.inhouse_bot import InhouseBot
+from inhouse_bot.common_utils.fields import RoleConverter
 
 
 class AdminCog(commands.Cog, name="Admin"):
@@ -37,6 +38,8 @@ class AdminCog(commands.Cog, name="Admin"):
             # Create or update Player object
             player = Player(id=player_id, server_id=ctx.guild.id)
             session.merge(player)
+            
+            role = await RoleConverter(ctx, role)
      
             player_rating = (
                 session.query(
