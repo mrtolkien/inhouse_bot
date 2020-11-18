@@ -1,8 +1,7 @@
 from typing import Optional, List
 
 import sqlalchemy
-from discord import TextChannel, Message, Embed
-from discord.ext import commands
+from discord import TextChannel
 from discord.ext.commands import Bot
 from sqlalchemy import func
 
@@ -66,9 +65,9 @@ class RankingChannelHandler:
                 self.unmark_ranking_channel(channel_id)  # We remove it for the future
                 continue
 
-            await self.refresh_channel_rankings(channel=channel, bot=bot)
+            await self.refresh_channel_rankings(channel=channel)
 
-    async def refresh_channel_rankings(self, channel: TextChannel, bot: Bot):
+    async def refresh_channel_rankings(self, channel: TextChannel):
         ratings = self.get_server_ratings(channel.guild.id, limit=30)
 
         # We need 3 messages because of character limits

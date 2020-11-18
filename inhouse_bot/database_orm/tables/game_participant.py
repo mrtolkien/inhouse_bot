@@ -24,7 +24,7 @@ class GameParticipant(bot_declarative_base):
     player_id = Column(BigInteger)
     player_server_id = Column(BigInteger)
 
-    # Player relationship
+    # Player & Player Rating relationship
     player = relationship("Player", viewonly=True)
     player_rating = relationship(
         "PlayerRating", viewonly=True, backref="game_participant_objects", sync_backref=False

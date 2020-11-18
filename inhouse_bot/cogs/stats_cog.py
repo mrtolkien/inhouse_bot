@@ -1,12 +1,22 @@
+import tempfile
+from collections import defaultdict
+from datetime import datetime
+
+import dateparser
+import discord
 import lol_id_tools
+import mplcyberpunk
 import sqlalchemy
+
 from discord import Embed
 from discord.ext import commands, menus
 from discord.ext.commands import guild_only
-from sqlalchemy import func
+
+import matplotlib
+import matplotlib.pyplot as plt
 
 from inhouse_bot.common_utils.emoji_and_thumbnails import get_role_emoji, get_rank_emoji
-from inhouse_bot.database_orm import session_scope, GameParticipant, Game, PlayerRating
+from inhouse_bot.database_orm import session_scope, GameParticipant, Game, PlayerRating, Player
 from inhouse_bot.common_utils.fields import ChampionNameConverter, RoleConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
 
@@ -14,6 +24,10 @@ from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.ranking_channel_handler.ranking_channel_handler import ranking_channel_handler
 from inhouse_bot.stats_menus.history_pages import HistoryPagesSource
 from inhouse_bot.stats_menus.ranking_pages import RankingPagesSource
+
+
+matplotlib.use("Agg")
+plt.style.use("cyberpunk")
 
 
 class StatsCog(commands.Cog, name="Stats"):
@@ -118,7 +132,7 @@ class StatsCog(commands.Cog, name="Stats"):
             rating_objects = (
                 session.query(
                     PlayerRating,
-                    func.count().label("count"),
+                    sqlalchemy.func.count().label("count"),
                     (
                         sqlalchemy.func.sum((Game.winner == GameParticipant.side).cast(sqlalchemy.Integer))
                     ).label("wins"),
@@ -138,7 +152,7 @@ class StatsCog(commands.Cog, name="Stats"):
             for row in sorted(rating_objects.all(), key=lambda r: -r.count):
                 # TODO LOW PRIO Make that a subquery
                 rank = (
-                    session.query(func.count())
+                    session.query(sqlalchemy.func.count())
                     .select_from(PlayerRating)
                     .filter(PlayerRating.player_server_id == row.PlayerRating.player_server_id)
                     .filter(PlayerRating.role == row.PlayerRating.role)
@@ -188,4 +202,56 @@ class StatsCog(commands.Cog, name="Stats"):
         )
         await pages.start(ctx)
 
-    # TODO LOW PRIO fancy mmr_history graph once again
+    @commands.command(aliases=["rating_history", "ratings_history"])
+    async def mmr_history(self, ctx: commands.Context):
+        """Displays a graph of your MMR history over the past month.
+        """
+        date_start = dateparser.parse("one month ago")
+
+        with session_scope() as session:
+
+            participants = (
+                session.query(
+                    Game.start,
+                    GameParticipant.role,
+                    GameParticipant.mmr,
+                    PlayerRating.mmr.label("latest_mmr"),
+                )
+                .select_from(Game)
+                .join(GameParticipant)
+                .join(PlayerRating)  # Join on rating first to select the right role
+                .join(Player)
+                .filter(GameParticipant.player_id == ctx.author.id)
+                .filter(Game.start > date_start)
+            )
+
+        mmr_history = defaultdict(lambda: {"dates": [], "mmr": []})
+
+        latest_role_mmr = {}
+
+        for row in participants:
+            mmr_history[row.role]["dates"].append(row.start)
+            mmr_history[row.role]["mmr"].append(row.mmr)
+
+            latest_role_mmr[row.role] = row.latest_mmr
+
+        legend = []
+        for role in mmr_history:
+            # We add a data point at the current timestamp with the player’s current MMR
+            mmr_history[role]["dates"].append(datetime.now())
+            mmr_history[role]["mmr"].append(latest_role_mmr[role])
+
+            plt.plot(mmr_history[role]["dates"], mmr_history[role]["mmr"])
+            legend.append(role)
+
+        plt.legend(legend)
+        plt.title(f"MMR variation in the last month for {ctx.author.display_name}")
+        mplcyberpunk.add_glow_effects()
+
+        # This looks to be unnecessary verbose with all the closing by hand, I should take a look
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp:
+            plt.savefig(temp.name)
+            file = discord.File(temp.name, filename=temp.name)
+            await ctx.send(file=file)
+            plt.close()
+            temp.close()
