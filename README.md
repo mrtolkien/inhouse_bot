@@ -6,12 +6,29 @@ A Discord bot to handle League of Legends in-house games, with role queue, match
 
 # Installation
 
-⚠ A FULL INSTALLATION WORKFLOW WILL BE WRITTEN SOON, ALONG WITH AN INSTALLATION VIDEO ⚠
+- Install [Docker](https://docs.docker.com/get-docker/)
 
-Get your Discord bot token from [the Discord developer portal](https://discord.com/developers/applications).
+    - I wrote an [in-depth tutorial about using Docker here](https://lol-data.com/development/realistic-python-docker-work-flow/)
 
-The most recent image can be found at [mrtolkien/inhouse_bot](https://hub.docker.com/r/mrtolkien/inhouse_bot/tags).
+- Get your Discord bot token from [the Discord developer portal](https://discord.com/developers/applications)
 
+- Activate your bot on the Discord developer portal and give it the Server Members privileged intent
+
+- Invite the bot to your server through OAuth2
+
+- Add emoji for all 5 LoL roles to your server
+
+    - They are handled separately than champion emoji as they’re crucial for the bot to work
+
+    - Optional: invite your bot to servers that have emoji for each champion, for example :TwistedFate: for Twisted Fate and :KaiSa: for Kai’Sa. You can also define a :loading: emoji that will be used by the bot 
+
+- Create a `docker-compose.yml` file based [on this docker compose file](https://github.com/mrtolkien/inhouse_bot/blob/master/docker-compose-example.yml)
+
+- Edit the file to add your Discord bot token as well as the Discord ID of your emojis, and change the database default password to something random
+
+- Run `docker-compose up -d` and your bot should be up and running!
+
+    - If you also added the `adminer` service, you can use http://localhost:8080/ to manage the database
 
 # Basic use
 ```
