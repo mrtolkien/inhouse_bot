@@ -4,9 +4,8 @@ from discord import Embed
 from discord.ext import commands, menus
 from discord.ext.commands import guild_only
 from sqlalchemy import func
-import inflect
 
-from inhouse_bot.common_utils.emoji_and_thumbnaills import get_role_emoji
+from inhouse_bot.common_utils.emoji_and_thumbnails import get_role_emoji, get_rank_emoji
 from inhouse_bot.database_orm import session_scope, GameParticipant, Game, PlayerRating
 from inhouse_bot.common_utils.fields import ChampionNameConverter, RoleConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
@@ -14,9 +13,7 @@ from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.ranking_channel_handler.ranking_channel_handler import ranking_channel_handler
 from inhouse_bot.stats_menus.history_pages import HistoryPagesSource
-from inhouse_bot.stats_menus.ranking_pages import RankingPagesSource, rank_emoji_dict
-
-inflect_engine = inflect.engine()
+from inhouse_bot.stats_menus.ranking_pages import RankingPagesSource
 
 
 class StatsCog(commands.Cog, name="Stats"):
@@ -148,19 +145,14 @@ class StatsCog(commands.Cog, name="Stats"):
                     .filter(PlayerRating.mmr > row.PlayerRating.mmr)
                 ).first()[0]
 
-                # TODO FIX DUPLICATION
-                if rank > 10:
-                    rank_str = inflect_engine.ordinal(rank + 1)
-                    rank_str = f"`{rank_str}`"
-                else:
-                    rank_str = rank_emoji_dict[rank + 1] + " "
+                rank_str = get_rank_emoji(rank)
 
                 row_string = (
                     f"{f'{self.bot.get_guild(row.PlayerRating.player_server_id).name} ' if not ctx.guild else ''}"
                     f"{get_role_emoji(row.PlayerRating.role)} "
                     f"{rank_str} "
-                    f"{round(row.PlayerRating.mmr, 2)} MMR, "
-                    f"{row.wins}W {row.count-row.wins}L"
+                    f"`{round(row.PlayerRating.mmr, 2)} MMR  "
+                    f"{row.wins}W {row.count-row.wins}L`"
                 )
 
                 rows.append(row_string)

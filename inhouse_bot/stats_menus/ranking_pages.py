@@ -4,18 +4,9 @@ import inflect
 from discord import Embed
 from discord.ext import menus
 
-from inhouse_bot.common_utils.emoji_and_thumbnaills import get_role_emoji
+from inhouse_bot.common_utils.emoji_and_thumbnails import get_role_emoji, get_rank_emoji
 
 inflect_engine = inflect.engine()
-
-
-rank_emoji_dict = {
-    1: "🥇",
-    2: "🥈",
-    3: "🥉",
-    10: "\N{KEYCAP TEN}",
-    **{i: str(i) + "\u20e3" for i in range(4, 10)},
-}
 
 
 class RankingPagesSource(menus.ListPageSource):
@@ -40,13 +31,9 @@ class RankingPagesSource(menus.ListPageSource):
         max_name_length = max(len(r.Player.short_name) for r in entries)
 
         for idx, row in enumerate(entries):
-            rank = idx + 1 + offset
+            rank = idx + offset
 
-            if rank > 10:
-                rank_str = inflect_engine.ordinal(rank)
-                rank_str = f"`{rank_str}`"
-            else:
-                rank_str = rank_emoji_dict[rank] + "   "
+            rank_str = get_rank_emoji(rank)
 
             role = get_role_emoji(row.role)
 

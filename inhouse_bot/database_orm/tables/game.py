@@ -13,7 +13,7 @@ from inhouse_bot.database_orm import bot_declarative_base
 from inhouse_bot.database_orm.tables.player import Player
 
 from inhouse_bot.common_utils.fields import roles_list, side_enum
-from inhouse_bot.common_utils.emoji_and_thumbnaills import get_role_emoji, get_orianna_emoji
+from inhouse_bot.common_utils.emoji_and_thumbnails import get_role_emoji, get_champion_emoji
 
 
 class Game(bot_declarative_base):
@@ -107,7 +107,7 @@ class Game(bot_declarative_base):
                         + (  # Then add loading or ✅ if we are looking at a validation embed
                             ""
                             if embed_type != "GAME_FOUND"
-                            else f" {get_orianna_emoji('loading', bot)}"
+                            else f" {get_champion_emoji('loading', bot)}"
                             if p.player_id not in validated_players
                             else " ✅"
                         )

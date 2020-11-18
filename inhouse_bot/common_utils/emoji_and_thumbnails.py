@@ -4,6 +4,10 @@ from typing import Optional, Union
 
 import lol_id_tools
 from discord import Emoji
+import inflect
+
+# Used to properly name numerals
+inflect_engine = inflect.engine()
 
 # Raw images for embed thumbnails
 cdragon_root = "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images"
@@ -30,18 +34,33 @@ role_emoji_dict = {
     "SUP": os.environ.get("INHOUSE_BOT_SUP_EMOJI") or "SUP",
 }
 
+# Default rank emoji
+rank_emoji_dict = {
+    1: "🥇",
+    2: "🥈",
+    3: "🥉",
+    10: "\N{KEYCAP TEN}",
+    **{i: str(i) + "\u20e3" for i in range(4, 10)},
+}
+
 
 def get_role_emoji(role: str) -> str:
     return role_emoji_dict[role]
 
 
+def get_rank_emoji(rank: int) -> str:
+    if rank > 9:
+        rank_str = inflect_engine.ordinal(rank + 1)
+        return f"`{rank_str}`"
+    else:
+        return rank_emoji_dict[rank + 1] + "  "
+
+
 no_symbols_regex = re.compile(r"[^\w]")
 
 
-def get_orianna_emoji(emoji_input: Optional[Union[int, str]], bot) -> str:
+def get_champion_emoji(emoji_input: Optional[Union[int, str]], bot) -> str:
     """
-    Orianna is a framework and supplies emoji from its server
-
     Accepts champion IDs, "loading", and None
     """
     emoji_name = None

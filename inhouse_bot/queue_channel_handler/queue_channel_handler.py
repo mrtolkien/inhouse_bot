@@ -7,7 +7,7 @@ from discord.ext.commands import Bot
 
 from inhouse_bot import game_queue
 from inhouse_bot.common_utils.embeds import embeds_color
-from inhouse_bot.common_utils.emoji_and_thumbnaills import get_role_emoji
+from inhouse_bot.common_utils.emoji_and_thumbnails import get_role_emoji
 from inhouse_bot.database_orm import session_scope, ChannelInformation
 
 

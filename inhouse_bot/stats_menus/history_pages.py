@@ -4,7 +4,7 @@ from typing import Tuple, List
 from discord import Embed
 from discord.ext import menus
 
-from inhouse_bot.common_utils.emoji_and_thumbnaills import get_orianna_emoji, get_role_emoji, role_thumbnail_dict
+from inhouse_bot.common_utils.emoji_and_thumbnails import get_champion_emoji, get_role_emoji, role_thumbnail_dict
 from inhouse_bot.database_orm import GameParticipant, Game
 
 entries_type = List[Tuple[Game, GameParticipant]]
@@ -31,7 +31,7 @@ class HistoryPagesSource(menus.ListPageSource):
         max_game_id_length = max(len(str(game.id)) for game, participant in entries)
 
         for game, participant in entries:
-            champion_emoji = get_orianna_emoji(participant.champion_id, self.bot)
+            champion_emoji = get_champion_emoji(participant.champion_id, self.bot)
             role = get_role_emoji(participant.role)
 
             role_counter[participant.role] += 1
