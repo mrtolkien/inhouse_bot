@@ -88,6 +88,9 @@ class GameQueue:
 
         return simple_queue == simple_other_queue
 
+    def __str__(self):
+        return " | ".join(f"{qp}" for qp in self.queue_players)
+
     @property
     def queue_players_dict(self) -> Dict[str, List[QueuePlayer]]:
         """

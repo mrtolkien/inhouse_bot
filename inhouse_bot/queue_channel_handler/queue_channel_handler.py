@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import List, Optional
 
 from discord import Message, Embed, TextChannel
@@ -9,6 +10,8 @@ from inhouse_bot import game_queue
 from inhouse_bot.common_utils.embeds import embeds_color
 from inhouse_bot.common_utils.emoji_and_thumbnails import get_role_emoji
 from inhouse_bot.database_orm import session_scope, ChannelInformation
+
+queue_logger = logging.getLogger("queue_channel_handler")
 
 
 class QueueChannelHandler:
@@ -42,6 +45,7 @@ class QueueChannelHandler:
 
         # We check if the message is in a queue channel
         if self.is_queue_channel(msg.channel.id):
+
             # If it was, we trigger a purge of non-marked messages
 
             # We save the msg id and will only delete if it’s still the latest msg in the channel to purge after 5s
@@ -119,6 +123,8 @@ class QueueChannelHandler:
 
         self._queue_channels.append(channel)
 
+        queue_logger.info(f"Marked {channel_id} as a queue channel")
+
     def unmark_queue_channel(self, channel_id):
         game_queue.reset_queue(channel_id)
 
@@ -127,6 +133,8 @@ class QueueChannelHandler:
             channel_query.delete(synchronize_session=False)
 
         self._queue_channels = [c for c in self._queue_channels if c.id != channel_id]
+
+        queue_logger.info(f"Unmarked {channel_id} as a queue channel")
 
     def mark_queue_related_message(self, msg):
         self.permanent_messages.add(msg.id)

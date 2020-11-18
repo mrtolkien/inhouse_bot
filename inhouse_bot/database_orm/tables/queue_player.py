@@ -47,3 +47,6 @@ class QueuePlayer(bot_declarative_base):
         ),
         {},
     )
+
+    def __str__(self):
+        return f"{self.player.name} - {self.role}"

@@ -38,7 +38,12 @@ class InhouseBot(commands.Bot):
         self.add_cog(StatsCog(self))
 
         # Setting up the on_message listener that will handle queue channels
-        self.add_listener(queue_channel_handler.queue_channel_message_listener, "on_message")
+        self.add_listener(func=queue_channel_handler.queue_channel_message_listener, name="on_message")
+
+        # Setting up some basic logging
+        self.logger = logging.getLogger("inhouse_bot")
+
+        self.add_listener(func=self.command_logging, name="on_command")
 
         # While I hate mixing production and testing code, this is the most convenient solution to test the bot
         if os.environ.get("INHOUSE_BOT_TEST"):
@@ -49,8 +54,14 @@ class InhouseBot(commands.Bot):
     def run(self, *args, **kwargs):
         super().run(os.environ["INHOUSE_BOT_TOKEN"], *args, **kwargs)
 
+    async def command_logging(self, ctx: discord.ext.commands.Context):
+        """
+        Listener called on command-trigger messages to add some logging
+        """
+        self.logger.info(f"{ctx.message.content}\t{ctx.author.name}\t{ctx.guild.name}\t{ctx.channel.name}")
+
     async def on_ready(self):
-        logging.info(f"{self.user.name} has connected to Discord")
+        self.logger.info(f"{self.user.name} has connected to Discord")
 
         # We cancel all ready-checks, and queue_channel_handler will handle rewriting the queues
         game_queue.cancel_all_ready_checks()
@@ -122,4 +133,4 @@ class InhouseBot(commands.Bot):
                 f"Use !help for the commands list or contact server admins for bugs",
             )
 
-            raise error
+            raise error  # This will be raised in the logs with ERROR level logging

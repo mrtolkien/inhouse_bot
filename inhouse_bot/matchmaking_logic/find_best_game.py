@@ -1,3 +1,4 @@
+import logging
 import itertools
 import random
 from typing import Optional, List
@@ -7,6 +8,9 @@ from inhouse_bot.common_utils.fields import roles_list
 from inhouse_bot.game_queue import GameQueue
 
 
+matchmaking_logger = logging.getLogger("matchmaking_logic")
+
+
 def find_best_game(queue: GameQueue, game_quality_threshold=0.1) -> Optional[Game]:
     # Do not do anything if there’s not at least 2 players in queue per role
 
@@ -14,10 +18,10 @@ def find_best_game(queue: GameQueue, game_quality_threshold=0.1) -> Optional[Gam
         if len(role_queue) < 2:
             return None
 
-    # TODO LOW PRIO Add some logging to the process
-
     # If we get there, we know there are at least 10 players in the queue
     # We start with the 10 players who have been in queue for the longest time
+
+    matchmaking_logger.info(f"Matchmaking process started with: {queue}")
 
     best_game = None
     for players_threshold in range(10, len(queue) + 1):
@@ -36,6 +40,10 @@ def find_best_game_for_queue_players(queue_players: List[QueuePlayer]) -> Game:
     """
     A sub function to allow us to iterate on QueuePlayers from oldest to newest
     """
+    matchmaking_logger.info(
+        f"Trying to find the best game for: {' | '.join(f'{qp}' for qp in queue_players)}"
+    )
+
     # Currently simply testing all permutations because it should be pretty lightweight
     # TODO LOW PRIO Spot mirrored team compositions (full blue/red -> red/blue) to not calculate them twice
 
@@ -88,6 +96,10 @@ def find_best_game_for_queue_players(queue_players: List[QueuePlayer]) -> Game:
         # Importantly, we do *not* add the game to the session, as that will be handled by the bot logic itself
 
         if game.matchmaking_score < best_score:
+            matchmaking_logger.info(
+                f"New best game found with {game.blue_expected_winrate*100:.2f} blue side expected winrate"
+            )
+
             best_game = game
             best_score = game.matchmaking_score
             # If the game is seen as being below 51% winrate for one side, we simply stop there (helps with big lists)
