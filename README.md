@@ -36,6 +36,8 @@ A Discord bot to handle League of Legends in-house games, with role queue, match
 - Run `docker-compose up -d` and your bot should be up and running!
 
     - If you also added the `adminer` service, you can use http://localhost:8080/ to manage the database
+    
+- Use `!admin mark queue` to define queue channels
 
 # Basic use
 ```
