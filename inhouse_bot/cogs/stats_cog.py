@@ -150,12 +150,11 @@ class StatsCog(commands.Cog, name="Stats"):
 
                 # TODO FIX DUPLICATION
                 if rank > 10:
-                    rank_str = inflect_engine.ordinal(rank+1)
+                    rank_str = inflect_engine.ordinal(rank + 1)
                     rank_str = f"`{rank_str}`"
                 else:
-                    rank_str = rank_emoji_dict[rank+1] + " "
+                    rank_str = rank_emoji_dict[rank + 1] + " "
 
-                # TODO C MOCHE
                 row_string = (
                     f"{f'{self.bot.get_guild(row.PlayerRating.player_server_id).name} ' if not ctx.guild else ''}"
                     f"{get_role_emoji(row.PlayerRating.role)} "

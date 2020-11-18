@@ -14,7 +14,7 @@ trueskill
 tabulate
 
 # Fuzzy string matching
-rapidfuzz
+rapidfuzz==0.12.5
 
 # Inflecting numerals
 inflect

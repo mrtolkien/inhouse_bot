@@ -1,3 +1,6 @@
+# THIS IS THE DEVELOPMENT DOCKER COMPOSE I’M USING
+# DO NOT USE IT TO DEPLOY THE BOT
+
 version: "3.8"
 
 services:
@@ -5,27 +8,36 @@ services:
     image: mrtolkien/inhouse_bot:beta
     build:
       context: .
-    env_file:
-    - .env
+    env_file: # Using in env file in dev to hide my bot key and such
+      - .env
     volumes:
-    - type: bind
-      source: ./
-      target: /inhouse_bot
+      - type: bind
+        source: ./
+        target: /inhouse_bot
+      - type: volume
+        source: dbsocket
+        target: /var/run/postgresql
+    depends_on:
+      - db
 
   db:
     image: postgres:alpine
-    # Optional volume to save data long-term, not used in development
-    # volumes:
-    # - pgdata:/var/lib/postgresql/data
+
     environment:
-      POSTGRES_PASSWORD: pwd
+      # By not supplying a POSTGRES_PWD our database is *very* unprotected
       POSTGRES_DB: inhouse_bot
+
+    volumes:
+      # Socket volume to communicate faster
+      - type: volume
+        source: dbsocket
+        target: /var/run/postgresql
 
   adminer:
     image: adminer
     ports:
       - 8080:8080
 
-# If you want to define a volume to save your postgres data, it’s done here
-# volumes:
-#     pgdata:
+
+volumes:
+  dbsocket:

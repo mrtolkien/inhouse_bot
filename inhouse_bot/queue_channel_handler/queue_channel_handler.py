@@ -37,7 +37,7 @@ class QueueChannelHandler:
 
     async def queue_channel_message_listener(self, msg: Message):
         """
-        This is a listener that’s meant to be called on all messages and delete unnecessary ones
+        This is a listener that’s meant to be called on all messages and delete unnecessary ones in the queue channels
         """
 
         # We check if the message is in a queue channel
@@ -49,7 +49,7 @@ class QueueChannelHandler:
 
             await asyncio.sleep(5)  # Hardcoded right now, will need a sanity pass
 
-            if self.latest_purge_message_id.get(msg.channel.id) == msg.id:
+            if self.latest_purge_message_id[msg.channel.id] == msg.id:
                 await msg.channel.purge(check=self.is_not_queue_related_message)
 
     async def refresh_channel_queue(self, channel: TextChannel, restart: bool):
@@ -58,6 +58,7 @@ class QueueChannelHandler:
 
         If channel is supplied instead of a context (in the case of a bot reboot), send the reboot message instead
         """
+
         # Creating the queue visualisation requires getting the Player objects from the DB to have the names
         new_queue = game_queue.GameQueue(channel.id)
 

@@ -111,7 +111,7 @@ def remove_players(player_ids: Set[int], channel_id: int):
 
 def start_ready_check(player_ids: List[int], channel_id: int, ready_check_message_id: int):
     # Checking to make sure everything is fine
-    assert len(player_ids) == int(os.environ["INHOUSE_BOT_QUEUE_SIZE"])
+    assert len(player_ids) == 10
 
     with session_scope() as session:
 

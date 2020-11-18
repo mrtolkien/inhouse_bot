@@ -1,0 +1,60 @@
+# THIS FILE IS MEANT TO BE AN EXAMPLE DOCKER COMPOSE FILE TO RUN THE BOT
+
+version: "3.8"
+
+services:
+  # Bot service
+  inhouse_bot:
+    image: mrtolkien/inhouse_bot
+    environment:
+      # The connection string is an SQLAlchemy connection string, does not need a password since it uses sockets
+      INHOUSE_BOT_CONNECTION_STRING: postgresql+psycopg2://postgres:@/inhouse_bot
+
+      # You need to put your Discord Bot token here
+      INHOUSE_BOT_TOKEN: ⚠ PUT_YOUR_TOKEN_HERE ⚠
+
+      # Those emoji help the bot look good and are defined with discord.py emoji syntax
+      INHOUSE_BOT_TOP_EMOJI: '<:TOP:770815146452451359>'
+      INHOUSE_BOT_JGL_EMOJI: '<:JGL:770815197728079882>'
+      INHOUSE_BOT_MID_EMOJI: '<:MID:770815159765696544>'
+      INHOUSE_BOT_BOT_EMOJI: '<:BOT:770815119630401586>'
+      INHOUSE_BOT_SUP_EMOJI: '<:SUP:770815175619379210>'
+
+    volumes:
+      # Socket volume to connect to the database
+      - type: volume
+        source: dbsocket
+        target: /var/run/postgresql
+
+    depends_on:
+      - db
+
+  # Database service for the bot
+  db:
+    image: postgres:alpine
+    volumes:
+      # Database persistence volume
+      - type: volume
+        source: pgdata
+        target: /var/lib/postgresql/data
+      # Socket volume to communicate faster
+      - type: volume
+        source: dbsocket
+        target: /var/run/postgresql
+    environment:
+      # CHANGE THE PASSWORD BEFORE DEPLOYMENT
+      POSTGRES_PASSWORD: ⚠ USE_A_RANDOM_PASSWORD ⚠
+      POSTGRES_DB: inhouse_bot
+
+  # Simple database management tool (will use the password you set for the db service)
+  adminer:
+    image: adminer
+    depends_on:
+      - db
+    ports:
+      - 8080:8080
+
+
+volumes:
+  pgdata:     # Persistent data volume for the database
+  dbsocket:   # Socket mounting volume
