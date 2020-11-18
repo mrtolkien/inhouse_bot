@@ -18,9 +18,7 @@ from inhouse_bot.stats_menus.ranking_pages import RankingPagesSource
 
 
 class RankingChannelHandler:
-    # TODO post ranking, purge channel, update after game has been scored
     def __init__(self):
-        # TODO LOW PRIO make sure there is only 1 ranking queue per server?
         with session_scope() as session:
             session.expire_on_commit = False
 

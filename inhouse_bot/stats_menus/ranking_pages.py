@@ -10,8 +10,6 @@ inflect_engine = inflect.engine()
 
 
 class RankingPagesSource(menus.ListPageSource):
-    # TODO LOW PRIO see if this really needs a bot in the constructor
-
     def __init__(self, entries, embed_name_suffix):
         self.embed_name_suffix = embed_name_suffix
         super().__init__(entries, per_page=10)

@@ -155,7 +155,7 @@ class TestCog(commands.Cog, name="TEST"):
 
         await ctx.send(f"{champion_id} - {emoji_text}")
 
-    # TODO LOW PRIO A test function to test accepting the queue/cancelling a game by spoofing reactions
+    # TODO LOW PRIO Write a test function to test accepting the queue/cancelling a game by spoofing reactions
     # @commands.command()
     # async def test_accept_queue(self, ctx: commands.Context, queue_message_id):
     #     """
