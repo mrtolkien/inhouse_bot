@@ -41,7 +41,7 @@ class QueueCog(commands.Cog, name="Queue"):
             embed = game.get_embed(embed_type="GAME_FOUND", validated_players=[], bot=self.bot)
 
             # We notify the players and send the message
-            ready_check_message = await ctx.send(content=game.players_ping, embed=embed, delete_after=60*15)
+            ready_check_message = await ctx.send(content=game.players_ping, embed=embed, delete_after=60 * 15)
 
             # We mark the ready check as ongoing (which will be used to the queue)
             game_queue.start_ready_check(
@@ -54,13 +54,31 @@ class QueueCog(commands.Cog, name="Queue"):
             await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
 
             # And then we wait for the validation
-            ready, players_to_drop = await checkmark_validation(
-                bot=self.bot,
-                message=ready_check_message,
-                validating_players_ids=game.player_ids_list,
-                validation_threshold=10,
-                game=game,
-            )
+            try:
+                ready, players_to_drop = await checkmark_validation(
+                    bot=self.bot,
+                    message=ready_check_message,
+                    validating_players_ids=game.player_ids_list,
+                    validation_threshold=10,
+                    game=game,
+                )
+
+            # We catch every error here to make sure it does not become blocking
+            except Exception as e:
+                self.bot.logger.error(e)
+                game_queue.cancel_ready_check(
+                    ready_check_id=ready_check_message.id,
+                    ids_to_drop=game.player_ids_list,
+                    server_id=ctx.guild.id,
+                )
+                await ctx.send(
+                    "There was a bug with the ready-check message, all players have been dropped from queue\n"
+                    "Please queue again to restart the process"
+                )
+
+                await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
+
+                return
 
             if ready is True:
                 # We drop all 10 players from the queue
