@@ -1,10 +1,14 @@
 import asyncio
+import logging
 from typing import Tuple, Optional, List, Set
 
 import discord
 from discord.ext.commands import Bot
 
 from inhouse_bot.queue_channel_handler import queue_channel_handler
+
+
+checkmark_logger = logging.getLogger("inhouse_bot_validation")
 
 
 async def checkmark_validation(
@@ -28,6 +32,11 @@ async def checkmark_validation(
         None with a list of players who did not validate
             It timed out and the players who didn't validate should be dropped
     """
+    checkmark_logger.info(
+        f"Starting validation message {message.id} with threshold {validation_threshold}"
+        f" for players {' '.join(str(i) for i in validating_players_ids)}"
+    )
+
     queue_channel_handler.mark_queue_related_message(message)
 
     await message.add_reaction("✅")
@@ -54,6 +63,8 @@ async def checkmark_validation(
             if str(reaction.emoji) == "✅":
                 ids_of_players_who_validated.add(user.id)
 
+                checkmark_logger.info(f"Player {user.id} validated")
+
                 if game:
                     await message.edit(
                         embed=game.get_embed(
@@ -63,16 +74,23 @@ async def checkmark_validation(
 
             # A player cancels, we return it and will drop him
             elif str(reaction.emoji) == "❌":
+                checkmark_logger.info(f"Player {user.id} cancelled, exiting validation")
+
                 result, ids_to_drop = False, {user.id}
                 break
 
     # We get there if no player accepted in the last x minutes
     except asyncio.TimeoutError:
+        checkmark_logger.info(
+            f"The validation timed out, {' '.join(str(i) for i in ids_of_players_who_validated)} validated"
+        )
+
         result, ids_to_drop = (
             None,
             set(i for i in validating_players_ids if i not in ids_of_players_who_validated),
         )
 
+    checkmark_logger.info(f"Unmarking message {message.id} as queue related")
     queue_channel_handler.unmark_queue_related_message(message)
 
     return result, ids_to_drop

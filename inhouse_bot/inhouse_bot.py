@@ -74,15 +74,10 @@ class InhouseBot(commands.Bot):
         Custom error command that catches CommandNotFound as well as MissingRequiredArgument for readable feedback
         """
         if isinstance(error, commands.CommandNotFound):
-            await ctx.send(
-                f"Command `{ctx.invoked_with}` not found, use !help to see the commands list", delete_after=20
-            )
+            await ctx.send(f"Command `{ctx.invoked_with}` not found, use !help to see the commands list")
 
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(
-                f"Arguments missing, use `!help {ctx.invoked_with}` to see the arguments list",
-                delete_after=20,
-            )
+            await ctx.send(f"Arguments missing, use `!help {ctx.invoked_with}` to see the arguments list")
 
         elif isinstance(error, commands.ConversionError):
             # Conversion errors feedback are handled in my converters
@@ -103,34 +98,30 @@ class InhouseBot(commands.Bot):
                     f"Your last game was not scored and you are not allowed to queue at the moment\n"
                     f"One of the winners can score the game with `!won`, "
                     f"or players can agree to cancel it with `!cancel`",
-                    delete_after=10,
+                    delete_after=20,
                 )
 
             elif isinstance(og_error, game_queue.PlayerInReadyCheck):
                 await ctx.send(
                     f"A game has already been found for you and you cannot queue until it is accepted or cancelled\n"
                     f"If it is a bug, contact an admin and ask them to use `!admin reset` with your name",
-                    delete_after=10,
+                    delete_after=20,
                 )
 
             else:
-                print(type(og_error))
-
                 # User-facing error
                 await ctx.send(
-                    f"{og_error.__class__.__name__}: {og_error}\n"
+                    f"There was an error processing the command\n"
                     f"Use !help for the commands list or contact server admins for bugs",
                 )
 
-                raise og_error
+                self.logger.error(og_error)
 
         else:
-            print(type(error))
-
             # User-facing error
             await ctx.send(
-                f"{error.__class__.__name__}: {error}\n"
+                f"There was an error processing the command\n"
                 f"Use !help for the commands list or contact server admins for bugs",
             )
 
-            raise error  # This will be raised in the logs with ERROR level logging
+            self.logger.error(error)

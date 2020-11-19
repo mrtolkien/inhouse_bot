@@ -41,7 +41,7 @@ class QueueCog(commands.Cog, name="Queue"):
             embed = game.get_embed(embed_type="GAME_FOUND", validated_players=[], bot=self.bot)
 
             # We notify the players and send the message
-            ready_check_message = await ctx.send(content=game.players_ping, embed=embed,)
+            ready_check_message = await ctx.send(content=game.players_ping, embed=embed, delete_after=60*15)
 
             # We mark the ready check as ongoing (which will be used to the queue)
             game_queue.start_ready_check(
