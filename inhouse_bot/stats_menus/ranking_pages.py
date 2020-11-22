@@ -39,10 +39,13 @@ class RankingPagesSource(menus.ListPageSource):
 
             player_padding = max_name_length - len(player_name) + 2
 
+            wins = row.wins
+            losses = row.count - row.wins
+
             output_string = (
                 f"{rank_str}{role}  "
                 f"`{row.Player.short_name}{' '*player_padding}{row.mmr:.2f} "
-                f"{row.wins}W {row.count-row.wins}L`"
+                f"{wins}W {losses}L`"
             )
 
             rows.append(output_string)
