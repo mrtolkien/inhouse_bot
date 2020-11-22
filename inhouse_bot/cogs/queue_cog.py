@@ -86,7 +86,7 @@ class QueueCog(commands.Cog, name="Queue"):
 
                 # We commit the game to the database (without a winner)
                 with session_scope() as session:
-                    session.add(game)
+                    game = session.merge(game)  # This gets us the game ID
 
                     queue_channel_handler.mark_queue_related_message(
                         await ctx.send(embed=game.get_embed("GAME_ACCEPTED"),)

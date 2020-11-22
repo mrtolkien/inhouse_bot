@@ -51,7 +51,7 @@ def get_role_emoji(role: str) -> str:
 def get_rank_emoji(rank: int) -> str:
     if rank > 9:
         rank_str = inflect_engine.ordinal(rank + 1)
-        return f"`{rank_str}`"
+        return f"`{rank_str}` "
     else:
         return rank_emoji_dict[rank + 1] + "  "
 
