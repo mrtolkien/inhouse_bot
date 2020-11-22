@@ -86,11 +86,12 @@ class QueueCog(commands.Cog, name="Queue"):
 
                 # We commit the game to the database (without a winner)
                 with session_scope() as session:
+                    session.expire_on_commit = False
                     game = session.merge(game)  # This gets us the game ID
 
-                    queue_channel_handler.mark_queue_related_message(
-                        await ctx.send(embed=game.get_embed("GAME_ACCEPTED"),)
-                    )
+                queue_channel_handler.mark_queue_related_message(
+                    await ctx.send(embed=game.get_embed("GAME_ACCEPTED"),)
+                )
 
             elif ready is False:
                 # We remove the player who cancelled
