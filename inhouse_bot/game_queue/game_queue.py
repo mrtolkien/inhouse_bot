@@ -104,9 +104,10 @@ class GameQueue:
 
         # TODO This should be an sqlalchemy hybrid property and a single list comprehension
         for qp in self.queue_players:
-            if (
-                qp.duo_id and qp.duo_id < qp.player_id
+            if (qp.duo_id is not None) and (
+                qp.duo_id > qp.player_id
             ):  # Using this inequality to make sure we only have each duo once
+
                 duo_qp = next(duo_qp for duo_qp in self.queue_players if duo_qp.player_id == qp.duo_id)
 
                 duos.append((qp, duo_qp))
