@@ -26,6 +26,7 @@ services:
     environment:
       # By not supplying a POSTGRES_PWD our database is *very* unprotected
       POSTGRES_DB: inhouse_bot
+      POSTGRES_PASSWORD: pwd
 
     volumes:
       # Socket volume to communicate faster

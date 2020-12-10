@@ -61,3 +61,9 @@ def test_matchmaking_logic_priority():
     # Assert we chose 0, 1, 4, 5, 8, 9, 13, 13, 16, 17 players
     for participant in game.participants.values():
         assert participant.player_id % 4 < 2
+
+
+def test_trueskill_draw():
+    import trueskill
+
+    assert trueskill.DRAW_PROBABILITY == 0.
