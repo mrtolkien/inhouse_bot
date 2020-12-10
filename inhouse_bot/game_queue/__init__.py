@@ -11,4 +11,6 @@ from inhouse_bot.game_queue.queue_handler import (
     cancel_all_ready_checks,
     get_active_queues,
     reset_queue,
+    add_duo,
+    remove_duo,
 )

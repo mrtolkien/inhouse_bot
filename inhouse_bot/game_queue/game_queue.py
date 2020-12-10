@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from sqlalchemy import func
 from inhouse_bot.database_orm import QueuePlayer, PlayerRating, session_scope
@@ -97,3 +97,7 @@ class GameQueue:
         This dictionary will always have all roles included
         """
         return {role: [player for player in self.queue_players if player.role == role] for role in roles_list}
+
+    @property
+    def duos(self) -> List[Tuple[QueuePlayer, QueuePlayer]]:
+        ...

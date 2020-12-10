@@ -66,4 +66,25 @@ def test_matchmaking_logic_priority():
 def test_trueskill_draw():
     import trueskill
 
-    assert trueskill.DRAW_PROBABILITY == 0.
+    assert trueskill.DRAW_PROBABILITY == 0.0
+
+
+def test_duo_matchmaking():
+    game_queue.reset_queue()
+
+    # We queue for everything except the red support
+    for player_id in range(0, 9):
+        game_queue.add_player(player_id, roles_list[player_id % 5], 0, 0)
+
+    # We add the last player as duo with player 0
+    game_queue.add_duo(0, "TOP", 9, "SUP", 0, 0)
+
+    game = find_best_game(GameQueue(0))
+
+    # Make sure we found a game
+    assert game
+
+    player_0 = next(p for p in game.participants.values() if p.player_id == 0)
+    player_9 = next(p for p in game.participants.values() if p.player_id == 9)
+
+    assert player_0.side == player_9.side

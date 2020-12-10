@@ -81,7 +81,7 @@ def test_multiple_queues():
     game_queue.reset_queue()
     game_queue.add_player(0, roles_list[0], 0, 0)
 
-    # This will take at least 30s to crash because of the queue timeout
+    # This will take a few seconds
     for i in range(1000):
         GameQueue(0)
 
@@ -94,3 +94,23 @@ def test_unmark_queue():
     queue_channel_handler.unmark_queue_channel(2)
 
     assert len(GameQueue(2)) == 0
+
+
+def test_duo_queue():
+    game_queue.reset_queue()
+
+    # Adding it all except last support
+    for player_id in range(0, 9):
+        game_queue.add_player(player_id, roles_list[player_id % 5], 0, 0)
+
+    # Marking players 0 and 9 as duo
+    game_queue.add_duo(0, "TOP", 9, "SUP", 0, 0)
+
+    assert len(GameQueue(0)) == 10
+    assert len(GameQueue(0).duos) == 1
+
+    # Removing their duo status with 0 calling !solo
+    game_queue.remove_duo(0, 0, 0)
+
+    assert len(GameQueue(0)) == 10
+    assert len(GameQueue(0).duos) == 0

@@ -31,6 +31,9 @@ class QueuePlayer(bot_declarative_base):
     player_id = Column(BigInteger, primary_key=True, index=True)
     player_server_id = Column(BigInteger)
 
+    # New column allowing us to handle duo queuing
+    duo_id = Column(BigInteger)
+
     # Queue start time to favor players who have been in queue longer
     queue_time = Column(DateTime)
 

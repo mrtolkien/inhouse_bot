@@ -198,3 +198,20 @@ def get_active_queues() -> List[int]:
 
 class PlayerInGame(Exception):
     ...
+
+
+def add_duo(
+    first_player_id: int,
+    first_player_role: str,
+    second_player_id: int,
+    second_player_role: str,
+    channel_id: int,
+    server_id: int = None,
+    first_player_name: str = None,
+    second_player_name: str = None,
+):
+    return None
+
+
+def remove_duo(player_id: int, channel_id: int, server_id: int = None):
+    return None
