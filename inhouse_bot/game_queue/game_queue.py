@@ -100,4 +100,15 @@ class GameQueue:
 
     @property
     def duos(self) -> List[Tuple[QueuePlayer, QueuePlayer]]:
-        ...
+        duos = []
+
+        # TODO This should be an sqlalchemy hybrid property and a single list comprehension
+        for qp in self.queue_players:
+            if (
+                qp.duo_id and qp.duo_id < qp.player_id
+            ):  # Using this inequality to make sure we only have each duo once
+                duo_qp = next(qp for qp in self.queue_players if qp.player_id == qp.duo_id)
+
+                duos.append((qp, duo_qp))
+
+        return duos
