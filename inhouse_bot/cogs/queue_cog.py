@@ -3,10 +3,12 @@ from discord.ext import commands
 
 from inhouse_bot import game_queue
 from inhouse_bot import matchmaking_logic
+
 from inhouse_bot.common_utils.emoji_and_thumbnails import get_role_emoji
 from inhouse_bot.common_utils.fields import RoleConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.common_utils.validation_dialog import checkmark_validation
+
 from inhouse_bot.database_orm import session_scope
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.queue_channel_handler import queue_channel_handler
