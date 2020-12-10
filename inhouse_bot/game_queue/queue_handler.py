@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, Set
 
+import sqlalchemy
 from discord.ext import commands
 
 from inhouse_bot.common_utils.fields import roles_list
@@ -216,6 +217,8 @@ def add_duo(
     first_player_name: str = None,
     second_player_name: str = None,
 ):
+    # Marks this group of players and roles as a duo
+
     if first_player_role == second_player_role:
         raise SameRolesForDuo
 
@@ -250,5 +253,14 @@ def add_duo(
         session.merge(second_queue_player)
 
 
-def remove_duo(player_id: int, channel_id: int, server_id: int = None):
-    return None
+def remove_duo(player_id: int, channel_id: int):
+    # Removes duos for all roles for this player in this channel
+    # This could be called during a ready-check but it shouldn’t be too much of an issue
+
+    with session_scope() as session:
+        (
+            session.query(QueuePlayer)
+            .filter(QueuePlayer.channel_id == channel_id)
+            .filter(sqlalchemy.or_(QueuePlayer.duo_id == player_id, QueuePlayer.player_id == player_id))
+            .update({"duo_id": None}, synchronize_session=False)
+        )

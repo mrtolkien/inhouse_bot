@@ -110,7 +110,7 @@ def test_duo_queue():
     assert len(GameQueue(0).duos) == 1
 
     # Removing their duo status with 0 calling !solo
-    game_queue.remove_duo(0, 0, 0)
+    game_queue.remove_duo(0, 0)
 
     assert len(GameQueue(0)) == 10
     assert len(GameQueue(0).duos) == 0
