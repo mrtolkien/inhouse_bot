@@ -45,6 +45,8 @@ class AdminCog(commands.Cog, name="Admin"):
             channel = ctx.channel if not member_or_channel else member_or_channel
             game_queue.reset_queue(channel.id)
 
+            # TODO Find a way to cancel the ongoing ready-checks as they *will* bug out
+            #   The current code organisation does not allow to do it easily, so maybe it’ll need some structure changes
             await ctx.send(f"Queue has been reset in {channel.name}")
 
         elif type(member_or_channel) == discord.Member:
