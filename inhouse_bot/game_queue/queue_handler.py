@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import List, Optional, Set
 
+from discord.ext import commands
+
 from inhouse_bot.common_utils.fields import roles_list
 
 from inhouse_bot.database_orm import session_scope, QueuePlayer, Player
@@ -8,6 +10,10 @@ from inhouse_bot.common_utils.get_last_game import get_last_game
 
 
 class PlayerInReadyCheck(Exception):
+    ...
+
+
+class SameRolesForDuo(commands.CheckFailure):
     ...
 
 
@@ -210,7 +216,38 @@ def add_duo(
     first_player_name: str = None,
     second_player_name: str = None,
 ):
-    return None
+    if first_player_role == second_player_role:
+        raise SameRolesForDuo
+
+    add_player(
+        player_id=first_player_id,
+        role=first_player_role,
+        channel_id=channel_id,
+        server_id=server_id,
+        name=first_player_name,
+    )
+
+    add_player(
+        player_id=second_player_id,
+        role=second_player_role,
+        channel_id=channel_id,
+        server_id=server_id,
+        name=second_player_name,
+    )
+
+    with session_scope() as session:
+        # Finally, we add the duos by merging only the newer data (empty fields shouldn’t get merged)
+        first_queue_player = QueuePlayer(
+            player_id=first_player_id, role=first_player_role, channel_id=channel_id, duo_id=second_player_id
+        )
+
+        second_queue_player = QueuePlayer(
+            player_id=second_player_id, role=second_player_role, channel_id=channel_id, duo_id=first_player_id
+        )
+
+        # We merge the new information
+        session.merge(first_queue_player)
+        session.merge(second_queue_player)
 
 
 def remove_duo(player_id: int, channel_id: int, server_id: int = None):

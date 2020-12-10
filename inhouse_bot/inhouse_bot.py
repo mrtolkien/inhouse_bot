@@ -8,6 +8,7 @@ from discord.ext import commands
 from discord.ext.commands import NoPrivateMessage
 
 from inhouse_bot import game_queue
+from inhouse_bot.game_queue.queue_handler import SameRolesForDuo
 from inhouse_bot.queue_channel_handler.queue_channel_handler import (
     QueueChannelsOnly,
     queue_channel_handler,
@@ -88,6 +89,9 @@ class InhouseBot(commands.Bot):
 
         elif isinstance(error, QueueChannelsOnly):
             await ctx.send(f"This command can only be used in a channel marked as a queue by an admin")
+
+        elif isinstance(error, SameRolesForDuo):
+            await ctx.send(f"Duos must have different roles")
 
         # This handles errors that happen during a command
         elif isinstance(error, commands.CommandInvokeError):

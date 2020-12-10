@@ -107,7 +107,7 @@ class GameQueue:
             if (
                 qp.duo_id and qp.duo_id < qp.player_id
             ):  # Using this inequality to make sure we only have each duo once
-                duo_qp = next(qp for qp in self.queue_players if qp.player_id == qp.duo_id)
+                duo_qp = next(duo_qp for duo_qp in self.queue_players if duo_qp.player_id == qp.duo_id)
 
                 duos.append((qp, duo_qp))
 
