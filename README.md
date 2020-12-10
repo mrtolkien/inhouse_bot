@@ -90,6 +90,8 @@ cancelled.
 # Queue features
 - `!queue role` puts you in the current channel’s queue for the given role
 
+- `!queue role @user other_role` duo queues you together with the tagged player in the current channel
+
 - `!leave` removes you from the channel’s queue for all roles
 
 - `!won` scores your last game as a win for your team and waits for validation from at least 6 players from the game

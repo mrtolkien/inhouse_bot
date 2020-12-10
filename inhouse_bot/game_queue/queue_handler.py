@@ -93,13 +93,16 @@ def remove_player(player_id: int, channel_id: int = None):
             raise PlayerInReadyCheck
 
         # We select the player’s rows
-        query = session.query(QueuePlayer).filter(QueuePlayer.player_id == player_id)
+        query_player = session.query(QueuePlayer).filter(QueuePlayer.player_id == player_id)
+        query_duos = session.query(QueuePlayer).filter(QueuePlayer.duo_id == player_id)
 
         # If given a channel ID (when the user calls !leave), we filter
         if channel_id:
-            query = query.filter(QueuePlayer.channel_id == channel_id)
+            query_player = query_player.filter(QueuePlayer.channel_id == channel_id)
+            query_duos = query_duos.filter(QueuePlayer.channel_id == channel_id)
 
-        query.delete(synchronize_session=False)
+        query_player.delete(synchronize_session=False)
+        query_duos.update({"duo_id": None}, synchronize_session=False)
 
 
 def remove_players(player_ids: Set[int], channel_id: int):
@@ -166,6 +169,7 @@ def cancel_ready_check(
         )
 
         if ids_to_drop:
+            # TODO This should be shared with remove_player and not duplicated
             players_query = session.query(QueuePlayer).filter(QueuePlayer.player_id.in_(ids_to_drop))
             duos_query = session.query(QueuePlayer).filter(QueuePlayer.duo_id.in_(ids_to_drop))
 
