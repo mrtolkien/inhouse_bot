@@ -76,15 +76,38 @@ def find_best_game_for_queue_players(queue_players: List[QueuePlayer]) -> Game:
         #   tuple_idx = 0 (BLUE) &  shuffle = True  -> False == True    -> False    -> RED
         #   tuple_idx = 1 (RED)  &  shuffle = True  -> True == True     -> True     -> BLUE
 
-        # We transform it to a more manageable dictionary of players
-        # {(team, role)} = Player
-        players = {
+        # We transform it to a more manageable dictionary of QueuePlayers
+        # {(team, role)} = QueuePlayer
+        queue_players_dict = {
             ("BLUE" if bool(tuple_idx) == shuffle else "RED", roles_list[role_idx]): queue_players_tuple[
                 tuple_idx
-            ].player  # We take the Player object of our QueuePlayer here
+            ]
             for role_idx, queue_players_tuple in enumerate(team_composition)
             for tuple_idx in (0, 1)
         }
+
+        # We check that all 10 QueuePlayers are in the same team as their duos
+
+        # TODO LOW PRIO This is super stupid *but* works well enough for easy situations
+        #   This is very much in need of a rewrite
+        duos_not_in_same_team = False
+        for team_tuple, qp in queue_players_dict.items():
+            if qp.duo_id is not None:
+                try:
+                    next(
+                        duo_qp
+                        for duo_team_tuple, duo_qp in queue_players_dict.items()
+                        if duo_team_tuple[0] == team_tuple[0] and duo_qp.player_id == qp.duo_id
+                    )
+                except StopIteration:
+                    duos_not_in_same_team = True
+                    continue
+
+        if duos_not_in_same_team:
+            continue
+
+        # We take the players from the queue players and make it a new dict to create our games objects
+        players = {k: qp.player for k, qp in queue_players_dict.items()}
 
         # We check to make sure all 10 players are different
         if set(players.values()).__len__() != 10:
