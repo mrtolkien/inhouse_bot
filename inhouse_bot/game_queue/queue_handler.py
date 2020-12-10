@@ -166,20 +166,25 @@ def cancel_ready_check(
         )
 
         if ids_to_drop:
-            query = session.query(QueuePlayer).filter(QueuePlayer.player_id.in_(ids_to_drop))
+            players_query = session.query(QueuePlayer).filter(QueuePlayer.player_id.in_(ids_to_drop))
+            duos_query = session.query(QueuePlayer).filter(QueuePlayer.duo_id.in_(ids_to_drop))
 
             if server_id and channel_id:
                 raise Exception("channel_id and server_id should not be used together here")
 
             # This removes the player from *all* queues in the server (timeout)
             if server_id:
-                query = query.filter(QueuePlayer.player_server_id == server_id)
+                players_query = players_query.filter(QueuePlayer.player_server_id == server_id)
+                duos_query = duos_query.filter(QueuePlayer.player_server_id == server_id)
 
             # This removes the player only from the given channel (cancellation)
             if channel_id:
-                query = query.filter(QueuePlayer.channel_id == channel_id)
+                players_query = players_query.filter(QueuePlayer.channel_id == channel_id)
+                duos_query = duos_query.filter(QueuePlayer.channel_id == channel_id)
 
-            query.delete(synchronize_session=False)
+            # Drop the player and remove his duo status with other players
+            players_query.delete(synchronize_session=False)
+            duos_query.update({"duo_id": None}, synchronize_session=False)
 
 
 def cancel_all_ready_checks():
