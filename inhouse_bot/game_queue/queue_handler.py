@@ -234,6 +234,10 @@ def add_duo(
     if first_player_role == second_player_role:
         raise SameRolesForDuo
 
+    # Just in case
+    remove_player(first_player_id, channel_id)
+    remove_player(second_player_id, channel_id)
+
     add_player(
         player_id=first_player_id,
         role=first_player_role,
