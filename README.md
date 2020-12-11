@@ -33,6 +33,8 @@ A Discord bot to handle League of Legends in-house games, with role queue, match
 
 - Edit the file to add your Discord bot token as well as the Discord ID of your emojis, and change the database default password to something random
 
+     - You can add the environment variable `INHOUSE_BOT_TEST=1` to the bot’s variables and it will add a few `!test` commands
+
 - Run `docker-compose up -d` and your bot should be up and running!
 
     - If you also added the `adminer` service, you can use http://localhost:8080/ to manage the database
