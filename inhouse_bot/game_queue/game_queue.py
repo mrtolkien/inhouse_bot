@@ -3,6 +3,7 @@ from typing import Dict, List, Tuple
 from sqlalchemy import func
 from inhouse_bot.database_orm import QueuePlayer, PlayerRating, session_scope
 from inhouse_bot.common_utils.fields import roles_list
+from inhouse_bot.inhouse_logger import inhouse_logger
 
 
 class GameQueue:
@@ -89,7 +90,20 @@ class GameQueue:
         return simple_queue == simple_other_queue
 
     def __str__(self):
-        return " | ".join(f"{qp}" for qp in self.queue_players)
+        rows = []
+
+        for role in roles_list:
+            rows.append(
+                f"{role}\t" + " ".join(qp.player.name for qp in self.queue_players if qp.role == role)
+            )
+
+        duos_strings = []
+        for duo in self.duos:
+            duos_strings.append(" + ".join(f"{qp.player.name} {qp.role}" for qp in duo))
+
+        rows.append(f"DUO\t{', '.join(duos_strings)}")
+
+        return "\n".join(rows)
 
     @property
     def queue_players_dict(self) -> Dict[str, List[QueuePlayer]]:
@@ -108,8 +122,12 @@ class GameQueue:
                 qp.duo_id > qp.player_id
             ):  # Using this inequality to make sure we only have each duo once
 
-                duo_qp = next(duo_qp for duo_qp in self.queue_players if duo_qp.player_id == qp.duo_id)
+                try:
+                    duo_qp = next(duo_qp for duo_qp in self.queue_players if duo_qp.player_id == qp.duo_id)
+                    duos.append((qp, duo_qp))
 
-                duos.append((qp, duo_qp))
+                except StopIteration:
+                    # TODO THIS SHOULD NOT HAPPEN BUT WE DON’T WANT TO CRASH, QUICKFIX THAT WILL NEED FIXING
+                    inhouse_logger.error(f"Could not find duo for {qp}\t{qp.duo_id=}")
 
         return duos
