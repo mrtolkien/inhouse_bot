@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import discord
 from discord.ext import commands
 
@@ -23,6 +25,10 @@ class QueueCog(commands.Cog, name="Queue"):
 
     def __init__(self, bot: InhouseBot):
         self.bot = bot
+
+        # Makes them jump ahead on the next queue
+        #   player_id -> timestamp
+        self.players_whose_last_game_got_cancelled = {}
 
         self.games_getting_scored_ids = set()
 
@@ -169,18 +175,29 @@ class QueueCog(commands.Cog, name="Queue"):
             !queue adc
             !queue adc @CoreJJ support
         """
+        # Checking if the last game of this player got cancelled
+        #   If so, we put them in the queue in front of other players
+        jump_ahead = False
+
+        # pop with two arguments returns the second one if the key was not found
+        if cancel_timestamp := self.players_whose_last_game_got_cancelled.pop(ctx.author.id, None):
+
+            if datetime.now() - cancel_timestamp < timedelta(hours=1):
+                jump_ahead = True
 
         if not duo:
-            # Queuing the player
+
+            # Simply queuing the player
             game_queue.add_player(
                 player_id=ctx.author.id,
                 name=ctx.author.display_name,
                 role=role,
                 channel_id=ctx.channel.id,
                 server_id=ctx.guild.id,
+                jump_ahead=jump_ahead,
             )
 
-        # If there is a duo, we go for a different flow (should likely be another function)
+        # If there is a duo, we go for a different flow (which should likely be another function)
         else:
             if not duo_role:
                 await ctx.send("You need to input a role for your duo partner")
@@ -212,6 +229,7 @@ class QueueCog(commands.Cog, name="Queue"):
                 second_player_name=duo.display_name,
                 channel_id=ctx.channel.id,
                 server_id=ctx.guild.id,
+                jump_ahead=jump_ahead,
             )
 
         await self.run_matchmaking_logic(ctx=ctx)
@@ -349,8 +367,14 @@ class QueueCog(commands.Cog, name="Queue"):
 
             if not validated:
                 await ctx.send(f"Game {game.id} was not cancelled")
+
             else:
+
+                for participant in game.participants.values():
+                    self.players_whose_last_game_got_cancelled[participant.player_id] = datetime.now()
+
                 session.delete(game)
+
                 queue_channel_handler.mark_queue_related_message(
                     await ctx.send(f"Game {game.id} was cancelled")
                 )

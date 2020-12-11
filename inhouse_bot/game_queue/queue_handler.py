@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional, Set
 
 import sqlalchemy
@@ -47,7 +47,9 @@ def reset_queue(channel_id: Optional[int] = None):
         query.delete(synchronize_session=False)
 
 
-def add_player(player_id: int, role: str, channel_id: int, server_id: int = None, name: str = None):
+def add_player(
+    player_id: int, role: str, channel_id: int, server_id: int = None, name: str = None, jump_ahead=False
+):
     # Just in case
     assert role in roles_list
 
@@ -72,7 +74,7 @@ def add_player(player_id: int, role: str, channel_id: int, server_id: int = None
             player_id=player_id,
             player_server_id=server_id,
             role=role,
-            queue_time=datetime.now(),
+            queue_time=datetime.now() if not jump_ahead else datetime.now() - timedelta(hours=24),
         )
 
         # We merge for simplicity (allows players to re-queue for the same role)
@@ -225,6 +227,7 @@ def add_duo(
     server_id: int = None,
     first_player_name: str = None,
     second_player_name: str = None,
+    jump_ahead=False,
 ):
     # Marks this group of players and roles as a duo
 
@@ -237,6 +240,7 @@ def add_duo(
         channel_id=channel_id,
         server_id=server_id,
         name=first_player_name,
+        jump_ahead=jump_ahead,
     )
 
     add_player(
@@ -245,6 +249,7 @@ def add_duo(
         channel_id=channel_id,
         server_id=server_id,
         name=second_player_name,
+        jump_ahead=jump_ahead,
     )
 
     with session_scope() as session:
