@@ -36,7 +36,8 @@ class QueuePlayer(bot_declarative_base):
     duo = relationship(
         "QueuePlayer",
         primaryjoin=(duo_id == foreign(player_id))
-        & (player_id == foreign(duo_id) & (channel_id == foreign(channel_id))),
+        & (player_id == foreign(duo_id))
+        & (channel_id == foreign(channel_id)),
         uselist=False,
     )
 

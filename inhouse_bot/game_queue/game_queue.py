@@ -5,7 +5,6 @@ from sqlalchemy.orm import joinedload
 
 from inhouse_bot.database_orm import QueuePlayer, PlayerRating, session_scope
 from inhouse_bot.common_utils.fields import roles_list
-from inhouse_bot.inhouse_logger import inhouse_logger
 
 
 class GameQueue:
@@ -44,6 +43,7 @@ class GameQueue:
                 try:
                     assert queue_player.player.ratings[queue_player.role]
                 except KeyError:
+                    # If not, we create a new rating object
                     queue_player.player.ratings[queue_player.role] = PlayerRating(
                         queue_player.player, queue_player.role
                     )
@@ -63,6 +63,7 @@ class GameQueue:
 
             player_ids_in_ready_check = [r.player_id for r in queue_query if r.is_in_ready_check is not None]
 
+            # Finally, we can cleanup the queue_players variable with only the players truly in queue here
             self.queue_players = [
                 qp for qp in potential_queue_players if qp.player_id not in player_ids_in_ready_check
             ]
@@ -74,6 +75,7 @@ class GameQueue:
             for role in self.queue_players_dict:
                 age_sorted_queue_players += self.queue_players_dict[role][:2]
 
+            # Then we fill with the other players in chronological order
             age_sorted_queue_players += [
                 qp for qp in self.queue_players if qp not in age_sorted_queue_players
             ]
