@@ -1,6 +1,6 @@
 import tempfile
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import dateparser
 import discord
@@ -207,7 +207,7 @@ class StatsCog(commands.Cog, name="Stats"):
         """
         Displays a graph of your MMR history over the past month
         """
-        date_start = dateparser.parse("one month ago")
+        date_start = datetime.now() - timedelta(hours=24 * 30)
 
         with session_scope() as session:
 
@@ -224,6 +224,7 @@ class StatsCog(commands.Cog, name="Stats"):
                 .join(Player)
                 .filter(GameParticipant.player_id == ctx.author.id)
                 .filter(Game.start > date_start)
+                .order_by(Game.start.asc())
             )
 
         mmr_history = defaultdict(lambda: {"dates": [], "mmr": []})
