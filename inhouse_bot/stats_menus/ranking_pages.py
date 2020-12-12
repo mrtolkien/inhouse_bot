@@ -44,7 +44,7 @@ class RankingPagesSource(menus.ListPageSource):
 
             output_string = (
                 f"{rank_str}{role}  "
-                f"`{row.Player.short_name}{' '*player_padding}{row.mmr} "
+                f"`{row.Player.short_name}{' '*player_padding}{int(row.mmr)} "
                 f"{wins}W {losses}L`"
             )
 

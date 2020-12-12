@@ -165,7 +165,7 @@ class StatsCog(commands.Cog, name="Stats"):
                     f"{f'{self.bot.get_guild(row.PlayerRating.player_server_id).name} ' if not ctx.guild else ''}"
                     f"{get_role_emoji(row.PlayerRating.role)} "
                     f"{rank_str} "
-                    f"`{row.PlayerRating.mmr} MMR  "
+                    f"`{int(row.PlayerRating.mmr)} MMR  "
                     f"{row.wins}W {row.count-row.wins}L`"
                 )
 

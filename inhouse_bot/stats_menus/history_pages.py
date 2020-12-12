@@ -45,6 +45,7 @@ class HistoryPagesSource(menus.ListPageSource):
 
             id_padding = max_game_id_length - len(str(game.id)) + 2
 
+            # TODO LOW PRIO add pre-game MMR
             output_string = (
                 f"{result}   {role}   {champion_emoji}  "
                 f"`#{game.id}{' '*id_padding}{game.start.date()}"
