@@ -1,4 +1,4 @@
-from sqlalchemy.orm import relationship, remote, foreign
+from sqlalchemy.orm import relationship, foreign
 
 from inhouse_bot.database_orm import bot_declarative_base
 from sqlalchemy import Column, BigInteger, ForeignKeyConstraint, DateTime, ForeignKey
