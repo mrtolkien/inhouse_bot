@@ -14,12 +14,12 @@ def test_matchmaking_logic():
 
     # We queue for everything except the red support
     for player_id in range(0, 9):
-        game_queue.add_player(player_id, roles_list[player_id % 5], 0, 0)
+        game_queue.add_player(player_id, roles_list[player_id % 5], 0, 0, name=str(player_id))
 
         assert not find_best_game(GameQueue(0))
 
     # We add the last player
-    game_queue.add_player(9, "SUP", 0, 0)
+    game_queue.add_player(9, "SUP", 0, 0, "", name="9")
 
     game = find_best_game(GameQueue(0))
 
@@ -55,7 +55,7 @@ def test_matchmaking_logic_priority():
 
     # We queue for everything, with 0, 1, 2, 3 being top, 4, 5, 6, 7 being jgl, ...
     for player_id in range(0, 20):
-        game_queue.add_player(player_id, roles_list[int(player_id / 4 % 5)], 0, 0)
+        game_queue.add_player(player_id, roles_list[int(player_id / 4 % 5)], 0, 0, name=str(player_id))
 
     game = find_best_game(GameQueue(0))
     print(game.blue_expected_winrate)
@@ -79,7 +79,7 @@ def test_duo_matchmaking():
 
         # We queue for everything except the red support
         for player_id in range(0, 9):
-            game_queue.add_player(player_id, roles_list[player_id % 5], 0, 0)
+            game_queue.add_player(player_id, roles_list[player_id % 5], 0, 0, name=str(player_id))
 
         # We add the last player as duo with player 0
         game_queue.add_duo(0, "TOP", 9, "SUP", 0, 0)
