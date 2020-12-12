@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Dict, List, Tuple
 
 from sqlalchemy import func
@@ -68,14 +69,40 @@ class GameQueue:
                 qp for qp in potential_queue_players if qp.player_id not in player_ids_in_ready_check
             ]
 
-            # We put 2 players per role *first* then fill the rest by time spent in queue
-            # This helps guarantee players who have been in queue longer are favored
-            age_sorted_queue_players = []
+            # The starting queue is made of the 2 players per role who have been in queue the longest
+            #   We also add any duos *required* for the game to fire
+            starting_queue = defaultdict(list)
 
             for role in self.queue_players_dict:
-                age_sorted_queue_players += self.queue_players_dict[role][:2]
+                for qp in self.queue_players_dict[role]:
 
-            # Then we fill with the other players in chronological order
+                    # If we already have 2 players in that role, we continue
+                    if len(starting_queue[role]) >= 2:
+                        continue
+
+                    # Else we add our current player
+                    starting_queue[role].append(qp)
+
+                    # If he has a duo, we add it
+                    if qp.duo:
+                        duo_role = qp.duo.role
+
+                        # If the role queue of the duo is already filled, we pop the youngest player
+                        if len(starting_queue[duo_role]) >= 2:
+                            starting_queue[duo_role].pop()
+
+                        # We add the duo as part of the queue for his role
+                        starting_queue[duo_role].append(qp.duo)
+
+            # Afterwards we fill the rest of the queue with players in chronological order
+
+            age_sorted_queue_players = sum(
+                list(starting_queue.values()), []
+            )  # Flattening the QueuePlayer objects to a single list
+
+            # This should always be the first game we try
+            assert len(age_sorted_queue_players) <= 10
+
             age_sorted_queue_players += [
                 qp for qp in self.queue_players if qp not in age_sorted_queue_players
             ]

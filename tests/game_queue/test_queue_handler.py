@@ -104,7 +104,10 @@ def test_duo_queue():
         game_queue.add_player(player_id, roles_list[player_id % 5], 0, 0, name=str(player_id))
 
     # Marking players 0 and 9 as duo
-    game_queue.add_duo(0, "TOP", 9, "SUP", 0, 0)
+    game_queue.add_duo(0, "TOP", 9, "SUP", 0, 0, first_player_name="0", second_player_name="9")
+
+    print(GameQueue(0))
+    print(GameQueue(0).duos)
 
     assert len(GameQueue(0)) == 10
     assert len(GameQueue(0).duos) == 1
@@ -114,4 +117,3 @@ def test_duo_queue():
 
     assert len(GameQueue(0)) == 10
     assert len(GameQueue(0).duos) == 0
-
