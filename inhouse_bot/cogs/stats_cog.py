@@ -256,3 +256,5 @@ class StatsCog(commands.Cog, name="Stats"):
             await ctx.send(file=file)
             plt.close()
             temp.close()
+
+    # TODO MEDIUM PRIO (simple) Add !champions_stats once again!!!
