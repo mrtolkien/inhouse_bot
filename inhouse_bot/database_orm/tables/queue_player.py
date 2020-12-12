@@ -1,4 +1,4 @@
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, remote, foreign
 
 from inhouse_bot.database_orm import bot_declarative_base
 from sqlalchemy import Column, BigInteger, ForeignKeyConstraint, DateTime, ForeignKey
@@ -31,8 +31,14 @@ class QueuePlayer(bot_declarative_base):
     player_id = Column(BigInteger, primary_key=True, index=True)
     player_server_id = Column(BigInteger)
 
-    # New column allowing us to handle duo queuing
+    # Duo queue partner
     duo_id = Column(BigInteger)
+    duo = relationship(
+        "QueuePlayer",
+        primaryjoin=(duo_id == foreign(player_id))
+        & (player_id == foreign(duo_id) & (channel_id == foreign(channel_id))),
+        uselist=False,
+    )
 
     # Queue start time to favor players who have been in queue longer
     queue_time = Column(DateTime)

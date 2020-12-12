@@ -1,6 +1,8 @@
 from typing import Dict, List, Tuple
 
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
+
 from inhouse_bot.database_orm import QueuePlayer, PlayerRating, session_scope
 from inhouse_bot.common_utils.fields import roles_list
 from inhouse_bot.inhouse_logger import inhouse_logger
@@ -22,6 +24,7 @@ class GameQueue:
             # First, we get all players in queue, which loads Player and PlayerRating objects as well
             potential_queue_players = (
                 session.query(QueuePlayer)
+                .options(joinedload(QueuePlayer.duo))
                 .filter(QueuePlayer.channel_id == channel_id)
                 .order_by(QueuePlayer.queue_time.asc())
                 .all()
@@ -118,16 +121,9 @@ class GameQueue:
 
         # TODO This should be an sqlalchemy hybrid property and a single list comprehension
         for qp in self.queue_players:
-            if (qp.duo_id is not None) and (
+            if (qp.duo is not None) and (
                 qp.duo_id > qp.player_id
             ):  # Using this inequality to make sure we only have each duo once
-
-                try:
-                    duo_qp = next(duo_qp for duo_qp in self.queue_players if duo_qp.player_id == qp.duo_id)
-                    duos.append((qp, duo_qp))
-
-                except StopIteration:
-                    # TODO THIS SHOULD NOT HAPPEN BUT WE DON’T WANT TO CRASH, QUICKFIX THAT WILL NEED FIXING
-                    inhouse_logger.error(f"Could not find duo for {qp}\t{qp.duo_id=}")
+                duos.append((qp, qp.duo))
 
         return duos

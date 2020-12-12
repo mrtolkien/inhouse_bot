@@ -114,3 +114,4 @@ def test_duo_queue():
 
     assert len(GameQueue(0)) == 10
     assert len(GameQueue(0).duos) == 0
+

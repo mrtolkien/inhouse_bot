@@ -234,7 +234,7 @@ def add_duo(
     if first_player_role == second_player_role:
         raise SameRolesForDuo
 
-    # Just in case
+    # Just in case, we drop the players from the queue first
     remove_player(first_player_id, channel_id)
     remove_player(second_player_id, channel_id)
 
