@@ -103,8 +103,12 @@ class GameQueue:
             # This should always be the first game we try
             assert len(age_sorted_queue_players) <= 10
 
+            # We create a (role, id) list to see who is already in queue more easily
+            #   Simple equality does not work because the qp.duo objects are != from the solo qp objects
+            age_sorted_queue_players_ids = [(qp.player_id, qp.role) for qp in age_sorted_queue_players]
+
             age_sorted_queue_players += [
-                qp for qp in self.queue_players if qp not in age_sorted_queue_players
+                qp for qp in self.queue_players if (qp.player_id, qp.role) not in age_sorted_queue_players_ids
             ]
 
             self.queue_players = age_sorted_queue_players
