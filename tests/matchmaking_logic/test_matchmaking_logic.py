@@ -19,7 +19,7 @@ def test_matchmaking_logic():
         assert not find_best_game(GameQueue(0))
 
     # We add the last player
-    game_queue.add_player(9, "SUP", 0, 0, "", name="9")
+    game_queue.add_player(9, "SUP", 0, 0, name="9")
 
     game = find_best_game(GameQueue(0))
 
@@ -82,7 +82,9 @@ def test_duo_matchmaking():
             game_queue.add_player(player_id, roles_list[player_id % 5], 0, 0, name=str(player_id))
 
         # We add the last player as duo with player 0
-        game_queue.add_duo(0, "TOP", 9, "SUP", 0, 0)
+        game_queue.add_duo(
+            0, "TOP", 9, "SUP", 0, 0, second_player_name="9", first_player_name="0",
+        )
 
         game = find_best_game(GameQueue(0))
 
