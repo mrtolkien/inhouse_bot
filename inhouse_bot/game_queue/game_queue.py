@@ -80,19 +80,23 @@ class GameQueue:
                     if len(starting_queue[role]) >= 2:
                         continue
 
-                    # Else we add our current player
-                    starting_queue[role].append(qp)
+                    # Else we add our current player if he’s not there yet (could have been added by his duo)
+                    # TODO LOW PRIO cleanup that ugly code
+                    if qp.player_id not in [qp.player_id for qp in starting_queue[role]]:
+                        starting_queue[role].append(qp)
 
-                    # If he has a duo, we add it
-                    if qp.duo:
+                    # If he has a duo, we add it if he’s not in queue for his role already
+                    if qp.duo_id is not None:
                         duo_role = qp.duo.role
 
                         # If the role queue of the duo is already filled, we pop the youngest player
                         if len(starting_queue[duo_role]) >= 2:
                             starting_queue[duo_role].pop()
 
-                        # We add the duo as part of the queue for his role
-                        starting_queue[duo_role].append(qp.duo)
+                        # We add the duo as part of the queue for his role *if he’s not yet in it*
+                        # TODO LOW PRIO find a more readable syntax, all those list comprehensions are really bad
+                        if qp.duo_id not in [qp.player_id for qp in starting_queue[duo_role]]:
+                            starting_queue[duo_role].append(qp.duo)
 
             # Afterwards we fill the rest of the queue with players in chronological order
 
