@@ -41,7 +41,7 @@ class StatsCog(commands.Cog, name="Stats"):
     @commands.command()
     @guild_only()
     async def champion(
-        self, ctx: commands.Context, champion_id: ChampionNameConverter(), game_id: int = None
+        self, ctx: commands.Context, champion_name: ChampionNameConverter(), game_id: int = None
     ):
         """
         Saves the champion you used in your last game
@@ -69,13 +69,13 @@ class StatsCog(commands.Cog, name="Stats"):
                 ).one_or_none()
 
             # We write down the champion
-            participant.champion_id = champion_id
+            participant.champion_id = champion_name
 
             game_id = game.id
 
         await ctx.send(
             f"Champion for game {game_id} was set to "
-            f"{lol_id_tools.get_name(champion_id, object_type='champion')} for {ctx.author.display_name}"
+            f"{lol_id_tools.get_name(champion_name, object_type='champion')} for {ctx.author.display_name}"
         )
 
     @commands.command(aliases=["match_history", "mh"])
