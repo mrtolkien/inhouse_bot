@@ -105,7 +105,7 @@ class AdminCog(commands.Cog, name="Admin"):
             await ctx.send(f"Current channel marked as a ranking channel")
 
         else:
-            await ctx.send("Accepted values for !admin mark are QUEUE and RANKING")
+            await ctx.send(f"Accepted values for {PREFIX}admin mark are QUEUE and RANKING")
 
     @admin.command()
     @guild_only()

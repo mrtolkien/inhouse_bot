@@ -15,6 +15,8 @@ from discord.ext.commands import guild_only
 import matplotlib
 import matplotlib.pyplot as plt
 
+from inhouse_bot.common_utils.constants import PREFIX
+from inhouse_bot.common_utils.docstring import doc
 from inhouse_bot.common_utils.emoji_and_thumbnails import get_role_emoji, get_rank_emoji
 from inhouse_bot.database_orm import session_scope, GameParticipant, Game, PlayerRating, Player
 from inhouse_bot.common_utils.fields import ChampionNameConverter, RoleConverter
@@ -40,20 +42,19 @@ class StatsCog(commands.Cog, name="Stats"):
 
     @commands.command()
     @guild_only()
+    @doc(f"""
+        Saves the champion you used in your last game
+
+        Older games can be filled with {PREFIX}champion champion_name game_id
+        You can find the ID of the games you played with {PREFIX}history
+
+        Example:
+            {PREFIX}champion riven
+            {PREFIX}champion riven 1
+    """)
     async def champion(
         self, ctx: commands.Context, champion_name: ChampionNameConverter(), game_id: int = None
     ):
-        """
-        Saves the champion you used in your last game
-
-        Older games can be filled with !champion champion_name game_id
-        You can find the ID of the games you played with !history
-
-        Example:
-            !champion riven
-            !champion riven 1
-        """
-
         with session_scope() as session:
             if not game_id:
                 game, participant = get_last_game(
@@ -79,14 +80,14 @@ class StatsCog(commands.Cog, name="Stats"):
         )
 
     @commands.command(aliases=["match_history", "mh"])
-    async def history(self, ctx: commands.Context):
-        # TODO LOW PRIO Add an @ user for admins
-        """
+    @doc(f"""
         Displays your games history
 
         Example:
-            !history
-        """
+            {PREFIX}history
+    """)
+    async def history(self, ctx: commands.Context):
+        # TODO LOW PRIO Add an @ user for admins
 
         with session_scope() as session:
             session.expire_on_commit = False
@@ -121,13 +122,13 @@ class StatsCog(commands.Cog, name="Stats"):
         await pages.start(ctx)
 
     @commands.command(aliases=["mmr", "rank", "rating"])
-    async def stats(self, ctx: commands.Context):
-        """
+    @doc(f"""
         Returns your rank, MMR, and games played
 
         Example:
-            !rank
-        """
+            {PREFIX}rank
+    """)
+    async def stats(self, ctx: commands.Context):
         with session_scope() as session:
             rating_objects = (
                 session.query(
@@ -177,16 +178,16 @@ class StatsCog(commands.Cog, name="Stats"):
 
     @commands.command(aliases=["rankings"])
     @guild_only()
-    async def ranking(self, ctx: commands.Context, role: RoleConverter() = None):
-        """
+    @doc(f"""
         Displays the top players on the server
 
         A role can be supplied to only display the ranking for this role
 
         Example:
-            !ranking
-            !ranking mid
-        """
+            {PREFIX}ranking
+            {PREFIX}ranking mid
+    """)
+    async def ranking(self, ctx: commands.Context, role: RoleConverter() = None):
         ratings = ranking_channel_handler.get_server_ratings(ctx.guild.id, role=role)
 
         if not ratings:
