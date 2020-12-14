@@ -35,7 +35,7 @@ A Discord bot to handle League of Legends in-house games, with role queue, match
 
      - You can add the environment variable `INHOUSE_BOT_TEST=1` to the bot’s variables and it will add a few `!test` commands
 
-     - You can add the environment variable `COMMAND_PREFIX` to customize the prefix of the bot (will default to `!`).
+     - You can add the environment variable `INHOUSE_BOT_COMMAND_PREFIX` to customize the prefix of the bot (will default to `!`).
 
 - Run `docker-compose up -d` and your bot should be up and running!
 
