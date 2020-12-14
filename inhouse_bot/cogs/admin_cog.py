@@ -6,6 +6,8 @@ from discord.ext.commands import guild_only
 
 from inhouse_bot import game_queue, matchmaking_logic
 from inhouse_bot.database_orm import session_scope
+from inhouse_bot.common_utils.constants import PREFIX
+from inhouse_bot.common_utils.docstring import doc
 from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.queue_channel_handler import queue_channel_handler
@@ -22,10 +24,8 @@ class AdminCog(commands.Cog, name="Admin"):
 
     @commands.group(case_insensitive=True)
     @commands.has_permissions(administrator=True)
+    @doc(f"Admin functions, use {PREFIX}help admin for a complete list")
     async def admin(self, ctx: commands.Context):
-        """
-        Admin functions, use !help admin for a complete list
-        """
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 f"The accepted subcommands are "
