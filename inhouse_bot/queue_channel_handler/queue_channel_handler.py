@@ -7,6 +7,7 @@ from discord.ext import commands
 from discord.ext.commands import Bot
 
 from inhouse_bot import game_queue
+from inhouse_bot.common_utils.constants import PREFIX
 from inhouse_bot.common_utils.embeds import embeds_color
 from inhouse_bot.common_utils.emoji_and_thumbnails import get_role_emoji
 from inhouse_bot.database_orm import session_scope, ChannelInformation
@@ -99,7 +100,7 @@ class QueueChannelHandler:
             embed.add_field(name="Duos", value=", ".join(duos_strings))
 
         embed.set_footer(
-            text="Use !queue [role] to join or !leave to leave | All non-queue messages are deleted"
+            text=f"Use {PREFIX}queue [role] to join or !leave to leave | All non-queue messages are deleted"
         )
 
         message_text = ""
