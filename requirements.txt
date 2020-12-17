@@ -23,6 +23,7 @@ inflect
 dateparser
 
 # Fun plots
+# TODO Make a build without it (will be more than 100Mb lighter)
 matplotlib
 mplcyberpunk
 
