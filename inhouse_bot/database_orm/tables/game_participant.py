@@ -53,7 +53,7 @@ class GameParticipant(bot_declarative_base):
     # Conservative rating for MMR display
     @hybrid_property
     def mmr(self):
-        return self.trueskill_mu - 3 * self.trueskill_sigma + 25
+        return 20 * (self.trueskill_mu - 3 * self.trueskill_sigma + 25)
 
     @hybrid_property
     def short_name(self):

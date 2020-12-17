@@ -1,10 +1,18 @@
+from datetime import datetime, timedelta
+
+import discord
 from discord.ext import commands
 
 from inhouse_bot import game_queue
 from inhouse_bot import matchmaking_logic
+
+from inhouse_bot.common_utils.constants import PREFIX
+from inhouse_bot.common_utils.docstring import doc
+from inhouse_bot.common_utils.emoji_and_thumbnails import get_role_emoji
 from inhouse_bot.common_utils.fields import RoleConverter
 from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.common_utils.validation_dialog import checkmark_validation
+
 from inhouse_bot.database_orm import session_scope
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.queue_channel_handler import queue_channel_handler
@@ -19,6 +27,10 @@ class QueueCog(commands.Cog, name="Queue"):
 
     def __init__(self, bot: InhouseBot):
         self.bot = bot
+
+        # Makes them jump ahead on the next queue
+        #   player_id -> timestamp
+        self.players_whose_last_game_got_cancelled = {}
 
         self.games_getting_scored_ids = set()
 
@@ -145,29 +157,82 @@ class QueueCog(commands.Cog, name="Queue"):
 
     @commands.command()
     @queue_channel_only()
-    async def queue(
-        self, ctx: commands.Context, role: RoleConverter(),
-    ):
-        """
+    @doc(f"""
         Adds you to the current channel’s queue for the given role
+
+        To duo queue, add @player role at the end (cf examples)
 
         Roles are TOP, JGL, MID, BOT/ADC, and SUP
 
         Example:
-            !queue SUP
-            !queue support
-            !queue bot
-            !queue adc
-        """
+            {PREFIX}queue SUP
+            {PREFIX}queue bot
+            {PREFIX}queue adc
+            {PREFIX}queue adc @CoreJJ support
+    """)
+    async def queue(
+        self,
+        ctx: commands.Context,
+        role: RoleConverter(),
+        duo: discord.Member = None,
+        duo_role: RoleConverter() = None,
+    ):
+        # Checking if the last game of this player got cancelled
+        #   If so, we put them in the queue in front of other players
+        jump_ahead = False
 
-        # Queuing the player
-        game_queue.add_player(
-            player_id=ctx.author.id,
-            name=ctx.author.display_name,
-            role=role,
-            channel_id=ctx.channel.id,
-            server_id=ctx.guild.id,
-        )
+        # pop with two arguments returns the second one if the key was not found
+        if cancel_timestamp := self.players_whose_last_game_got_cancelled.pop(ctx.author.id, None):
+
+            if datetime.now() - cancel_timestamp < timedelta(hours=1):
+                jump_ahead = True
+
+        if not duo:
+
+            # Simply queuing the player
+            game_queue.add_player(
+                player_id=ctx.author.id,
+                name=ctx.author.display_name,
+                role=role,
+                channel_id=ctx.channel.id,
+                server_id=ctx.guild.id,
+                jump_ahead=jump_ahead,
+            )
+
+        # If there is a duo, we go for a different flow (which should likely be another function)
+        else:
+            if not duo_role:
+                await ctx.send("You need to input a role for your duo partner")
+                return
+
+            duo_validation_message = await ctx.send(
+                f"<@{ctx.author.id}> {get_role_emoji(role)} wants to duo with <@{duo.id}> {get_role_emoji(duo_role)}\n"
+                f"Press ✅ to accept the duo queue"
+            )
+
+            validated, players_who_refused = await checkmark_validation(
+                bot=self.bot,
+                message=duo_validation_message,
+                validating_players_ids=[duo.id],
+                validation_threshold=1,
+            )
+
+            if not validated:
+                await ctx.send(f"<@{ctx.author.id}>: Duo queue was refused")
+                return
+
+            # Here, we have a working duo queue
+            game_queue.add_duo(
+                first_player_id=ctx.author.id,
+                first_player_role=role,
+                first_player_name=ctx.author.display_name,
+                second_player_id=duo.id,
+                second_player_role=duo_role,
+                second_player_name=duo.display_name,
+                channel_id=ctx.channel.id,
+                server_id=ctx.guild.id,
+                jump_ahead=jump_ahead,
+            )
 
         await self.run_matchmaking_logic(ctx=ctx)
 
@@ -175,34 +240,33 @@ class QueueCog(commands.Cog, name="Queue"):
 
     @commands.command(aliases=["leave_queue", "stop"])
     @queue_channel_only()
-    async def leave(
-        self, ctx: commands.Context,
-    ):
-        """
+    @doc(f"""
         Removes you from the queue in the current channel
 
         Example:
-            !leave
-            !leave_queue
-        """
-
+            {PREFIX}leave
+            {PREFIX}leave_queue
+    """)
+    async def leave(
+        self, ctx: commands.Context,
+    ):
         game_queue.remove_player(player_id=ctx.author.id, channel_id=ctx.channel.id)
 
         await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
 
     @commands.command(aliases=["win", "wins", "victory"])
     @queue_channel_only()
-    async def won(
-        self, ctx: commands.Context,
-    ):
-        """
+    @doc(f"""
         Scores your last game as a win
 
         Will require validation from at least 6 players in the game
 
         Example:
-            !won
-        """
+            {PREFIX}won
+    """)
+    async def won(
+        self, ctx: commands.Context,
+    ):
         with session_scope() as session:
             # Get the latest game
             game, participant = get_last_game(
@@ -259,17 +323,17 @@ class QueueCog(commands.Cog, name="Queue"):
 
     @commands.command(aliases=["cancel_game"])
     @queue_channel_only()
-    async def cancel(
-        self, ctx: commands.Context,
-    ):
-        """
+    @doc(f"""
         Cancels your ongoing game
 
         Will require validation from at least 6 players in the game
 
         Example:
-            !cancel
-        """
+            {PREFIX}cancel
+    """)
+    async def cancel(
+        self, ctx: commands.Context,
+    ):
         with session_scope() as session:
             # Get the latest game
             game, participant = get_last_game(
@@ -304,8 +368,14 @@ class QueueCog(commands.Cog, name="Queue"):
 
             if not validated:
                 await ctx.send(f"Game {game.id} was not cancelled")
+
             else:
+
+                for participant in game.participants.values():
+                    self.players_whose_last_game_got_cancelled[participant.player_id] = datetime.now()
+
                 session.delete(game)
+
                 queue_channel_handler.mark_queue_related_message(
                     await ctx.send(f"Game {game.id} was cancelled")
                 )

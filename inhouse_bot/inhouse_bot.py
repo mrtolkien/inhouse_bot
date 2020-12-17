@@ -8,6 +8,8 @@ from discord.ext import commands
 from discord.ext.commands import NoPrivateMessage
 
 from inhouse_bot import game_queue
+from inhouse_bot.common_utils.constants import PREFIX
+from inhouse_bot.game_queue.queue_handler import SameRolesForDuo
 from inhouse_bot.queue_channel_handler.queue_channel_handler import (
     QueueChannelsOnly,
     queue_channel_handler,
@@ -26,7 +28,7 @@ class InhouseBot(commands.Bot):
     """
 
     def __init__(self, **options):
-        super().__init__("!", intents=intents, case_insensitive=True, **options)
+        super().__init__(PREFIX, intents=intents, case_insensitive=True, **options)
 
         # Importing locally to allow InhouseBot to be imported in the cogs
         from inhouse_bot.cogs.queue_cog import QueueCog
@@ -74,10 +76,10 @@ class InhouseBot(commands.Bot):
         Custom error command that catches CommandNotFound as well as MissingRequiredArgument for readable feedback
         """
         if isinstance(error, commands.CommandNotFound):
-            await ctx.send(f"Command `{ctx.invoked_with}` not found, use !help to see the commands list")
+            await ctx.send(f"Command `{ctx.invoked_with}` not found, use {PREFIX}help to see the commands list")
 
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(f"Arguments missing, use `!help {ctx.invoked_with}` to see the arguments list")
+            await ctx.send(f"Arguments missing, use `{PREFIX}help {ctx.invoked_with}` to see the arguments list")
 
         elif isinstance(error, commands.ConversionError):
             # Conversion errors feedback are handled in my converters
@@ -89,6 +91,9 @@ class InhouseBot(commands.Bot):
         elif isinstance(error, QueueChannelsOnly):
             await ctx.send(f"This command can only be used in a channel marked as a queue by an admin")
 
+        elif isinstance(error, SameRolesForDuo):
+            await ctx.send(f"Duos must have different roles")
+
         # This handles errors that happen during a command
         elif isinstance(error, commands.CommandInvokeError):
             og_error = error.original
@@ -96,15 +101,15 @@ class InhouseBot(commands.Bot):
             if isinstance(og_error, game_queue.PlayerInGame):
                 await ctx.send(
                     f"Your last game was not scored and you are not allowed to queue at the moment\n"
-                    f"One of the winners can score the game with `!won`, "
-                    f"or players can agree to cancel it with `!cancel`",
+                    f"One of the winners can score the game with `{PREFIX}won`, "
+                    f"or players can agree to cancel it with `{PREFIX}cancel`",
                     delete_after=20,
                 )
 
             elif isinstance(og_error, game_queue.PlayerInReadyCheck):
                 await ctx.send(
                     f"A game has already been found for you and you cannot queue until it is accepted or cancelled\n"
-                    f"If it is a bug, contact an admin and ask them to use `!admin reset` with your name",
+                    f"If it is a bug, contact an admin and ask them to use `{PREFIX}admin reset` with your name",
                     delete_after=20,
                 )
 
@@ -112,7 +117,7 @@ class InhouseBot(commands.Bot):
                 # User-facing error
                 await ctx.send(
                     f"There was an error processing the command\n"
-                    f"Use !help for the commands list or contact server admins for bugs",
+                    f"Use {PREFIX}help for the commands list or contact server admins for bugs",
                 )
 
                 self.logger.error(og_error)
@@ -121,7 +126,7 @@ class InhouseBot(commands.Bot):
             # User-facing error
             await ctx.send(
                 f"There was an error processing the command\n"
-                f"Use !help for the commands list or contact server admins for bugs",
+                f"Use {PREFIX}help for the commands list or contact server admins for bugs",
             )
 
             self.logger.error(error)

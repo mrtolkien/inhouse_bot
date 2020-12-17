@@ -7,6 +7,7 @@ from discord.ext import commands
 from discord.ext.commands import Bot
 
 from inhouse_bot import game_queue
+from inhouse_bot.common_utils.constants import PREFIX
 from inhouse_bot.common_utils.embeds import embeds_color
 from inhouse_bot.common_utils.emoji_and_thumbnails import get_role_emoji
 from inhouse_bot.database_orm import session_scope, ChannelInformation
@@ -64,25 +65,42 @@ class QueueChannelHandler:
         """
 
         # Creating the queue visualisation requires getting the Player objects from the DB to have the names
-        new_queue = game_queue.GameQueue(channel.id)
+        queue = game_queue.GameQueue(channel.id)
 
         # If the new queue is the same as the cache, we simple return
-        if new_queue == self._queue_cache.get(channel.id):
+        if queue == self._queue_cache.get(channel.id):
             return
         else:
             # Else, we update our cache (useful to not send too many messages)
-            self._queue_cache[channel.id] = new_queue
-
-        rows = []
-
-        for role, role_queue in new_queue.queue_players_dict.items():
-            rows.append(f"{get_role_emoji(role)} " + ", ".join(qp.player.short_name for qp in role_queue))
+            self._queue_cache[channel.id] = queue
 
         # Create the queue embed
         embed = Embed(colour=embeds_color)
-        embed.add_field(name="Queue", value="\n".join(rows))
+
+        # Adding queue field
+        queue_rows = []
+
+        for role, role_queue in queue.queue_players_dict.items():
+            queue_rows.append(
+                f"{get_role_emoji(role)} " + ", ".join(qp.player.short_name for qp in role_queue)
+            )
+
+        embed.add_field(name="Queue", value="\n".join(queue_rows))
+
+        # Adding duos field if it’s not empty
+        if queue.duos:
+            duos_strings = []
+
+            for duo in queue.duos:
+
+                duos_strings.append(
+                    " + ".join(f"{qp.player.short_name} {get_role_emoji(qp.role)}" for qp in duo)
+                )
+
+            embed.add_field(name="Duos", value=", ".join(duos_strings))
+
         embed.set_footer(
-            text="Use !queue [role] to join or !leave to leave | All non-queue messages are deleted"
+            text=f"Use {PREFIX}queue [role] to join or !leave to leave | All non-queue messages are deleted"
         )
 
         message_text = ""

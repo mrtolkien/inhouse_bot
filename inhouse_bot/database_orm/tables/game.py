@@ -85,7 +85,8 @@ class Game(bot_declarative_base):
                 title="📢 Game found 📢",
                 description=f"Blue side expected winrate is {self.blue_expected_winrate * 100:.1f}%\n"
                 "If you are ready to play, press ✅\n"
-                "If you cannot play, press ❌",
+                "If you cannot play, press ❌\n"
+                "The queue will timeout after a few minutes and AFK players will be automatically dropped from queue",
             )
         elif embed_type == "GAME_ACCEPTED":
             embed = Embed(
@@ -101,7 +102,7 @@ class Game(bot_declarative_base):
         for side in ("BLUE", "RED"):
             embed.add_field(
                 name=side,
-                value="\n".join(    # This adds one side as an inline field
+                value="\n".join(  # This adds one side as an inline field
                     [
                         f"{get_role_emoji(roles_list[idx])}"  # We start with the role emoji
                         + (  # Then add loading or ✅ if we are looking at a validation embed

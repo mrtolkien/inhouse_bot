@@ -1,4 +1,3 @@
-import logging
 import itertools
 import random
 from typing import Optional, List
@@ -6,9 +5,7 @@ from typing import Optional, List
 from inhouse_bot.database_orm import Game, QueuePlayer
 from inhouse_bot.common_utils.fields import roles_list
 from inhouse_bot.game_queue import GameQueue
-
-
-matchmaking_logger = logging.getLogger("matchmaking_logic")
+from inhouse_bot.inhouse_logger import inhouse_logger
 
 
 def find_best_game(queue: GameQueue, game_quality_threshold=0.1) -> Optional[Game]:
@@ -21,7 +18,7 @@ def find_best_game(queue: GameQueue, game_quality_threshold=0.1) -> Optional[Gam
     # If we get there, we know there are at least 10 players in the queue
     # We start with the 10 players who have been in queue for the longest time
 
-    matchmaking_logger.info(f"Matchmaking process started with: {queue}")
+    inhouse_logger.info(f"Matchmaking process started with the following queue:\n{queue}")
 
     best_game = None
     for players_threshold in range(10, len(queue) + 1):
@@ -40,9 +37,7 @@ def find_best_game_for_queue_players(queue_players: List[QueuePlayer]) -> Game:
     """
     A sub function to allow us to iterate on QueuePlayers from oldest to newest
     """
-    matchmaking_logger.info(
-        f"Trying to find the best game for: {' | '.join(f'{qp}' for qp in queue_players)}"
-    )
+    inhouse_logger.info(f"Trying to find the best game for: {' | '.join(f'{qp}' for qp in queue_players)}")
 
     # Currently simply testing all permutations because it should be pretty lightweight
     # TODO LOW PRIO Spot mirrored team compositions (full blue/red -> red/blue) to not calculate them twice
@@ -76,15 +71,38 @@ def find_best_game_for_queue_players(queue_players: List[QueuePlayer]) -> Game:
         #   tuple_idx = 0 (BLUE) &  shuffle = True  -> False == True    -> False    -> RED
         #   tuple_idx = 1 (RED)  &  shuffle = True  -> True == True     -> True     -> BLUE
 
-        # We transform it to a more manageable dictionary of players
-        # {(team, role)} = Player
-        players = {
+        # We transform it to a more manageable dictionary of QueuePlayers
+        # {(team, role)} = QueuePlayer
+        queue_players_dict = {
             ("BLUE" if bool(tuple_idx) == shuffle else "RED", roles_list[role_idx]): queue_players_tuple[
                 tuple_idx
-            ].player  # We take the Player object of our QueuePlayer here
+            ]
             for role_idx, queue_players_tuple in enumerate(team_composition)
             for tuple_idx in (0, 1)
         }
+
+        # We check that all 10 QueuePlayers are in the same team as their duos
+
+        # TODO LOW PRIO This is super stupid *but* works well enough for easy situations
+        #   This is very much in need of a rewrite
+        duos_not_in_same_team = False
+        for team_tuple, qp in queue_players_dict.items():
+            if qp.duo_id is not None:
+                try:
+                    next(
+                        duo_qp
+                        for duo_team_tuple, duo_qp in queue_players_dict.items()
+                        if duo_team_tuple[0] == team_tuple[0] and duo_qp.player_id == qp.duo_id
+                    )
+                except StopIteration:
+                    duos_not_in_same_team = True
+                    continue
+
+        if duos_not_in_same_team:
+            continue
+
+        # We take the players from the queue players and make it a new dict to create our games objects
+        players = {k: qp.player for k, qp in queue_players_dict.items()}
 
         # We check to make sure all 10 players are different
         if set(players.values()).__len__() != 10:
@@ -96,7 +114,7 @@ def find_best_game_for_queue_players(queue_players: List[QueuePlayer]) -> Game:
         # Importantly, we do *not* add the game to the session, as that will be handled by the bot logic itself
 
         if game.matchmaking_score < best_score:
-            matchmaking_logger.info(
+            inhouse_logger.info(
                 f"New best game found with {game.blue_expected_winrate*100:.2f} blue side expected winrate"
             )
 

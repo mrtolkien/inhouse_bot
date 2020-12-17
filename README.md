@@ -33,6 +33,10 @@ A Discord bot to handle League of Legends in-house games, with role queue, match
 
 - Edit the file to add your Discord bot token as well as the Discord ID of your emojis, and change the database default password to something random
 
+     - You can add the environment variable `INHOUSE_BOT_TEST=1` to the bot’s variables and it will add a few `!test` commands
+
+     - You can add the environment variable `INHOUSE_BOT_COMMAND_PREFIX` to customize the prefix of the bot (will default to `!`).
+
 - Run `docker-compose up -d` and your bot should be up and running!
 
     - If you also added the `adminer` service, you can use http://localhost:8080/ to manage the database
@@ -89,6 +93,8 @@ cancelled.
 
 # Queue features
 - `!queue role` puts you in the current channel’s queue for the given role
+
+- `!queue role @user other_role` duo queues you together with the tagged player in the current channel
 
 - `!leave` removes you from the channel’s queue for all roles
 

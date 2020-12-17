@@ -66,6 +66,30 @@ class TestCog(commands.Cog, name="TEST"):
         await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
 
     @test.command()
+    async def duo(self, ctx: commands.Context):
+        """
+        Testing the duo queue feature
+        """
+        # We put 10 people in the queue
+        for i in range(0, 10):
+            game_queue.add_player(i, roles_list[i % 5], ctx.channel.id, ctx.guild.id, name=str(i))
+
+        game_queue.add_duo(
+            6,
+            "JGL",
+            ctx.author.id,
+            "MID",
+            ctx.channel.id,
+            ctx.guild.id,
+            first_player_name="6",
+            second_player_name=ctx.author.display_name,
+        )
+
+        await ctx.send("The queue has been filled and you have been put in mid/jgl duo with player 6")
+
+        await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
+
+    @test.command()
     async def game(self, ctx: commands.Context):
         """
         Creating a fake game in the database with players 0 to 8 and the ctx author

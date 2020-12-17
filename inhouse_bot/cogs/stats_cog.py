@@ -1,6 +1,6 @@
 import tempfile
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import dateparser
 import discord
@@ -15,6 +15,8 @@ from discord.ext.commands import guild_only
 import matplotlib
 import matplotlib.pyplot as plt
 
+from inhouse_bot.common_utils.constants import PREFIX
+from inhouse_bot.common_utils.docstring import doc
 from inhouse_bot.common_utils.emoji_and_thumbnails import get_role_emoji, get_rank_emoji
 from inhouse_bot.database_orm import session_scope, GameParticipant, Game, PlayerRating, Player
 from inhouse_bot.common_utils.fields import ChampionNameConverter, RoleConverter
@@ -40,20 +42,19 @@ class StatsCog(commands.Cog, name="Stats"):
 
     @commands.command()
     @guild_only()
-    async def champion(
-        self, ctx: commands.Context, champion_id: ChampionNameConverter(), game_id: int = None
-    ):
-        """
+    @doc(f"""
         Saves the champion you used in your last game
 
-        Older games can be filled with !champion champion_name game_id
-        You can find the ID of the games you played with !history
+        Older games can be filled with {PREFIX}champion champion_name game_id
+        You can find the ID of the games you played with {PREFIX}history
 
         Example:
-            !champion riven
-            !champion riven 1
-        """
-
+            {PREFIX}champion riven
+            {PREFIX}champion riven 1
+    """)
+    async def champion(
+        self, ctx: commands.Context, champion_name: ChampionNameConverter(), game_id: int = None
+    ):
         with session_scope() as session:
             if not game_id:
                 game, participant = get_last_game(
@@ -69,24 +70,24 @@ class StatsCog(commands.Cog, name="Stats"):
                 ).one_or_none()
 
             # We write down the champion
-            participant.champion_id = champion_id
+            participant.champion_id = champion_name
 
             game_id = game.id
 
         await ctx.send(
             f"Champion for game {game_id} was set to "
-            f"{lol_id_tools.get_name(champion_id, object_type='champion')} for {ctx.author.display_name}"
+            f"{lol_id_tools.get_name(champion_name, object_type='champion')} for {ctx.author.display_name}"
         )
 
     @commands.command(aliases=["match_history", "mh"])
-    async def history(self, ctx: commands.Context):
-        # TODO LOW PRIO Add an @ user for admins
-        """
+    @doc(f"""
         Displays your games history
 
         Example:
-            !history
-        """
+            {PREFIX}history
+    """)
+    async def history(self, ctx: commands.Context):
+        # TODO LOW PRIO Add an @ user for admins
 
         with session_scope() as session:
             session.expire_on_commit = False
@@ -121,13 +122,13 @@ class StatsCog(commands.Cog, name="Stats"):
         await pages.start(ctx)
 
     @commands.command(aliases=["mmr", "rank", "rating"])
-    async def stats(self, ctx: commands.Context):
-        """
+    @doc(f"""
         Returns your rank, MMR, and games played
 
         Example:
-            !rank
-        """
+            {PREFIX}rank
+    """)
+    async def stats(self, ctx: commands.Context):
         with session_scope() as session:
             rating_objects = (
                 session.query(
@@ -165,7 +166,7 @@ class StatsCog(commands.Cog, name="Stats"):
                     f"{f'{self.bot.get_guild(row.PlayerRating.player_server_id).name} ' if not ctx.guild else ''}"
                     f"{get_role_emoji(row.PlayerRating.role)} "
                     f"{rank_str} "
-                    f"`{round(row.PlayerRating.mmr, 2)} MMR  "
+                    f"`{int(row.PlayerRating.mmr)} MMR  "
                     f"{row.wins}W {row.count-row.wins}L`"
                 )
 
@@ -177,16 +178,16 @@ class StatsCog(commands.Cog, name="Stats"):
 
     @commands.command(aliases=["rankings"])
     @guild_only()
-    async def ranking(self, ctx: commands.Context, role: RoleConverter() = None):
-        """
+    @doc(f"""
         Displays the top players on the server
 
         A role can be supplied to only display the ranking for this role
 
         Example:
-            !ranking
-            !ranking mid
-        """
+            {PREFIX}ranking
+            {PREFIX}ranking mid
+    """)
+    async def ranking(self, ctx: commands.Context, role: RoleConverter() = None):
         ratings = ranking_channel_handler.get_server_ratings(ctx.guild.id, role=role)
 
         if not ratings:
@@ -207,7 +208,7 @@ class StatsCog(commands.Cog, name="Stats"):
         """
         Displays a graph of your MMR history over the past month
         """
-        date_start = dateparser.parse("one month ago")
+        date_start = datetime.now() - timedelta(hours=24 * 30)
 
         with session_scope() as session:
 
@@ -224,6 +225,7 @@ class StatsCog(commands.Cog, name="Stats"):
                 .join(Player)
                 .filter(GameParticipant.player_id == ctx.author.id)
                 .filter(Game.start > date_start)
+                .order_by(Game.start.asc())
             )
 
         mmr_history = defaultdict(lambda: {"dates": [], "mmr": []})
@@ -256,3 +258,5 @@ class StatsCog(commands.Cog, name="Stats"):
             await ctx.send(file=file)
             plt.close()
             temp.close()
+
+    # TODO MEDIUM PRIO (simple) Add !champions_stats once again!!!

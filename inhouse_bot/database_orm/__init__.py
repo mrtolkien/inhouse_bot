@@ -6,3 +6,7 @@ from inhouse_bot.database_orm.tables.player import Player
 from inhouse_bot.database_orm.tables.player_rating import PlayerRating
 from inhouse_bot.database_orm.tables.queue_player import QueuePlayer
 from inhouse_bot.database_orm.tables.channel_information import ChannelInformation
+
+from inhouse_bot.database_orm import mini_migration_tool
+
+mini_migration_tool.migrate()
