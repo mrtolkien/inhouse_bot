@@ -200,7 +200,7 @@ class StatsCog(commands.Cog, name="Stats"):
                 rank_str = get_rank_emoji(rank)
 
                 row_string = (
-                    f"{f'{player_name_show} ' if not ctx.guild else ''}"
+                    f"{f'{player_name_display} ' if not ctx.guild else ''}"
                     f"{get_role_emoji(row.PlayerRating.role)} "
                     f"{rank_str} "
                     f"`{int(row.PlayerRating.mmr)} MMR  "
