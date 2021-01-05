@@ -129,27 +129,64 @@ class StatsCog(commands.Cog, name="Stats"):
             {PREFIX}rank
     """)
     async def stats(self, ctx: commands.Context):
+        # Get the player name
+        player_name = ctx.message.content.strip()
+        if player_name.find(' ') != -1:
+            player_name = player_name[player_name.find(' '):].strip()
+        else:
+            player_name = ""
+
+        # Set if has a player name
+        has_player_name = False
+        if len(player_name) > 0:
+            has_player_name = True
+
         with session_scope() as session:
-            rating_objects = (
-                session.query(
-                    PlayerRating,
-                    sqlalchemy.func.count().label("count"),
-                    (
-                        sqlalchemy.func.sum((Game.winner == GameParticipant.side).cast(sqlalchemy.Integer))
-                    ).label("wins"),
+
+            # Search by player name
+            if has_player_name:
+                rating_objects = (
+                    session.query(
+                        Player,
+                        PlayerRating,
+                        sqlalchemy.func.count().label("count"),
+                        (
+                            sqlalchemy.func.sum((Game.winner == GameParticipant.side).cast(sqlalchemy.Integer))
+                        ).label("wins"),
+                    )
+                    .select_from(PlayerRating)
+                    .join(GameParticipant)
+                    .join(Game)
+                    .filter(Player.name == player_name)
+                    .filter(Player.id == PlayerRating.player_id)
+                    .group_by(Player, PlayerRating)
                 )
-                .select_from(PlayerRating)
-                .join(GameParticipant)
-                .join(Game)
-                .filter(PlayerRating.player_id == ctx.author.id)
-                .group_by(PlayerRating)
-            )
+            else: # Otherwise, by player id
+                rating_objects = (
+                    session.query(
+                        PlayerRating,
+                        sqlalchemy.func.count().label("count"),
+                        (
+                            sqlalchemy.func.sum((Game.winner == GameParticipant.side).cast(sqlalchemy.Integer))
+                        ).label("wins"),
+                    )
+                    .select_from(PlayerRating)
+                    .join(GameParticipant)
+                    .join(Game)
+                    .filter(PlayerRating.player_id == ctx.author.id)
+                    .group_by(PlayerRating)
+                )
 
             if ctx.guild:
                 rating_objects = rating_objects.filter(PlayerRating.player_server_id == ctx.guild.id)
 
             rows = []
 
+            # Init name
+            player_name_display = ctx.author.display_name
+            if has_player_name:
+                player_name_display = player_name
+                
             for row in sorted(rating_objects.all(), key=lambda r: -r.count):
                 # TODO LOW PRIO Make that a subquery
                 rank = (
@@ -163,7 +200,7 @@ class StatsCog(commands.Cog, name="Stats"):
                 rank_str = get_rank_emoji(rank)
 
                 row_string = (
-                    f"{f'{self.bot.get_guild(row.PlayerRating.player_server_id).name} ' if not ctx.guild else ''}"
+                    f"{f'{player_name_show} ' if not ctx.guild else ''}"
                     f"{get_role_emoji(row.PlayerRating.role)} "
                     f"{rank_str} "
                     f"`{int(row.PlayerRating.mmr)} MMR  "
@@ -172,7 +209,7 @@ class StatsCog(commands.Cog, name="Stats"):
 
                 rows.append(row_string)
 
-            embed = Embed(title=f"Ranks for {ctx.author.display_name}", description="\n".join(rows))
+            embed = Embed(title=f"Ranks for {player_name_display}", description="\n".join(rows))
 
             await ctx.send(embed=embed)
 
