@@ -18,6 +18,7 @@ from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.queue_channel_handler import queue_channel_handler
 from inhouse_bot.queue_channel_handler.queue_channel_handler import queue_channel_only
 from inhouse_bot.ranking_channel_handler.ranking_channel_handler import ranking_channel_handler
+from inhouse_bot.voice_channel_handler.voice_channel_handler import create_voice_channels, remove_voice_channels
 
 
 class QueueCog(commands.Cog, name="Queue"):
@@ -104,6 +105,9 @@ class QueueCog(commands.Cog, name="Queue"):
                 queue_channel_handler.mark_queue_related_message(
                     await ctx.send(embed=game.get_embed("GAME_ACCEPTED"),)
                 )
+
+                # We create voice channels for each team in this game
+                await create_voice_channels(ctx, game)
 
             elif ready is False:
                 # We remove the player who cancelled
@@ -320,6 +324,9 @@ class QueueCog(commands.Cog, name="Queue"):
 
         matchmaking_logic.score_game_from_winning_player(player_id=ctx.author.id, server_id=ctx.guild.id)
         await ranking_channel_handler.update_ranking_channels(self.bot, ctx.guild.id)
+
+        # If we're here, the game has been scored and the voice channels for this game can be removed
+        await remove_voice_channels(ctx, game)
 
     @commands.command(aliases=["cancel_game"])
     @queue_channel_only()

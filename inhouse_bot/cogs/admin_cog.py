@@ -12,6 +12,7 @@ from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.queue_channel_handler import queue_channel_handler
 from inhouse_bot.ranking_channel_handler.ranking_channel_handler import ranking_channel_handler
+from inhouse_bot.voice_channel_handler.voice_channel_handler import remove_voice_channels
 
 
 class AdminCog(commands.Cog, name="Admin"):
@@ -88,6 +89,7 @@ class AdminCog(commands.Cog, name="Admin"):
 
         await ctx.send(f"{member.display_name}’s ongoing game was cancelled and deleted from the database")
         await queue_channel_handler.update_queue_channels(bot=self.bot, server_id=ctx.guild.id)
+        await remove_voice_channels(ctx, game)
 
     @admin.command()
     @guild_only()
