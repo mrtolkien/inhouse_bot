@@ -6,9 +6,10 @@ from discord.ext.commands import guild_only
 
 from inhouse_bot import game_queue, matchmaking_logic
 from inhouse_bot.database_orm import session_scope
-from inhouse_bot.common_utils.constants import PREFIX
+from inhouse_bot.common_utils.constants import CONFIG_KEYS, PREFIX
 from inhouse_bot.common_utils.docstring import doc
 from inhouse_bot.common_utils.get_last_game import get_last_game
+from inhouse_bot.common_utils.get_server_config import get_server_config
 from inhouse_bot.inhouse_bot import InhouseBot
 from inhouse_bot.queue_channel_handler import queue_channel_handler
 from inhouse_bot.ranking_channel_handler.ranking_channel_handler import ranking_channel_handler
@@ -119,3 +120,37 @@ class AdminCog(commands.Cog, name="Admin"):
         ranking_channel_handler.unmark_ranking_channel(ctx.channel.id)
 
         await ctx.send(f"The current channel has been reverted to a normal channel")
+
+    @admin.command()
+    @guild_only()
+    async def config(self, ctx: commands.Context, config_key: str, option: str):
+        """
+        Toggles config options
+        """
+
+        config_key = config_key.lower()
+        option = option.upper()
+
+        options = {
+            'ON': True,
+            'OFF': False,
+            'STATUS': -1
+        }
+
+        if config_key not in CONFIG_KEYS:
+            await ctx.send(f"Accepted config_keys for {PREFIX}admin config config_key option are: {', '.join(CONFIG_KEYS)}")
+            return
+
+        if option not in options.keys():
+            await ctx.send(f"Accepted options for {PREFIX}admin config config_key option are: {', '.join(options.keys())}")
+            return
+
+        with session_scope() as session:
+            server_config = get_server_config(server_id=ctx.guild.id, session=session)
+
+            if option != "STATUS":
+                server_config.config[config_key] = options[option]
+                session.merge(server_config)
+
+            value = 'ON' if server_config.config.get(config_key, False) else 'OFF'
+            await ctx.send(f"{config_key} is: {value}")
