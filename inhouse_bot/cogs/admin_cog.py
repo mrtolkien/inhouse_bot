@@ -139,8 +139,8 @@ class AdminCog(commands.Cog, name="Admin"):
             info = ""
             for c in CONFIG_OPTIONS:
                 info = f"{info}\n**{c[0]}**: {c[1]}"
-                await ctx.send(info)
-                return
+            await ctx.send(info)
+            return
 
         options = {
             'ON': True,
