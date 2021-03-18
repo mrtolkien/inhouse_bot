@@ -1,4 +1,4 @@
-from inhouse_bot.common_utils.constants import CONFIG_KEYS
+from inhouse_bot.common_utils.constants import CONFIG_OPTIONS
 from inhouse_bot.database_orm import ServerConfig
 from inhouse_bot.database_orm.session.session_handler import session_scope
 
@@ -8,7 +8,7 @@ def get_server_config(server_id: int, session) -> ServerConfig:
         session.query(ServerConfig)
         .select_from(ServerConfig)
         .filter(ServerConfig.server_id == server_id)
-    ).first() or None
+    ).one_or_none()
 
     if server_config is not None:
         return server_config
@@ -17,10 +17,10 @@ def get_server_config(server_id: int, session) -> ServerConfig:
     server_config = ServerConfig()
     server_config.server_id = server_id
     server_config.config = {}
-    for key in CONFIG_KEYS:
-        server_config.config[key] = False
+    for key in CONFIG_OPTIONS:
+        server_config.config[key[0]] = False
 
-    session.merge(server_config)
+    session.commit()
 
     return server_config
 
