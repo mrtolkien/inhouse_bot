@@ -6,7 +6,7 @@ from discord.ext.commands import guild_only
 
 from inhouse_bot import game_queue, matchmaking_logic
 from inhouse_bot.database_orm import session_scope
-from inhouse_bot.common_utils.constants import CONFIG_KEYS, PREFIX
+from inhouse_bot.common_utils.constants import CONFIG_OPTIONS, PREFIX
 from inhouse_bot.common_utils.docstring import doc
 from inhouse_bot.common_utils.get_last_game import get_last_game
 from inhouse_bot.common_utils.get_server_config import get_server_config
@@ -123,13 +123,24 @@ class AdminCog(commands.Cog, name="Admin"):
 
     @admin.command()
     @guild_only()
-    async def config(self, ctx: commands.Context, config_key: str, option: str):
-        """
-        Toggles config options
-        """
+    @doc(f"""
+        Toggles new features 'ON' or 'OFF'
 
+        Example:
+            `{PREFIX}admin config voice on` will enable the voice channel creation feature.
+
+        `{PREFIX}admin config list` will list all available features.
+    """)
+    async def config(self, ctx: commands.Context, config_key: str, option: str = ""):
         config_key = config_key.lower()
         option = option.upper()
+
+        if config_key == "list":
+            info = ""
+            for c in CONFIG_OPTIONS:
+                info = f"{info}\n**{c[0]}**: {c[1]}"
+                await ctx.send(info)
+                return
 
         options = {
             'ON': True,
@@ -137,8 +148,10 @@ class AdminCog(commands.Cog, name="Admin"):
             'STATUS': -1
         }
 
-        if config_key not in CONFIG_KEYS:
-            await ctx.send(f"Accepted config_keys for {PREFIX}admin config config_key option are: {', '.join(CONFIG_KEYS)}")
+        config_keys = map(lambda x: x[0], CONFIG_OPTIONS)
+
+        if config_key not in config_keys:
+            await ctx.send(f"This is not a configuration option. For a list of options use {PREFIX}admin config list.")
             return
 
         if option not in options.keys():
@@ -150,7 +163,7 @@ class AdminCog(commands.Cog, name="Admin"):
 
             if option != "STATUS":
                 server_config.config[config_key] = options[option]
-                session.merge(server_config)
+                session.commit()
 
-            value = 'ON' if server_config.config.get(config_key, False) else 'OFF'
+            value = 'ON' if server_config.config.get(config_key) else 'OFF'
             await ctx.send(f"{config_key} is: {value}")
