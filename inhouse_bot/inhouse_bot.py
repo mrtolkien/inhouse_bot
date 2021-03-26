@@ -1,5 +1,7 @@
 import logging
 import os
+import threading
+from datetime import datetime
 
 import discord
 from discord.ext import commands
@@ -8,7 +10,9 @@ from discord.ext import commands
 from discord.ext.commands import NoPrivateMessage
 
 from inhouse_bot import game_queue
-from inhouse_bot.common_utils.constants import PREFIX
+from inhouse_bot.common_utils.constants import PREFIX, QUEUE_RESET_TIME
+from inhouse_bot.common_utils.get_server_config import get_server_config
+from inhouse_bot.database_orm import session_scope
 from inhouse_bot.game_queue.queue_handler import SameRolesForDuo
 from inhouse_bot.queue_channel_handler.queue_channel_handler import (
     QueueChannelsOnly,
@@ -62,8 +66,25 @@ class InhouseBot(commands.Bot):
         """
         self.logger.info(f"{ctx.message.content}\t{ctx.author.name}\t{ctx.guild.name}\t{ctx.channel.name}")
 
+    def daily_jobs(self):
+        """
+        Runs a timer every 60 seconds, triggering jobs at the appropriate minute mark
+        """
+        threading.Timer(60, self.daily_jobs).start()
+        now = datetime.now()
+
+        if now.strftime("%H:%M") == QUEUE_RESET_TIME:
+            with session_scope() as session:
+                server_config = get_server_config(server_id=self.guilds[0].id, session=session)
+                if server_config.config.get('queue_reset'):
+                    game_queue.reset_queue()
+                    self.loop.create_task(queue_channel_handler.update_queue_channels(bot=self, server_id=None))
+
     async def on_ready(self):
         self.logger.info(f"{self.user.name} has connected to Discord")
+
+        # Starts the scheduler
+        self.daily_jobs()
 
         # We cancel all ready-checks, and queue_channel_handler will handle rewriting the queues
         game_queue.cancel_all_ready_checks()
