@@ -21,6 +21,7 @@ def get_server_config(server_id: int, session) -> ServerConfig:
         server_config.config[key[0]] = False
 
     session.commit()
+    session.merge(server_config)
 
     return server_config
 
