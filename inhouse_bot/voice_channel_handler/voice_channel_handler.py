@@ -38,7 +38,7 @@ async def create_voice_channels(ctx: commands.Context, game: Game):
         }
 
         for p in getattr(game.teams, side):
-            member = discord.Guild.get_member(ctx.guild, p.id)
+            member = discord.Guild.get_member(ctx.guild, p.player_id)
             if member is not None:
                 overwrites[member] = discord.PermissionOverwrite(read_messages=True)
 
