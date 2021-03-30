@@ -381,6 +381,7 @@ class QueueCog(commands.Cog, name="Queue"):
                 for participant in game.participants.values():
                     self.players_whose_last_game_got_cancelled[participant.player_id] = datetime.now()
 
+                await remove_voice_channels(ctx, game)
                 session.delete(game)
 
                 queue_channel_handler.mark_queue_related_message(
