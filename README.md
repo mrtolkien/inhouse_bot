@@ -15,7 +15,7 @@ A Discord bot to handle League of Legends in-house games, with role queue, match
 
 - Install [Docker](https://docs.docker.com/get-docker/)
 
-    - I wrote an [in-depth tutorial about using Docker here](https://lol-data.com/development/realistic-python-docker-work-flow/)
+    - I wrote an [in-depth tutorial about using Docker here](https://blog.tolki.dev/development/realistic-python-docker-work-flow/)
 
 - Get your Discord bot token from [the Discord developer portal](https://discord.com/developers/applications)
 
