@@ -7,28 +7,58 @@ from inhouse_bot.common_utils.fields import roles_list
 from inhouse_bot.game_queue import GameQueue
 from inhouse_bot.inhouse_logger import inhouse_logger
 
+from inhouse_bot.common_utils.fields import queue_algorithm
+from inhouse_bot.common_utils.fields import queue_algorithms_list
 
-def find_best_game(queue: GameQueue, game_quality_threshold=0.1) -> Optional[Game]:
-    # Do not do anything if there’s not at least 2 players in queue per role
 
+def enough_players(queue: GameQueue) -> bool:
+    # There are not enough players without at least 2 players in queue per role
     for role_queue in queue.queue_players_dict.values():
         if len(role_queue) < 2:
-            return None
+            return False
+    return True
+
+
+def fair_algorithm(queue: GameQueue, game_quality_threshold=0.1) -> Optional[Game]:
+    best_game = None
+    current_matchmaking_score = -1
+    for players_threshold in range(10, len(queue) + 1):
+        # The queue_players are already ordered the right way to take age into account in matchmaking
+        #   We first try with the 10 first players, then 11, ...
+        new_game = find_best_game_for_queue_players(queue.queue_players[:players_threshold])
+
+        # Check if "new game" has a bigger score than "best game"
+        # This assures that, even if no game meets the threshold, "best game" is actually the best game
+        if new_game.matchmaking_score > current_matchmaking_score:
+            best_game = new_game
+            current_matchmaking_score = new_game.matchmaking_score
+        else:
+            continue
+
+        # We stop when we beat the game quality threshold (below 60% winrate for one side)
+        if best_game and best_game.matchmaking_score < game_quality_threshold:
+            return best_game
+    return best_game
+
+
+def fifo_algorithm(queue: GameQueue, game_quality_threshold=0.1) -> Optional[Game]:
+    best_game = find_best_game_for_queue_players(queue.queue_players[:10])
+    return best_game
+
+
+def find_best_game(queue: GameQueue, game_quality_threshold=0.1) -> Optional[Game]:
+
+    if not enough_players(queue):
+        return None
 
     # If we get there, we know there are at least 10 players in the queue
     # We start with the 10 players who have been in queue for the longest time
 
     inhouse_logger.info(f"Matchmaking process started with the following queue:\n{queue}")
 
-    best_game = None
-    for players_threshold in range(10, len(queue) + 1):
-        # The queue_players are already ordered the right way to take age into account in matchmaking
-        #   We first try with the 10 first players, then 11, ...
-        best_game = find_best_game_for_queue_players(queue.queue_players[:players_threshold])
+    # Use the correct algorithm
+    best_game = queue_algorithms_list[queue_algorithm](queue,game_quality_threshold)
 
-        # We stop when we beat the game quality threshold (below 60% winrate for one side)
-        if best_game and best_game.matchmaking_score < game_quality_threshold:
-            return best_game
 
     return best_game
 
@@ -115,7 +145,7 @@ def find_best_game_for_queue_players(queue_players: List[QueuePlayer]) -> Game:
 
         if game.matchmaking_score < best_score:
             inhouse_logger.info(
-                f"New best game found with {game.blue_expected_winrate*100:.2f} blue side expected winrate"
+                f"New best game found with {game.blue_expected_winrate * 100:.2f} blue side expected winrate"
             )
 
             best_game = game

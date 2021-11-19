@@ -3,6 +3,15 @@ from discord.ext.commands import ConversionError
 from sqlalchemy import Enum
 import rapidfuzz
 import lol_id_tools
+import os
+from inhouse_bot.matchmaking_logic import fair_algorithm, fifo_algorithm
+
+
+queue_algorithms_list = {
+    "fifo" : fifo_algorithm,
+    "fair" : fair_algorithm
+}
+queue_algorithm = (os.environ.get("QUEUE_ALGORITHM") in queue_algorithms_list) or "fair"
 
 roles_list = ["TOP", "JGL", "MID", "BOT", "SUP"]
 role_enum = Enum(*roles_list, name="role_enum")
