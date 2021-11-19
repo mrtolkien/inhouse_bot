@@ -13,6 +13,9 @@ services:
       # You need to put your Discord Bot token here
       INHOUSE_BOT_TOKEN: ⚠ PUT_YOUR_TOKEN_HERE ⚠
 
+      # Define the queue algorithm here
+      QUEUE_ALGORITHM: "fair"
+
       # Those emoji help the bot look good and are defined with discord.py emoji syntax
       INHOUSE_BOT_TOP_EMOJI: '<:TOP:770815146452451359>'
       INHOUSE_BOT_JGL_EMOJI: '<:JGL:770815197728079882>'
