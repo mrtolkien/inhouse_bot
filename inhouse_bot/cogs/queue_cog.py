@@ -191,6 +191,9 @@ class QueueCog(commands.Cog, name="Queue"):
             if datetime.now() - cancel_timestamp < timedelta(hours=1):
                 jump_ahead = True
 
+        if not common_utils.has_discord_role(ctx.author, role):
+            return await ctx.send(f"You need to have that role in your discord in order to queue up.")
+
         if not duo:
 
             # Simply queuing the player
@@ -208,6 +211,9 @@ class QueueCog(commands.Cog, name="Queue"):
             if not duo_role:
                 await ctx.send("You need to input a role for your duo partner")
                 return
+            
+            if not common_utils.has_discord_role(duo, duo_role):
+                return await ctx.send("Your duo partner need to have that role in their discord in order to queue up.")
 
             duo_validation_message = await ctx.send(
                 f"<@{ctx.author.id}> {get_role_emoji(role)} wants to duo with <@{duo.id}> {get_role_emoji(duo_role)}\n"
