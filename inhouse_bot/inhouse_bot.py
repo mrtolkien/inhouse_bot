@@ -56,6 +56,7 @@ class InhouseBot(commands.Bot):
             from tests.test_cog import TestCog
 
             self.add_cog(TestCog(self))
+        self._background_task.start()
 
     def run(self, *args, **kwargs):
         super().run(os.environ["INHOUSE_BOT_TOKEN"], *args, **kwargs)
