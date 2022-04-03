@@ -19,6 +19,7 @@ services:
       INHOUSE_BOT_MID_EMOJI: '<:MID:770815159765696544>'
       INHOUSE_BOT_BOT_EMOJI: '<:BOT:770815119630401586>'
       INHOUSE_BOT_SUP_EMOJI: '<:SUP:770815175619379210>'
+      INHOUSE_BOT_PENALTY: 900
 
     volumes:
       # Socket volume to connect to the database
