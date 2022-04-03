@@ -56,6 +56,34 @@ class InhouseBot(commands.Bot):
             from tests.test_cog import TestCog
 
             self.add_cog(TestCog(self))
+        
+        # Connect to the database using psycopg2
+        import urllib.parse
+        url = os.environ["INHOUSE_BOT_CONNECTION_STRING"]
+        parsed = urllib.parse.urlparse(url)
+        username = parsed.username
+        password = parsed.password
+        database = parsed.path[1:]
+
+        self.psycop_connection = psycopg2.connect(
+            user = username,
+            password = password,
+            dbname = database
+        )
+
+        cur = self.psycop_connection.cursor()
+        cur.execute(f"select * from information_schema.tables where table_name='muted_players';")
+        if not bool(cur.rowcount):
+            # TODO: muted_players table does not exist, therefore create it
+            cur.execute("""
+create table muted_players (
+    id bigint,
+    mute_time bigint
+)
+""")
+            self.psycop_connection.commit()
+        cur.close()
+
         self._background_task.start()
 
     def run(self, *args, **kwargs):
