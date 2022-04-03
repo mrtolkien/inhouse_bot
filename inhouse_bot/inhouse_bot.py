@@ -1,10 +1,13 @@
 import logging
 import os
 import threading
+import time
+import psycopg2
+import psycopg2.extras
 from datetime import datetime
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 
 from discord.ext.commands import NoPrivateMessage
