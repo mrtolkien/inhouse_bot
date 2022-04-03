@@ -5,7 +5,7 @@ version: "3.8"
 services:
   # Bot service
   inhouse_bot:
-    image: mrtolkien/inhouse_bot
+    image: bossauh/inhouse_bot
     environment:
       # The connection string is an SQLAlchemy connection string, does not need a password since it uses sockets
       INHOUSE_BOT_CONNECTION_STRING: postgresql+psycopg2://postgres:@/inhouse_bot
