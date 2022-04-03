@@ -59,6 +59,23 @@ class InhouseBot(commands.Bot):
 
     def run(self, *args, **kwargs):
         super().run(os.environ["INHOUSE_BOT_TOKEN"], *args, **kwargs)
+    
+    @tasks.loop(seconds=1.0)
+    async def _background_task(self) -> None:
+        cur = self.psycop_connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute("select * from muted_players")
+        players = cur.fetchall()
+        
+        for player in players:
+            if (int(time.time()) - player["mute_time"]) >= int(os.environ.get("INHOUSE_BOT_PENALTY", str(900))):
+                for guild in self.guilds:
+                    member = await guild.fetch_member(player["id"])
+                    await member.edit(mute=False)
+
+                    cur.execute(f"delete from muted_players where id={player['id']}")
+                    self.psycop_connection.commit()
+        
+        cur.close()      
 
     async def command_logging(self, ctx: discord.ext.commands.Context):
         """
