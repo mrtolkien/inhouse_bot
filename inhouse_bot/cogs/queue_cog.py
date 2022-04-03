@@ -390,6 +390,17 @@ class QueueCog(commands.Cog, name="Queue"):
                 await remove_voice_channels(ctx, game)
                 session.delete(game)
 
+                try:
+                    # Mute the user
+                    await ctx.author.edit(mute=True)
+                    cur = self.bot.psycop_connection.cursor()
+                    cur.execute(f"insert into muted_players values ({ctx.author.id}, {int(time.time())})")
+                    self.bot.psycop_connection.commit()
+                    cur.close()
+                except Exception as e:
+                    traceback.print_exc()
+                    await ctx.send(f"An error has occurred while trying to mute the user. {e}")
+
                 queue_channel_handler.mark_queue_related_message(
                     await ctx.send(f"Game {game.id} was cancelled")
                 )
