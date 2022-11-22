@@ -24,7 +24,7 @@ from inhouse_bot.ranking_channel_handler.ranking_channel_handler import ranking_
 
 intents = discord.Intents.default()
 intents.members = True
-
+intent.messages = True
 
 class InhouseBot(commands.Bot):
     """
